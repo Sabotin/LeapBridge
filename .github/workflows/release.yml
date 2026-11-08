@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+
+jobs:
+  upload-hacs-zip:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Verify release tag matches manifest version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: >
+          python3 scripts/check_release_version.py "$RELEASE_TAG"
+
+      - name: Build HACS release ZIP
+        run: bash scripts/build_release_zip.sh /tmp/leapmotor-ha.zip
+
+      - name: Validate HACS release ZIP
+        run: |
+          python - <<'PY'
+          import zipfile
+
+          with zipfile.ZipFile("/tmp/leapmotor-ha.zip") as archive:
+              names = set(archive.namelist())
+          required = {"manifest.json", "__init__.py", "api.py"}
+          forbidden = {
+              "custom_components/leapmotor/manifest.json",
+              "app_cert.pem",
+              "app_key.pem",
+          }
+          missing = required - names
+          present_forbidden = forbidden & names
+          cache_entries = {
+              name
+              for name in names
+              if "__pycache__" in name or name.endswith(".pyc")
+          }
+          nested_archives = {
+              name for name in names if name.lower().endswith(".zip")
+          }
+          if missing:
+              raise SystemExit(f"release ZIP missing root files: {sorted(missing)}")
+          if present_forbidden:
+              raise SystemExit(
+                  f"release ZIP contains forbidden entries: {sorted(present_forbidden)}"
+              )
+          if cache_entries:
+              raise SystemExit(
+                  f"release ZIP contains Python cache entries: {sorted(cache_entries)}"
+              )
+          if nested_archives:
+              raise SystemExit(
+                  f"release ZIP contains nested ZIP files: {sorted(nested_archives)}"
+              )
+          print("ok release ZIP layout")
+          PY
+
+      - name: Upload HACS release ZIP
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release upload "${{ github.event.release.tag_name }}"
+          /tmp/leapmotor-ha.zip
+          --clobber
+          --repo "${{ github.repository }}"

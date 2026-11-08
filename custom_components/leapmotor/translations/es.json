@@ -1,0 +1,653 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Conectar Leapmotor",
+        "description": "Configura los datos del vehiculo Leapmotor. El certificado de la app y la clave privada son obligatorios para iniciar sesion; pegalos o subelos aqui, o colocalos primero como app_cert.pem y app_key.pem en /config/leapmotor. El PIN del vehiculo es opcional; sin el solo funcionan datos de lectura, no el control remoto. Los datos en vivo de ABRP son opcionales; usa tu token Generic de ABRP.",
+        "data": {
+          "username": "Usuario / e-mail",
+          "password": "Contrasena",
+          "app_cert_file": "Subir app_cert.pem (certificado)",
+          "app_key_file": "Subir app_key.pem (clave privada)",
+          "app_cert_pem": "Pegar PEM de app_cert.pem (certificado)",
+          "app_key_pem": "Pegar PEM de app_key.pem (clave privada)",
+          "operation_password": "PIN del vehiculo (opcional, para control)",
+          "scan_interval": "Intervalo de actualizacion en minutos",
+          "eco_polling_enabled": "Activar sondeo eco cuando esta aparcado",
+          "eco_scan_interval": "Intervalo eco de actualizacion en minutos",
+          "abrp_enabled": "Activar datos en vivo de ABRP",
+          "abrp_token": "Token Generic de ABRP"
+        },
+        "data_description": {
+          "eco_polling_enabled": "Usa el intervalo eco mas lento solo cuando todos los vehiculos estan claramente cerrados, aparcados y desconectados.",
+          "eco_scan_interval": "Intervalo de sondeo en modo eco. Se ajusta automaticamente como minimo al intervalo normal de actualizacion."
+        }
+      },
+      "init": {
+        "title": "Opciones de Leapmotor",
+        "description": "Cambia el certificado, la clave privada, el PIN del vehiculo, el intervalo de actualizacion y el envio opcional de datos en vivo a ABRP. El certificado y la clave se guardan como /config/leapmotor/app_cert.pem y /config/leapmotor/app_key.pem. Sin PIN, las acciones de control remoto permanecen desactivadas.",
+        "data": {
+          "app_cert_file": "Subir app_cert.pem (certificado)",
+          "app_key_file": "Subir app_key.pem (clave privada)",
+          "app_cert_pem": "Pegar PEM de app_cert.pem (certificado)",
+          "app_key_pem": "Pegar PEM de app_key.pem (clave privada)",
+          "operation_password": "PIN del vehiculo (opcional, para control)",
+          "scan_interval": "Intervalo de actualizacion en minutos",
+          "eco_polling_enabled": "Activar sondeo eco cuando esta aparcado",
+          "eco_scan_interval": "Intervalo eco de actualizacion en minutos",
+          "abrp_enabled": "Activar datos en vivo de ABRP",
+          "abrp_token": "Token Generic de ABRP"
+        }
+      },
+      "certificates": {
+        "title": "Certificados Leapmotor",
+        "description": "Sube el certificado de app y la clave privada requeridos, o pega su contenido PEM. Se guardan localmente como /config/leapmotor/app_cert.pem y /config/leapmotor/app_key.pem y no se incluyen en el repositorio publico.",
+        "data": {
+          "app_cert_file": "Subir app_cert.pem (certificado)",
+          "app_key_file": "Subir app_key.pem (clave privada)",
+          "app_cert_pem": "Pegar PEM de app_cert.pem (certificado)",
+          "app_key_pem": "Pegar PEM de app_key.pem (clave privada)"
+        }
+      },
+      "account": {
+        "title": "Conectar cuenta Leapmotor",
+        "description": "Introduce tus credenciales de Leapmotor. El PIN del vehiculo es opcional; sin el solo funcionan datos de lectura, no el control remoto. Los datos en vivo de ABRP son opcionales y solo requieren tu token Generic de ABRP.",
+        "data": {
+          "username": "Usuario / e-mail",
+          "password": "Contrasena",
+          "operation_password": "PIN del vehiculo (opcional, para control)",
+          "scan_interval": "Intervalo de actualizacion en minutos",
+          "eco_polling_enabled": "Activar sondeo eco cuando esta aparcado",
+          "eco_scan_interval": "Intervalo eco de actualizacion en minutos",
+          "abrp_enabled": "Activar datos en vivo de ABRP",
+          "abrp_token": "Token Generic de ABRP"
+        },
+        "data_description": {
+          "eco_polling_enabled": "Usa el intervalo eco mas lento solo cuando todos los vehiculos estan claramente cerrados, aparcados y desconectados.",
+          "eco_scan_interval": "Intervalo de sondeo en modo eco. Se ajusta automaticamente como minimo al intervalo normal de actualizacion."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Actualizar contraseña de Leapmotor",
+        "description": "Introduce la contraseña de {username}. Se conservarán los vehículos y ajustes.",
+        "data": {
+          "password": "Contrasena"
+        }
+      },
+      "reconfigure": {
+        "title": "Actualizar contraseña de Leapmotor",
+        "description": "Introduce la contraseña de {username}. Se conservarán los vehículos y ajustes.",
+        "data": {
+          "password": "Contrasena"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Autenticacion fallida.",
+      "account_cert_error": "El inicio de sesion fue correcto, pero no se pudo abrir el certificado de la cuenta.",
+      "cannot_connect": "Fallo de conexion o actualizacion de API.",
+      "unknown": "Error inesperado.",
+      "missing_app_cert": "Falta el certificado o la clave privada de la app. Pega ambos valores PEM o coloca app_cert.pem y app_key.pem en /config/leapmotor.",
+      "certificate_import_error": "Error al importar el certificado. Comprueba el certificado PEM y la clave privada.",
+      "api_refresh_failed": "El inicio de sesion fue correcto, pero fallo la primera actualizacion de datos del vehiculo.",
+      "no_vehicle": "Esta cuenta no tiene ningun vehiculo vinculado."
+    },
+    "abort": {
+      "already_configured": "Esta cuenta ya esta configurada.",
+      "reauth_successful": "Contraseña de la cuenta actualizada.",
+      "reconfigure_successful": "Contraseña de la cuenta actualizada."
+    }
+  },
+  "config_subentries": {
+    "vehicle": {
+      "entry_type": "Vehículo",
+      "initiate_flow": {"user": "Añadir vehículo"},
+      "step": {
+        "user": {"title": "Seleccionar vehículo", "data": {"vin": "Vehículo"}},
+        "vehicle": {"title": "Configurar vehículo", "description": "El PIN y el token de ABRP solo se aplican a este vehículo.", "data": {"operation_password": "PIN del vehículo (opcional, para control)", "abrp_enabled": "Activar datos en vivo de ABRP", "abrp_token": "Token genérico de ABRP"}},
+        "reconfigure": {"title": "Configurar {vehicle}", "description": "Cambia el PIN y el token de ABRP solo para este vehículo.", "data": {"operation_password": "PIN del vehículo (opcional, para control)", "abrp_enabled": "Activar datos en vivo de ABRP", "abrp_token": "Token genérico de ABRP"}}
+      },
+      "abort": {"all_vehicles_configured": "Todos los vehículos de esta cuenta ya están configurados."}
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_percent": {
+        "name": "Batería"
+      },
+      "remaining_range_km": {
+        "name": "Autonomía"
+      },
+      "odometer_km": {
+        "name": "Odómetro"
+      },
+      "interior_temp_c": {
+        "name": "Temperatura interior"
+      },
+      "climate_set_temp_left_c": {
+        "name": "Temperatura objetivo izquierda"
+      },
+      "climate_set_temp_right_c": {
+        "name": "Temperatura objetivo derecha"
+      },
+      "charge_limit_percent": {
+        "name": "Límite de carga"
+      },
+      "charging_planned_start": {
+        "name": "Inicio de carga programada"
+      },
+      "charging_planned_end": {
+        "name": "Fin de carga programada"
+      },
+      "charging_planned_circulation": {
+        "name": "Repetición de carga programada"
+      },
+      "charging_plan_updated_at": {
+        "name": "Plan de carga actualizado"
+      },
+      "vehicle_state": {
+        "name": "Estado del vehículo"
+      },
+      "total_mileage_km": {
+        "name": "Kilometraje total"
+      },
+      "tire_pressure_front_left_bar": {
+        "name": "Presión neumático delantero izquierdo"
+      },
+      "tire_pressure_front_right_bar": {
+        "name": "Presión neumático delantero derecho"
+      },
+      "tire_pressure_rear_left_bar": {
+        "name": "Presión neumático trasero izquierdo"
+      },
+      "tire_pressure_rear_right_bar": {
+        "name": "Presión neumático trasero derecho"
+      },
+      "unread_message_count": {
+        "name": "Mensajes sin leer"
+      },
+      "last_message_title": {
+        "name": "Último mensaje"
+      },
+      "last_message_time": {
+        "name": "Hora del último mensaje"
+      },
+      "last_successful_refresh": {
+        "name": "Última actualización de la nube"
+      },
+      "last_vehicle_update": {
+        "name": "Última actualización del vehículo"
+      },
+      "battery_percent_precise": {
+        "name": "Batería precisa"
+      },
+      "wltp_max_range_km": {
+        "name": "Autonomía restante CLTC"
+      },
+      "live_remaining_range_km": {
+        "name": "Autonomía en vivo"
+      },
+      "range_mode": {
+        "name": "Modo de autonomía"
+      },
+      "speed_kmh": {
+        "name": "Velocidad"
+      },
+      "gear": {
+        "name": "Marcha"
+      },
+      "remaining_charge_minutes": {
+        "name": "Tiempo de carga restante"
+      },
+      "charging_power_kw": {
+        "name": "Potencia de carga"
+      },
+      "charging_current_a": {
+        "name": "Corriente de la batería"
+      },
+      "charging_voltage_v": {
+        "name": "Tensión de carga"
+      },
+      "charging_connection_state": {
+        "name": "Conexión de carga"
+      },
+      "charging_finish_time": {
+        "name": "Hora estimada de fin de carga"
+      },
+      "evcc_status": {
+        "name": "Estado de carga EVCC",
+        "state": {
+          "A": "Desconectado",
+          "B": "Conectado",
+          "C": "Cargando"
+        }
+      },
+      "battery_min_temp_c": {
+        "name": "Temperatura mínima de batería"
+      },
+      "battery_thermal_request": {
+        "name": "Gestión térmica de batería"
+      },
+      "ptc_power_w": {
+        "name": "Potencia PTC"
+      },
+      "climate_mode": {
+        "name": "Modo de climatización"
+      },
+      "steering_wheel_heating_remaining_minutes": {
+        "name": "Tiempo restante calefacción volante"
+      },
+      "driver_seat_heating_level": {
+        "name": "Nivel calefacción asiento conductor"
+      },
+      "passenger_seat_heating_level": {
+        "name": "Nivel calefacción asiento pasajero"
+      },
+      "driver_seat_ventilation_level": {
+        "name": "Nivel ventilación asiento conductor"
+      },
+      "passenger_seat_ventilation_level": {
+        "name": "Nivel ventilación asiento pasajero"
+      },
+      "speed_limit_kmh": {
+        "name": "Límite de velocidad"
+      },
+      "front_left_window_position_percent": {
+        "name": "Posición ventanilla delantera izquierda"
+      },
+      "front_right_window_position_percent": {
+        "name": "Posición ventanilla delantera derecha"
+      },
+      "rear_left_window_position_percent": {
+        "name": "Posición ventanilla trasera izquierda"
+      },
+      "rear_right_window_position_percent": {
+        "name": "Posición ventanilla trasera derecha"
+      },
+      "total_energy_kwh": {
+        "name": "Consumo total de energía"
+      },
+      "last_7_days_mileage_km": {
+        "name": "Kilometraje últimos 7 días"
+      },
+      "last_7_days_energy_kwh": {
+        "name": "Energía últimos 7 días"
+      },
+      "average_consumption_6w_kwh_100km": {
+        "name": "Consumo medio 6 semanas (kWh/100 km)"
+      },
+      "average_consumption_6w_mi_kwh": {
+        "name": "Consumo medio 6 semanas (mi/kWh)"
+      },
+      "last_week_driving_energy_percent": {
+        "name": "Energía conducción semana pasada"
+      },
+      "last_week_climate_energy_percent": {
+        "name": "Energía climatización semana pasada"
+      },
+      "last_week_other_energy_percent": {
+        "name": "Otra energía semana pasada"
+      },
+      "lock_state_source": {
+        "name": "Fuente de bloqueo"
+      },
+      "lock_state_age_seconds": {
+        "name": "Antigüedad del bloqueo"
+      },
+      "raw_lock_status_code": {
+        "name": "Código bruto de bloqueo"
+      },
+      "ptc_state": {
+        "name": "Estado PTC (código sin procesar)"
+      },
+      "ptc_power_setting_value": {
+        "name": "PTC power setting"
+      },
+      "available_energy_kwh": {
+        "name": "Available energy"
+      },
+      "outdoor_temp_c": {
+        "name": "Outdoor temperature"
+      },
+      "climate_fan_volume": {
+        "name": "Climate fan volume"
+      },
+      "climate_fan_volume_setting": {
+        "name": "Climate fan volume setting"
+      },
+      "climate_air_direction": {
+        "name": "Dirección del aire (código sin procesar)"
+      },
+      "climate_cooling_heating_mode": {
+        "name": "Climate cooling/heating mode"
+      },
+      "climate_min_single_temp_c": {
+        "name": "Climate minimum single temperature"
+      },
+      "sunshade_position": {
+        "name": "Sunshade position"
+      },
+      "last_charge_energy_kwh": {
+        "name": "Energia ultima carga"
+      },
+      "fuel_level_percent": {
+        "name": "Nivel de combustible"
+      },
+      "fuel_range_km": {
+        "name": "Autonomía de combustible"
+      },
+      "combined_range_km": {
+        "name": "Autonomía combinada"
+      },
+      "today_driving_energy_percent": {
+        "name": "Energía de conducción de hoy"
+      },
+      "today_climate_energy_percent": {
+        "name": "Energía de clima de hoy"
+      },
+      "today_other_energy_percent": {
+        "name": "Otra energía de hoy"
+      },
+      "ac_operation_mode": {
+        "name": "Modo de funcionamiento del aire acondicionado",
+        "state": {
+          "auto": "Auto",
+          "manual": "Manual"
+        }
+      },
+      "max_fuel_range_km": {
+        "name": "Autonomía máxima combustible"
+      },
+      "max_combined_range_km": {
+        "name": "Autonomía combinada máxima"
+      }
+    },
+    "binary_sensor": {
+      "is_charging": {
+        "name": "Cargando"
+      },
+      "charging_planned_weekly": {
+        "name": "Programa de carga semanal"
+      },
+      "charging_planned_enabled": {
+        "name": "Carga programada"
+      },
+      "is_plugged_in": {
+        "name": "Cable de carga conectado"
+      },
+      "is_regening": {
+        "name": "Frenado regenerativo"
+      },
+      "dc_cable_connected": {
+        "name": "Cable de carga DC conectado"
+      },
+      "remote_session_active": {
+        "name": "Sesión remota activa"
+      },
+      "vehicle_ready": {
+        "name": "Vehículo READY"
+      },
+      "vehicle_security_active": {
+        "name": "Seguridad del vehículo activa"
+      },
+      "parking_brake_active": {
+        "name": "Freno de estacionamiento activo"
+      },
+      "battery_heating": {
+        "name": "Calefacción de batería"
+      },
+      "driver_door_open": {
+        "name": "Puerta del conductor"
+      },
+      "passenger_door_open": {
+        "name": "Puerta del pasajero"
+      },
+      "rear_left_door_open": {
+        "name": "Puerta trasera izquierda"
+      },
+      "rear_right_door_open": {
+        "name": "Puerta trasera derecha"
+      },
+      "trunk_open": {
+        "name": "Maletero"
+      },
+      "front_left_window_open": {
+        "name": "Ventanilla delantera izquierda"
+      },
+      "front_right_window_open": {
+        "name": "Ventanilla delantera derecha"
+      },
+      "rear_left_window_open": {
+        "name": "Ventanilla trasera izquierda"
+      },
+      "rear_right_window_open": {
+        "name": "Ventanilla trasera derecha"
+      },
+      "skylight_open": {
+        "name": "Techo panorámico abierto"
+      },
+      "climate_on": {
+        "name": "Climatización"
+      },
+      "fast_cooling_active": {
+        "name": "Enfriamiento rápido activo"
+      },
+      "fast_heating_active": {
+        "name": "Calefacción rápida activa"
+      },
+      "windshield_defrosting": {
+        "name": "Desempañado parabrisas"
+      },
+      "rear_window_heating": {
+        "name": "Luneta térmica"
+      },
+      "air_recirculation": {
+        "name": "Recirculación de aire"
+      },
+      "steering_wheel_heating": {
+        "name": "Calefacción del volante"
+      },
+      "left_mirror_heating": {
+        "name": "Calefacción espejo izquierdo"
+      },
+      "right_mirror_heating": {
+        "name": "Calefacción espejo derecho"
+      },
+      "speed_limit_enabled": {
+        "name": "Límite de velocidad activo"
+      },
+      "park_assist_enabled": {
+        "name": "Asistente de aparcamiento activo"
+      },
+      "sentinel_mode": {
+        "name": "Modo centinela"
+      },
+      "parking_photo": {
+        "name": "Foto de aparcamiento"
+      },
+      "fully_charged": {
+        "name": "Carga completa"
+      },
+      "healthy_charging_enabled": {
+        "name": "Carga saludable activada"
+      },
+      "charging_schedule_cancelled_once": {
+        "name": "Programa de carga suspendido una vez"
+      },
+      "climate_temp_mode": {
+        "name": "Climate temperature mode"
+      },
+      "bluetooth_enabled": {
+        "name": "Bluetooth"
+      },
+      "hotspot_enabled": {
+        "name": "Hotspot"
+      },
+      "windows_remote_supported": {
+        "name": "Windows remote supported"
+      },
+      "door_control_allowed": {
+        "name": "Door control allowed"
+      },
+      "is_driving": {
+        "name": "Conduciendo"
+      }
+    },
+    "image": {
+      "vehicle_picture": {
+        "name": "Imagen del vehículo"
+      }
+    },
+    "button": {
+      "unlock_charger": {
+        "name": "Desbloquear cargador"
+      },
+      "open_trunk": {
+        "name": "Abrir maletero"
+      },
+      "find_vehicle": {
+        "name": "Localizar vehiculo"
+      },
+      "sunshade_action": {
+        "name": "Persiana solar"
+      },
+      "windows": {
+        "name": "Accion de ventanillas"
+      },
+      "quick_cool": {
+        "name": "Enfriamiento rapido"
+      },
+      "quick_heat": {
+        "name": "Calentamiento rapido"
+      },
+      "windshield_defrost": {
+        "name": "Desempanar parabrisas"
+      },
+      "close_trunk": {
+        "name": "Cerrar maletero"
+      },
+      "open_sunshade": {
+        "name": "Abrir persiana solar"
+      },
+      "close_sunshade": {
+        "name": "Cerrar persiana solar"
+      },
+      "open_windows": {
+        "name": "Abrir ventanillas"
+      },
+      "close_windows": {
+        "name": "Cerrar ventanillas"
+      },
+      "refresh_data": {
+        "name": "Actualizar datos"
+      },
+      "ac_off": {
+        "name": "Desactivar climatizacion"
+      }
+    },
+    "lock": {
+      "vehicle_lock": {
+        "name": "Cerradura"
+      }
+    },
+    "device_tracker": {
+      "location": {
+        "name": "Ubicacion"
+      }
+    },
+    "number": {
+      "charge_limit_setting": {
+        "name": "Ajustar limite de carga"
+      },
+      "driver_seat_heating": {
+        "name": "Calefaccion asiento conductor"
+      },
+      "passenger_seat_heating": {
+        "name": "Calefaccion asiento pasajero"
+      },
+      "driver_seat_ventilation": {
+        "name": "Ventilacion asiento conductor"
+      },
+      "passenger_seat_ventilation": {
+        "name": "Ventilacion asiento pasajero"
+      }
+    },
+    "switch": {
+      "climate_control": {
+        "name": "Climatizacion"
+      },
+      "charging_schedule": {
+        "name": "Programa de carga"
+      },
+      "battery_preheat": {
+        "name": "Precalentamiento de bateria"
+      },
+      "steering_wheel_heat": {
+        "name": "Calefaccion volante"
+      },
+      "rearview_mirror_heat": {
+        "name": "Calefaccion espejos"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opciones de Leapmotor",
+        "description": "Cambia el certificado, la clave privada, el PIN del vehiculo, el intervalo de actualizacion y el envio opcional de datos en vivo a ABRP. El certificado y la clave se guardan como /config/leapmotor/app_cert.pem y /config/leapmotor/app_key.pem. Sin PIN, las acciones de control remoto permanecen desactivadas.",
+        "data": {
+          "app_cert_file": "Subir app_cert.pem (certificado)",
+          "app_key_file": "Subir app_key.pem (clave privada)",
+          "app_cert_pem": "Pegar PEM de app_cert.pem (certificado)",
+          "app_key_pem": "Pegar PEM de app_key.pem (clave privada)",
+          "operation_password": "PIN del vehiculo (opcional, para control)",
+          "scan_interval": "Intervalo de actualizacion en minutos",
+          "eco_polling_enabled": "Activar sondeo eco cuando esta aparcado",
+          "eco_scan_interval": "Intervalo eco de actualizacion en minutos",
+          "abrp_enabled": "Activar datos en vivo de ABRP",
+          "abrp_token": "Token Generic de ABRP"
+        },
+        "data_description": {
+          "eco_polling_enabled": "Usa el intervalo eco mas lento solo cuando todos los vehiculos estan claramente cerrados, aparcados y desconectados.",
+          "eco_scan_interval": "Intervalo de sondeo en modo eco. Se ajusta automaticamente como minimo al intervalo normal de actualizacion."
+        }
+      }
+    }
+  },
+  "services": {
+    "set_climate": {
+      "name": "Configurar climatizacion",
+      "description": "Envia un comando de climatizacion con parametros. Requiere PIN.",
+      "fields": {
+        "mode": {
+          "name": "Modo",
+          "description": "Modo de climatizacion: cold, hot o wind."
+        },
+        "temperature": {
+          "name": "Temperatura",
+          "description": "Temperatura objetivo en grados C, de 18 a 32. Predeterminado 26."
+        },
+        "fan_speed": {
+          "name": "Velocidad del ventilador",
+          "description": "Nivel del ventilador de 1 a 7. Predeterminado 3."
+        },
+        "recirculate": {
+          "name": "Recircular",
+          "description": "Usar recirculacion de aire interior en vez de aire exterior. Predeterminado false."
+        },
+        "windshield_defrost": {
+          "name": "Desempañado parabrisas",
+          "description": "Activar desempañado del parabrisas delantero. Predeterminado false."
+        },
+        "vin": {
+          "name": "VIN",
+          "description": "Numero de identificacion del vehiculo. Obligatorio con varios vehiculos."
+        },
+        "entity_id": {
+          "name": "Entity ID",
+          "description": "Entidad Leapmotor opcional para resolver el vehiculo de destino."
+        }
+      }
+    }
+  }
+}

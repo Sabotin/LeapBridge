@@ -1,0 +1,653 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Leapmotor verbinden",
+        "description": "Stelt Leapmotor-voertuiggegevens in. Een app-certificaat en app-privésleutel zijn verplicht om in te loggen; plak ze hier of upload ze, of plaats ze eerst als app_cert.pem en app_key.pem in /config/leapmotor. De voertuig-PIN is optioneel; zonder PIN werken alleen leesgegevens, geen bediening op afstand. ABRP live-data is optioneel; gebruik je ABRP Generic-token.",
+        "data": {
+          "username": "Gebruikersnaam / e-mail",
+          "password": "Wachtwoord",
+          "app_cert_file": "app_cert.pem uploaden (certificaat)",
+          "app_key_file": "app_key.pem uploaden (privésleutel)",
+          "app_cert_pem": "app_cert.pem PEM plakken (certificaat)",
+          "app_key_pem": "app_key.pem PEM plakken (privésleutel)",
+          "operation_password": "Voertuig-PIN (optioneel, voor bediening)",
+          "scan_interval": "Update-interval in minuten",
+          "eco_polling_enabled": "Eco-polling inschakelen wanneer geparkeerd",
+          "eco_scan_interval": "Eco-update-interval in minuten",
+          "abrp_enabled": "ABRP live-data inschakelen",
+          "abrp_token": "ABRP Generic-token"
+        },
+        "data_description": {
+          "eco_polling_enabled": "Gebruik het langzamere eco-interval alleen wanneer alle voertuigen duidelijk vergrendeld, geparkeerd en niet aangesloten zijn.",
+          "eco_scan_interval": "Pollinginterval in eco-modus. Dit wordt automatisch minimaal gelijk aan het normale update-interval gezet."
+        }
+      },
+      "init": {
+        "title": "Leapmotor opties",
+        "description": "Wijzig certificaatmateriaal, voertuig-PIN, update-interval en optionele ABRP live-data doorsturen. App-certificaat en privésleutel zijn verplicht om in te loggen en worden opgeslagen als /config/leapmotor/app_cert.pem en /config/leapmotor/app_key.pem. Zonder PIN blijven afstandsbedieningsacties uitgeschakeld.",
+        "data": {
+          "app_cert_file": "app_cert.pem uploaden (certificaat)",
+          "app_key_file": "app_key.pem uploaden (privésleutel)",
+          "app_cert_pem": "app_cert.pem PEM plakken (certificaat)",
+          "app_key_pem": "app_key.pem PEM plakken (privésleutel)",
+          "operation_password": "Voertuig-PIN (optioneel, voor bediening)",
+          "scan_interval": "Update-interval in minuten",
+          "eco_polling_enabled": "Eco-polling inschakelen wanneer geparkeerd",
+          "eco_scan_interval": "Eco-update-interval in minuten",
+          "abrp_enabled": "ABRP live-data inschakelen",
+          "abrp_token": "ABRP Generic-token"
+        }
+      },
+      "certificates": {
+        "title": "Leapmotor-certificaten",
+        "description": "Upload het vereiste app-certificaat en de privésleutel, of plak hun PEM-inhoud. Ze worden lokaal opgeslagen als /config/leapmotor/app_cert.pem en /config/leapmotor/app_key.pem en worden niet opgenomen in de publieke repository.",
+        "data": {
+          "app_cert_file": "app_cert.pem uploaden (certificaat)",
+          "app_key_file": "app_key.pem uploaden (privésleutel)",
+          "app_cert_pem": "app_cert.pem PEM plakken (certificaat)",
+          "app_key_pem": "app_key.pem PEM plakken (privésleutel)"
+        }
+      },
+      "account": {
+        "title": "Leapmotor-account verbinden",
+        "description": "Voer je Leapmotor-accountgegevens in. De voertuig-PIN is optioneel; zonder PIN werken alleen leesgegevens, geen bediening op afstand. ABRP live-data is optioneel en vereist alleen je ABRP Generic-token.",
+        "data": {
+          "username": "Gebruikersnaam / e-mail",
+          "password": "Wachtwoord",
+          "operation_password": "Voertuig-PIN (optioneel, voor bediening)",
+          "scan_interval": "Update-interval in minuten",
+          "eco_polling_enabled": "Eco-polling inschakelen wanneer geparkeerd",
+          "eco_scan_interval": "Eco-update-interval in minuten",
+          "abrp_enabled": "ABRP live-data inschakelen",
+          "abrp_token": "ABRP Generic-token"
+        },
+        "data_description": {
+          "eco_polling_enabled": "Gebruik het langzamere eco-interval alleen wanneer alle voertuigen duidelijk vergrendeld, geparkeerd en niet aangesloten zijn.",
+          "eco_scan_interval": "Pollinginterval in eco-modus. Dit wordt automatisch minimaal gelijk aan het normale update-interval gezet."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Leapmotor-wachtwoord bijwerken",
+        "description": "Voer het wachtwoord voor {username} in. Voertuigen en instellingen blijven behouden.",
+        "data": {
+          "password": "Wachtwoord"
+        }
+      },
+      "reconfigure": {
+        "title": "Leapmotor-wachtwoord bijwerken",
+        "description": "Voer het wachtwoord voor {username} in. Voertuigen en instellingen blijven behouden.",
+        "data": {
+          "password": "Wachtwoord"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Authenticatie mislukt.",
+      "account_cert_error": "Inloggen is gelukt, maar het accountcertificaat kon niet worden geopend.",
+      "cannot_connect": "Verbinding of API-update mislukt.",
+      "unknown": "Onverwachte fout.",
+      "missing_app_cert": "App-certificaat of privésleutel ontbreekt. Plak beide PEM-waarden of plaats app_cert.pem en app_key.pem in /config/leapmotor.",
+      "certificate_import_error": "Certificaatimport mislukt. Controleer het PEM-certificaat en de privesleutel.",
+      "api_refresh_failed": "Inloggen is gelukt, maar de eerste update van voertuiggegevens is mislukt.",
+      "no_vehicle": "Dit account heeft geen gekoppeld voertuig."
+    },
+    "abort": {
+      "already_configured": "Dit account is al geconfigureerd.",
+      "reauth_successful": "Accountwachtwoord bijgewerkt.",
+      "reconfigure_successful": "Accountwachtwoord bijgewerkt."
+    }
+  },
+  "config_subentries": {
+    "vehicle": {
+      "entry_type": "Voertuig",
+      "initiate_flow": {"user": "Voertuig toevoegen"},
+      "step": {
+        "user": {"title": "Voertuig selecteren", "data": {"vin": "Voertuig"}},
+        "vehicle": {"title": "Voertuig configureren", "description": "De pincode en het ABRP-token gelden alleen voor dit voertuig.", "data": {"operation_password": "Pincode voertuig (optioneel, voor bediening)", "abrp_enabled": "ABRP-livegegevens inschakelen", "abrp_token": "ABRP Generic-token"}},
+        "reconfigure": {"title": "{vehicle} configureren", "description": "Wijzig de pincode en het ABRP-token alleen voor dit voertuig.", "data": {"operation_password": "Pincode voertuig (optioneel, voor bediening)", "abrp_enabled": "ABRP-livegegevens inschakelen", "abrp_token": "ABRP Generic-token"}}
+      },
+      "abort": {"all_vehicles_configured": "Alle voertuigen van dit account zijn al geconfigureerd."}
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_percent": {
+        "name": "Accu"
+      },
+      "remaining_range_km": {
+        "name": "Bereik"
+      },
+      "odometer_km": {
+        "name": "Kilometerstand"
+      },
+      "interior_temp_c": {
+        "name": "Binnentemperatuur"
+      },
+      "climate_set_temp_left_c": {
+        "name": "Doeltemperatuur links"
+      },
+      "climate_set_temp_right_c": {
+        "name": "Doeltemperatuur rechts"
+      },
+      "charge_limit_percent": {
+        "name": "Laadlimiet"
+      },
+      "charging_planned_start": {
+        "name": "Gepland laden start"
+      },
+      "charging_planned_end": {
+        "name": "Gepland laden einde"
+      },
+      "charging_planned_circulation": {
+        "name": "Gepland laden herhaling"
+      },
+      "charging_plan_updated_at": {
+        "name": "Laadplanning bijgewerkt"
+      },
+      "vehicle_state": {
+        "name": "Voertuigstatus"
+      },
+      "total_mileage_km": {
+        "name": "Totale kilometerstand"
+      },
+      "tire_pressure_front_left_bar": {
+        "name": "Bandenspanning linksvoor"
+      },
+      "tire_pressure_front_right_bar": {
+        "name": "Bandenspanning rechtsvoor"
+      },
+      "tire_pressure_rear_left_bar": {
+        "name": "Bandenspanning linksachter"
+      },
+      "tire_pressure_rear_right_bar": {
+        "name": "Bandenspanning rechtsachter"
+      },
+      "unread_message_count": {
+        "name": "Ongelezen berichten"
+      },
+      "last_message_title": {
+        "name": "Laatste bericht"
+      },
+      "last_message_time": {
+        "name": "Tijd laatste bericht"
+      },
+      "last_successful_refresh": {
+        "name": "Laatste cloudvernieuwing"
+      },
+      "last_vehicle_update": {
+        "name": "Laatste voertuigupdate"
+      },
+      "battery_percent_precise": {
+        "name": "Accu nauwkeurig"
+      },
+      "wltp_max_range_km": {
+        "name": "CLTC resterend bereik"
+      },
+      "live_remaining_range_km": {
+        "name": "Live bereik"
+      },
+      "range_mode": {
+        "name": "Bereikmodus"
+      },
+      "speed_kmh": {
+        "name": "Snelheid"
+      },
+      "gear": {
+        "name": "Versnelling"
+      },
+      "remaining_charge_minutes": {
+        "name": "Resterende laadtijd"
+      },
+      "charging_power_kw": {
+        "name": "Laadvermogen"
+      },
+      "charging_current_a": {
+        "name": "Accustroom"
+      },
+      "charging_voltage_v": {
+        "name": "Laadspanning"
+      },
+      "charging_connection_state": {
+        "name": "Laadverbinding"
+      },
+      "charging_finish_time": {
+        "name": "Geschatte laadeindtijd"
+      },
+      "evcc_status": {
+        "name": "EVCC laadstatus",
+        "state": {
+          "A": "Ontkoppeld",
+          "B": "Verbonden",
+          "C": "Aan het laden"
+        }
+      },
+      "battery_min_temp_c": {
+        "name": "Minimale accutemperatuur"
+      },
+      "battery_thermal_request": {
+        "name": "Accu thermisch beheer"
+      },
+      "ptc_power_w": {
+        "name": "PTC-vermogen"
+      },
+      "climate_mode": {
+        "name": "Klimaatmodus"
+      },
+      "steering_wheel_heating_remaining_minutes": {
+        "name": "Resterende tijd stuurverwarming"
+      },
+      "driver_seat_heating_level": {
+        "name": "Stoelverwarming bestuurder niveau"
+      },
+      "passenger_seat_heating_level": {
+        "name": "Stoelverwarming passagier niveau"
+      },
+      "driver_seat_ventilation_level": {
+        "name": "Stoelventilatie bestuurder niveau"
+      },
+      "passenger_seat_ventilation_level": {
+        "name": "Stoelventilatie passagier niveau"
+      },
+      "speed_limit_kmh": {
+        "name": "Snelheidslimiet"
+      },
+      "front_left_window_position_percent": {
+        "name": "Raam linksvoor positie"
+      },
+      "front_right_window_position_percent": {
+        "name": "Raam rechtsvoor positie"
+      },
+      "rear_left_window_position_percent": {
+        "name": "Raam linksachter positie"
+      },
+      "rear_right_window_position_percent": {
+        "name": "Raam rechtsachter positie"
+      },
+      "total_energy_kwh": {
+        "name": "Totaal energieverbruik"
+      },
+      "last_7_days_mileage_km": {
+        "name": "Kilometers laatste 7 dagen"
+      },
+      "last_7_days_energy_kwh": {
+        "name": "Energie laatste 7 dagen"
+      },
+      "average_consumption_6w_kwh_100km": {
+        "name": "Gemiddeld verbruik 6 weken (kWh/100 km)"
+      },
+      "average_consumption_6w_mi_kwh": {
+        "name": "Gemiddeld verbruik 6 weken (mi/kWh)"
+      },
+      "last_week_driving_energy_percent": {
+        "name": "Rij-energie vorige week"
+      },
+      "last_week_climate_energy_percent": {
+        "name": "Klimaatenergie vorige week"
+      },
+      "last_week_other_energy_percent": {
+        "name": "Overige energie vorige week"
+      },
+      "lock_state_source": {
+        "name": "Vergrendelingsbron"
+      },
+      "lock_state_age_seconds": {
+        "name": "Leeftijd vergrendelingsstatus"
+      },
+      "raw_lock_status_code": {
+        "name": "Ruwe vergrendelingscode"
+      },
+      "ptc_state": {
+        "name": "PTC-status (ruwe code)"
+      },
+      "ptc_power_setting_value": {
+        "name": "PTC power setting"
+      },
+      "available_energy_kwh": {
+        "name": "Available energy"
+      },
+      "outdoor_temp_c": {
+        "name": "Outdoor temperature"
+      },
+      "climate_fan_volume": {
+        "name": "Climate fan volume"
+      },
+      "climate_fan_volume_setting": {
+        "name": "Climate fan volume setting"
+      },
+      "climate_air_direction": {
+        "name": "Luchtrichting (ruwe code)"
+      },
+      "climate_cooling_heating_mode": {
+        "name": "Climate cooling/heating mode"
+      },
+      "climate_min_single_temp_c": {
+        "name": "Climate minimum single temperature"
+      },
+      "sunshade_position": {
+        "name": "Sunshade position"
+      },
+      "last_charge_energy_kwh": {
+        "name": "Energie laatste laadbeurt"
+      },
+      "fuel_level_percent": {
+        "name": "Brandstofpeil"
+      },
+      "fuel_range_km": {
+        "name": "Brandstof actieradius"
+      },
+      "combined_range_km": {
+        "name": "Gecombineerde actieradius"
+      },
+      "today_driving_energy_percent": {
+        "name": "Aandrijvingsenergie vandaag"
+      },
+      "today_climate_energy_percent": {
+        "name": "Klimaatenergie vandaag"
+      },
+      "today_other_energy_percent": {
+        "name": "Overige energie vandaag"
+      },
+      "ac_operation_mode": {
+        "name": "Airco bedieningsmodus",
+        "state": {
+          "auto": "Auto",
+          "manual": "Handmatig"
+        }
+      },
+      "max_fuel_range_km": {
+        "name": "Max. brandstof actieradius"
+      },
+      "max_combined_range_km": {
+        "name": "Max. gecombineerde actieradius"
+      }
+    },
+    "binary_sensor": {
+      "is_charging": {
+        "name": "Laden"
+      },
+      "charging_planned_weekly": {
+        "name": "Wekelijks laadschema"
+      },
+      "charging_planned_enabled": {
+        "name": "Gepland laden"
+      },
+      "is_plugged_in": {
+        "name": "Laadkabel aangesloten"
+      },
+      "is_regening": {
+        "name": "Regeneratief remmen"
+      },
+      "dc_cable_connected": {
+        "name": "DC-laadkabel aangesloten"
+      },
+      "remote_session_active": {
+        "name": "Remote-sessie actief"
+      },
+      "vehicle_ready": {
+        "name": "Voertuig READY"
+      },
+      "vehicle_security_active": {
+        "name": "Voertuigbeveiliging actief"
+      },
+      "parking_brake_active": {
+        "name": "Parkeerrem actief"
+      },
+      "battery_heating": {
+        "name": "Accuverwarming"
+      },
+      "driver_door_open": {
+        "name": "Bestuurdersdeur"
+      },
+      "passenger_door_open": {
+        "name": "Passagiersdeur"
+      },
+      "rear_left_door_open": {
+        "name": "Achterdeur links"
+      },
+      "rear_right_door_open": {
+        "name": "Achterdeur rechts"
+      },
+      "trunk_open": {
+        "name": "Kofferbak"
+      },
+      "front_left_window_open": {
+        "name": "Raam linksvoor"
+      },
+      "front_right_window_open": {
+        "name": "Raam rechtsvoor"
+      },
+      "rear_left_window_open": {
+        "name": "Raam linksachter"
+      },
+      "rear_right_window_open": {
+        "name": "Raam rechtsachter"
+      },
+      "skylight_open": {
+        "name": "Panoramadak open"
+      },
+      "climate_on": {
+        "name": "Klimaatregeling"
+      },
+      "fast_cooling_active": {
+        "name": "Snel koelen actief"
+      },
+      "fast_heating_active": {
+        "name": "Snel verwarmen actief"
+      },
+      "windshield_defrosting": {
+        "name": "Voorruitontdooiing"
+      },
+      "rear_window_heating": {
+        "name": "Achterruitverwarming"
+      },
+      "air_recirculation": {
+        "name": "Luchtrecirculatie"
+      },
+      "steering_wheel_heating": {
+        "name": "Stuurverwarming"
+      },
+      "left_mirror_heating": {
+        "name": "Linkerspiegelverwarming"
+      },
+      "right_mirror_heating": {
+        "name": "Rechterspiegelverwarming"
+      },
+      "speed_limit_enabled": {
+        "name": "Snelheidslimiet actief"
+      },
+      "park_assist_enabled": {
+        "name": "Parkeerassistent actief"
+      },
+      "sentinel_mode": {
+        "name": "Sentinel-modus"
+      },
+      "parking_photo": {
+        "name": "Parkeerfoto"
+      },
+      "fully_charged": {
+        "name": "Volledig opgeladen"
+      },
+      "healthy_charging_enabled": {
+        "name": "Gezond laden ingeschakeld"
+      },
+      "charging_schedule_cancelled_once": {
+        "name": "Laadschema eenmalig uitgesteld"
+      },
+      "climate_temp_mode": {
+        "name": "Climate temperature mode"
+      },
+      "bluetooth_enabled": {
+        "name": "Bluetooth"
+      },
+      "hotspot_enabled": {
+        "name": "Hotspot"
+      },
+      "windows_remote_supported": {
+        "name": "Windows remote supported"
+      },
+      "door_control_allowed": {
+        "name": "Door control allowed"
+      },
+      "is_driving": {
+        "name": "Rijden"
+      }
+    },
+    "image": {
+      "vehicle_picture": {
+        "name": "Voertuigafbeelding"
+      }
+    },
+    "button": {
+      "unlock_charger": {
+        "name": "Laadpistool ontgrendelen"
+      },
+      "open_trunk": {
+        "name": "Kofferbak openen"
+      },
+      "find_vehicle": {
+        "name": "Voertuig vinden"
+      },
+      "sunshade_action": {
+        "name": "Zonnescherm"
+      },
+      "windows": {
+        "name": "Raamactie"
+      },
+      "quick_cool": {
+        "name": "Snel koelen"
+      },
+      "quick_heat": {
+        "name": "Snel verwarmen"
+      },
+      "windshield_defrost": {
+        "name": "Voorruit ontdooien"
+      },
+      "close_trunk": {
+        "name": "Kofferbak sluiten"
+      },
+      "open_sunshade": {
+        "name": "Zonnescherm openen"
+      },
+      "close_sunshade": {
+        "name": "Zonnescherm sluiten"
+      },
+      "open_windows": {
+        "name": "Ramen openen"
+      },
+      "close_windows": {
+        "name": "Ramen sluiten"
+      },
+      "refresh_data": {
+        "name": "Gegevens vernieuwen"
+      },
+      "ac_off": {
+        "name": "Klimaat uit"
+      }
+    },
+    "lock": {
+      "vehicle_lock": {
+        "name": "Vergrendeling"
+      }
+    },
+    "device_tracker": {
+      "location": {
+        "name": "Locatie"
+      }
+    },
+    "number": {
+      "charge_limit_setting": {
+        "name": "Laadlimiet instellen"
+      },
+      "driver_seat_heating": {
+        "name": "Bestuurdersstoelverwarming"
+      },
+      "passenger_seat_heating": {
+        "name": "Passagiersstoelverwarming"
+      },
+      "driver_seat_ventilation": {
+        "name": "Bestuurdersstoelventilatie"
+      },
+      "passenger_seat_ventilation": {
+        "name": "Passagiersstoelventilatie"
+      }
+    },
+    "switch": {
+      "climate_control": {
+        "name": "Klimaatregeling"
+      },
+      "charging_schedule": {
+        "name": "Laadschema"
+      },
+      "battery_preheat": {
+        "name": "Accu voorverwarmen"
+      },
+      "steering_wheel_heat": {
+        "name": "Stuurwielverwarming"
+      },
+      "rearview_mirror_heat": {
+        "name": "Spiegelverwarming"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Leapmotor opties",
+        "description": "Wijzig certificaatmateriaal, voertuig-PIN, update-interval en optionele ABRP live-data doorsturen. App-certificaat en privésleutel zijn verplicht om in te loggen en worden opgeslagen als /config/leapmotor/app_cert.pem en /config/leapmotor/app_key.pem. Zonder PIN blijven afstandsbedieningsacties uitgeschakeld.",
+        "data": {
+          "app_cert_file": "app_cert.pem uploaden (certificaat)",
+          "app_key_file": "app_key.pem uploaden (privésleutel)",
+          "app_cert_pem": "app_cert.pem PEM plakken (certificaat)",
+          "app_key_pem": "app_key.pem PEM plakken (privésleutel)",
+          "operation_password": "Voertuig-PIN (optioneel, voor bediening)",
+          "scan_interval": "Update-interval in minuten",
+          "eco_polling_enabled": "Eco-polling inschakelen wanneer geparkeerd",
+          "eco_scan_interval": "Eco-update-interval in minuten",
+          "abrp_enabled": "ABRP live-data inschakelen",
+          "abrp_token": "ABRP Generic-token"
+        },
+        "data_description": {
+          "eco_polling_enabled": "Gebruik het langzamere eco-interval alleen wanneer alle voertuigen duidelijk vergrendeld, geparkeerd en niet aangesloten zijn.",
+          "eco_scan_interval": "Pollinginterval in eco-modus. Dit wordt automatisch minimaal gelijk aan het normale update-interval gezet."
+        }
+      }
+    }
+  },
+  "services": {
+    "set_climate": {
+      "name": "Klimaat instellen",
+      "description": "Stuur een klimaatopdracht met parameters naar het voertuig. PIN vereist.",
+      "fields": {
+        "mode": {
+          "name": "Modus",
+          "description": "Klimaatmodus: cold, hot of wind."
+        },
+        "temperature": {
+          "name": "Temperatuur",
+          "description": "Doeltemperatuur in graden C, van 18 tot 32. Standaard 26."
+        },
+        "fan_speed": {
+          "name": "Ventilatorsnelheid",
+          "description": "Ventilatorniveau van 1 tot 7. Standaard 3."
+        },
+        "recirculate": {
+          "name": "Recirculeren",
+          "description": "Gebruik recirculatie in plaats van buitenlucht. Standaard false."
+        },
+        "windshield_defrost": {
+          "name": "Voorruit ontdooien",
+          "description": "Voorruitontdooiing inschakelen. Standaard false."
+        },
+        "vin": {
+          "name": "VIN",
+          "description": "Voertuigidentificatienummer. Verplicht wanneer meerdere voertuigen zijn geconfigureerd."
+        },
+        "entity_id": {
+          "name": "Entiteits-ID",
+          "description": "Optionele Leapmotor-entiteit om het doelvoertuig te bepalen."
+        }
+      }
+    }
+  }
+}
