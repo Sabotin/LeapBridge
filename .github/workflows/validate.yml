@@ -1,0 +1,109 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install API test dependencies
+        run: python -m pip install 'requests>=2.31.0' 'cryptography>=42.0.0'
+
+      - name: Compile Python files
+        run: python -m py_compile custom_components/leapmotor/*.py
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests
+
+      - name: Verify tag version on tagged builds
+        if: startsWith(github.ref, 'refs/tags/')
+        run: python scripts/check_release_version.py "${GITHUB_REF_NAME}"
+
+      - name: Validate JSON files
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          paths = [
+              Path("hacs.json"),
+              Path("custom_components/leapmotor/manifest.json"),
+              *Path("custom_components/leapmotor/translations").glob("*.json"),
+          ]
+          for path in paths:
+              json.loads(path.read_text(encoding="utf-8"))
+              print(f"ok {path}")
+          PY
+
+      - name: Validate release ZIP layout
+        run: |
+          bash scripts/build_release_zip.sh /tmp/leapmotor-ha.zip
+          python - <<'PY'
+          import zipfile
+
+          with zipfile.ZipFile("/tmp/leapmotor-ha.zip") as archive:
+              names = set(archive.namelist())
+          assert "manifest.json" in names
+          assert "__init__.py" in names
+          assert "custom_components/leapmotor/manifest.json" not in names
+          assert "app_cert.pem" not in names
+          assert "app_key.pem" not in names
+          assert not {name for name in names if name.lower().endswith(".zip")}
+          print("ok release ZIP layout")
+          PY
+
+      - name: Check forbidden files
+        run: |
+          test ! -e custom_components/leapmotor/app_cert.pem
+          test ! -e custom_components/leapmotor/app_key.pem
+          ! find . -name '*.p12' -o -name '*.log' | grep .
+
+      - name: Secret pattern scan
+        run: |
+          ! grep -RIE \
+            'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|BEGIN CERTIFICATE|@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|192\.168\.' \
+            --exclude-dir=.git \
+            --exclude='validate.yml' \
+            --exclude='config_flow.py' \
+            --exclude='README.md' \
+            --exclude='LEGAL.md' \
+            --exclude='SECURITY.md' \
+            .
+
+  ha-issue-runtime:
+    name: ha-issue-runtime (HA ${{ matrix.homeassistant }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Minimum version declared in hacs.json.
+          - homeassistant: "2025.3.0"
+            requirement: "homeassistant==2025.3.0"
+            python: "3.13"
+          # Newest release supported by this Python version; raise the
+          # Python version when Home Assistant requires a newer one.
+          - homeassistant: "latest"
+            requirement: "homeassistant"
+            python: "3.14"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install Home Assistant runtime
+        run: |
+          python -m pip install '${{ matrix.requirement }}' 'requests>=2.31.0'
+          python -m pip show homeassistant | grep '^Version:'
+      - name: Test diagnostics, entity defaults and T03 service boundary offline
+        run: python tools/ha_issue_runtime.py -v

@@ -1,0 +1,181 @@
+"""Entity registry migrations for Leapmotor."""
+
+from __future__ import annotations
+
+import logging
+
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
+
+from .const import DOMAIN
+
+_LOGGER = logging.getLogger(__name__)
+
+
+_ENGLISH_ENTITY_SLUGS: dict[tuple[str, str], str] = {
+    ("binary_sensor", "is_charging"): "charging",
+    ("binary_sensor", "is_plugged_in"): "charge_cable_plugged_in",
+    ("binary_sensor", "is_regening"): "regenerative_braking",
+    ("binary_sensor", "dc_cable_connected"): "dc_charge_cable_plugged_in",
+    ("binary_sensor", "charging_planned_enabled"): "scheduled_charging",
+    ("binary_sensor", "charging_planned_weekly"): "weekly_charging_schedule",
+    ("binary_sensor", "vehicle_ready"): "vehicle_ready",
+    ("binary_sensor", "remote_session_active"): "remote_session_active",
+    ("binary_sensor", "vehicle_security_active"): "vehicle_security_active",
+    ("binary_sensor", "parking_brake_active"): "parking_brake",
+    ("binary_sensor", "battery_heating"): "battery_heating",
+    ("binary_sensor", "driver_door_open"): "driver_door",
+    ("binary_sensor", "passenger_door_open"): "passenger_door",
+    ("binary_sensor", "rear_left_door_open"): "rear_left_door",
+    ("binary_sensor", "rear_right_door_open"): "rear_right_door",
+    ("binary_sensor", "trunk_open"): "trunk",
+    ("binary_sensor", "front_left_window_open"): "front_left_window",
+    ("binary_sensor", "front_right_window_open"): "front_right_window",
+    ("binary_sensor", "rear_left_window_open"): "rear_left_window",
+    ("binary_sensor", "rear_right_window_open"): "rear_right_window",
+    ("binary_sensor", "skylight_open"): "skylight_open",
+    ("binary_sensor", "climate_on"): "climate",
+    ("binary_sensor", "fast_cooling_active"): "fast_cooling_active",
+    ("binary_sensor", "fast_heating_active"): "fast_heating_active",
+    ("binary_sensor", "windshield_defrosting"): "windshield_defrost",
+    ("binary_sensor", "rear_window_heating"): "rear_window_heating",
+    ("binary_sensor", "air_recirculation"): "air_recirculation",
+    ("binary_sensor", "climate_temp_mode"): "climate_temperature_mode",
+    ("binary_sensor", "steering_wheel_heating"): "steering_wheel_heating",
+    ("binary_sensor", "left_mirror_heating"): "left_mirror_heating",
+    ("binary_sensor", "right_mirror_heating"): "right_mirror_heating",
+    ("binary_sensor", "speed_limit_enabled"): "speed_limit_active",
+    ("binary_sensor", "park_assist_enabled"): "park_assist_active",
+    ("binary_sensor", "sentinel_mode"): "sentinel_mode",
+    ("binary_sensor", "parking_photo"): "parking_photo",
+    ("binary_sensor", "fully_charged"): "fully_charged",
+    ("binary_sensor", "healthy_charging_enabled"): "healthy_charging",
+    ("binary_sensor", "charging_schedule_cancelled_once"): "charging_schedule_cancelled_once",
+    ("binary_sensor", "bluetooth_enabled"): "bluetooth",
+    ("binary_sensor", "hotspot_enabled"): "hotspot",
+    ("binary_sensor", "windows_remote_supported"): "windows_remote_supported",
+    ("binary_sensor", "door_control_allowed"): "door_control_allowed",
+    ("button", "refresh_data"): "refresh_data",
+    ("button", "unlock_charger"): "unlock_charger",
+    ("button", "trunk_open"): "open_trunk",
+    ("button", "trunk_close"): "close_trunk",
+    ("button", "find_car"): "find_vehicle",
+    ("button", "sunshade_open"): "open_sunshade",
+    ("button", "sunshade_close"): "close_sunshade",
+    ("button", "battery_preheat"): "battery_preheat",
+    ("button", "windows_open"): "open_windows",
+    ("button", "windows_close"): "close_windows",
+    ("button", "quick_cool"): "quick_cool",
+    ("button", "quick_heat"): "quick_heat",
+    ("button", "windshield_defrost"): "windshield_defrost",
+    ("device_tracker", "location"): "location",
+    ("image", "vehicle_picture_pkg"): "vehicle_picture",
+    ("lock", "vehicle_lock"): "lock",
+    ("number", "charge_limit_setting"): "set_charge_limit",
+    ("number", "driver_seat_heating"): "driver_seat_heating",
+    ("number", "passenger_seat_heating"): "passenger_seat_heating",
+    ("number", "driver_seat_ventilation"): "driver_seat_ventilation",
+    ("number", "passenger_seat_ventilation"): "passenger_seat_ventilation",
+    ("switch", "climate_control"): "climate",
+    ("sensor", "battery_percent"): "battery",
+    ("sensor", "battery_percent_precise"): "precise_battery",
+    ("sensor", "remaining_range_km"): "range",
+    ("sensor", "wltp_max_range_km"): "cltc_remaining_range",
+    ("sensor", "live_remaining_range_km"): "live_range",
+    ("sensor", "range_mode"): "range_mode",
+    ("sensor", "odometer_km"): "odometer",
+    ("sensor", "speed_kmh"): "speed",
+    ("sensor", "gear"): "gear",
+    ("sensor", "interior_temp_c"): "interior_temperature",
+    ("sensor", "climate_set_temp_left_c"): "target_temperature_left",
+    ("sensor", "climate_set_temp_right_c"): "target_temperature_right",
+    ("sensor", "charge_limit_percent"): "charge_limit",
+    ("sensor", "remaining_charge_minutes"): "remaining_charge_time",
+    ("sensor", "charging_power_kw"): "charging_power",
+    ("sensor", "charging_current_a"): "charging_current",
+    ("sensor", "charging_voltage_v"): "charging_voltage",
+    ("sensor", "charging_connection_state"): "charging_connection",
+    ("sensor", "battery_min_temp_c"): "battery_minimum_temperature",
+    ("sensor", "battery_thermal_request"): "battery_thermal_request",
+    ("sensor", "ptc_power_w"): "ptc_power",
+    ("sensor", "ptc_state"): "ptc_state",
+    ("sensor", "ptc_power_setting_value"): "ptc_power_setting",
+    ("sensor", "available_energy_kwh"): "available_energy",
+    ("sensor", "charging_planned_start"): "charging_schedule_start",
+    ("sensor", "charging_planned_end"): "charging_schedule_end",
+    ("sensor", "charging_planned_circulation"): "charging_schedule_recurrence",
+    ("sensor", "charging_plan_updated_at"): "charging_schedule_updated",
+    ("sensor", "vehicle_state"): "vehicle_state",
+    ("sensor", "lock_state_source"): "lock_state_source",
+    ("sensor", "lock_state_age_seconds"): "lock_state_age",
+    ("sensor", "raw_lock_status_code"): "raw_lock_status_code",
+    ("sensor", "climate_mode"): "climate_mode",
+    ("sensor", "outdoor_temp_c"): "outdoor_temperature",
+    ("sensor", "climate_fan_volume"): "climate_fan_volume",
+    ("sensor", "climate_fan_volume_setting"): "climate_fan_volume_setting",
+    ("sensor", "climate_air_direction"): "climate_air_direction",
+    ("sensor", "climate_cooling_heating_mode"): "climate_cooling_heating_mode",
+    ("sensor", "climate_min_single_temp_c"): "climate_minimum_single_temperature",
+    ("sensor", "sunshade_position"): "sunshade_position",
+    ("sensor", "steering_wheel_heating_remaining_minutes"): "steering_wheel_heating_remaining_time",
+    ("sensor", "driver_seat_heating_level"): "driver_seat_heating_level",
+    ("sensor", "passenger_seat_heating_level"): "passenger_seat_heating_level",
+    ("sensor", "driver_seat_ventilation_level"): "driver_seat_ventilation_level",
+    ("sensor", "passenger_seat_ventilation_level"): "passenger_seat_ventilation_level",
+    ("sensor", "speed_limit_kmh"): "speed_limit",
+    ("sensor", "front_left_window_position_percent"): "front_left_window_position",
+    ("sensor", "front_right_window_position_percent"): "front_right_window_position",
+    ("sensor", "rear_left_window_position_percent"): "rear_left_window_position",
+    ("sensor", "rear_right_window_position_percent"): "rear_right_window_position",
+    ("sensor", "last_successful_refresh"): "last_refresh",
+    ("sensor", "last_vehicle_update"): "last_vehicle_update",
+    ("sensor", "total_mileage_km"): "total_mileage",
+    ("sensor", "total_energy_kwh"): "total_energy_consumption",
+    ("sensor", "last_7_days_mileage_km"): "last_7_days_mileage",
+    ("sensor", "last_7_days_energy_kwh"): "last_7_days_energy",
+    ("sensor", "average_consumption_6w_kwh_100km"): "six_week_average_consumption",
+    ("sensor", "last_week_driving_energy_percent"): "last_week_driving_energy",
+    ("sensor", "last_week_climate_energy_percent"): "last_week_climate_energy",
+    ("sensor", "last_week_other_energy_percent"): "last_week_other_energy",
+    ("sensor", "tire_pressure_front_left_bar"): "front_left_tire_pressure",
+    ("sensor", "tire_pressure_front_right_bar"): "front_right_tire_pressure",
+    ("sensor", "tire_pressure_rear_left_bar"): "rear_left_tire_pressure",
+    ("sensor", "tire_pressure_rear_right_bar"): "rear_right_tire_pressure",
+    ("sensor", "unread_message_count"): "unread_message_count",
+    ("sensor", "last_message_title"): "last_message_title",
+    ("sensor", "last_message_time"): "last_message_time",
+    ("switch", "charging_schedule"): "charging_schedule",
+    ("switch", "battery_preheat"): "battery_preheat",
+    ("switch", "steering_wheel_heat"): "steering_wheel_heating",
+    ("switch", "rearview_mirror_heat"): "mirror_heating",
+    ("sensor", "last_charge_energy_kwh"): "last_charge_energy",
+}
+
+
+def english_entity_slug(domain: str, suffix: str) -> str | None:
+    """Return the stable English entity slug for a Leapmotor unique-id suffix."""
+    return _ENGLISH_ENTITY_SLUGS.get((domain, suffix))
+
+
+async def async_remove_obsolete_entities(
+    hass: HomeAssistant,
+) -> None:
+    """Remove registry entries superseded by corrected entities."""
+    registry = er.async_get(hass)
+    for entry in list(registry.entities.values()):
+        if (
+            entry.platform == DOMAIN
+            and isinstance(entry.unique_id, str)
+            and (
+                (
+                    entry.entity_id.startswith("button.")
+                    and entry.unique_id.endswith(("_ac_off", "_ac_switch"))
+                )
+                or (
+                    entry.entity_id.startswith("sensor.")
+                    and entry.unique_id.endswith("_parking_camera_state")
+                )
+            )
+        ):
+            registry.async_remove(entry.entity_id)
+            _LOGGER.info("Removed obsolete Leapmotor entity %s", entry.entity_id)
