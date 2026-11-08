@@ -19,6 +19,7 @@ import voluptuous as vol
 
 from .api import LeapmotorApiClient
 from .button import BUTTON_SPECS
+from .card import async_register_card
 from .const import (
     CONF_ACCOUNT_P12_PASSWORD,
     CONF_ABRP_ENABLED,
@@ -331,6 +332,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     await async_remove_obsolete_entities(hass)
+    await async_register_card(hass)
     return True
 
 

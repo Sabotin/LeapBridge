@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased — sabotin/leapmotor redesign
+
+- New built-in dashboard card (`type: custom:leapmotor-card`), served and
+  auto-loaded by the integration: night/day hero scene with the owned car's
+  official picture, vehicle check, 24-hour battery/range/power chart, 7-day
+  driving bars, charging arc, energy & tires, and remote-control tiles with
+  tap-twice confirmation. English, Slovenian and German.
+- Full Slovenian translation of the integration (setup, options, vehicles,
+  entities, services).
+- New brand icon and logo, redesigned README, card documentation and a demo
+  preview page (`docs/preview/`).
+- HACS installs from the default branch (`zip_release: false`); manifest links
+  point to this repository. Based on kerniger/leapmotor-ha 0.7.5 (MIT).
+
 ## 0.7.3 - 2026-09-23
 
 - Redact nested VINs, vehicle/account titles, nicknames and remote-control session IDs in both diagnostics export paths (#69).

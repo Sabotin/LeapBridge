@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Leapmotor Card Preview</title>
+  <style>
+    :root { color-scheme: dark; }
+    html, body { margin: 0; background: #060a16; }
+    body { padding: 28px; min-height: 100vh; box-sizing: border-box; font-family: system-ui, sans-serif; color: #c3cbe0; }
+    .wrap { max-width: 1440px; margin: 0 auto; }
+    .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 auto 16px; max-width: 1440px; font-size: 13px; }
+    .bar a { color: #ffc461; text-decoration: none; padding: 5px 10px; border: 1px solid rgba(246,168,35,.35); border-radius: 999px; }
+    .bar a:hover { background: rgba(246,168,35,.12); }
+    .bar span { color: #5f6a82; margin-left: 6px; }
+    body.shot .bar { display: none; }
+    body.shot { padding: 0; min-height: 0; }
+    html:has(body.shot), body.shot { background: transparent; }
+    @media (max-width: 600px) { body { padding: 10px; } }
+  </style>
+</head>
+<body>
+  <nav class="bar">
+    <span>Scenario</span>
+    <a href="?state=charging">Charging · night</a>
+    <a href="?state=parked&scene=day">Parked · day</a>
+    <a href="?state=attention">Needs attention</a>
+    <span>Language</span>
+    <a href="?lang=en">EN</a><a href="?lang=sl">SL</a><a href="?lang=de">DE</a>
+  </nav>
+  <div class="wrap"><leapmotor-card id="card"></leapmotor-card></div>
+
+  <script type="module">
+    import "../../custom_components/leapmotor/frontend/leapmotor-card.js";
+
+    /* Demo data only: a synthetic C10 with a believable day of driving and charging. */
+    const q = new URLSearchParams(location.search);
+    const scenario = q.get("state") || "charging";
+    const lang = q.get("lang") || "en";
+    const scene = q.get("scene") || (scenario === "parked" ? "day" : "night");
+    const sections = q.get("sections") ? q.get("sections").split(",") : undefined;
+    if (q.get("shot")) document.body.classList.add("shot");
+
+    const MIN = 60e3, HOUR = 60 * MIN, DAY = 24 * HOUR;
+    const now = q.get("now") ? new Date(q.get("now")).getTime() : Date.now();
+    const iso = (t) => new Date(t).toISOString();
+    const charging = scenario === "charging";
+    const attention = scenario === "attention";
+
+    /* ---------- 24 h timeline (hours ago) ---------- */
+    const events = [
+      { from: 24, to: 15.5, kind: "park", soc: [66, 64] },
+      { from: 15.5, to: 14.6, kind: "drive", soc: [64, 55], km: 32 },
+      { from: 14.6, to: 6.2, kind: "park", soc: [55, 54] },
+      { from: 6.2, to: 5.3, kind: "drive", soc: [54, 44], km: 36 },
+      ...(charging
+        ? [{ from: 5.3, to: 1.8, kind: "park", soc: [44, 44] }, { from: 1.8, to: 0, kind: "charge", soc: [44, 71.4] }]
+        : [{ from: 5.3, to: 3.6, kind: "park", soc: [44, 44] }, { from: 3.6, to: 1.6, kind: "charge", soc: [44, 74] }, { from: 1.6, to: 0, kind: "park", soc: [74, 73.6] }]),
+    ];
+    const series = { battery: [], range: [], power: [], odometer: [], charging: [], driving: [] };
+    let odo = 18384;
+    for (let ago = 24; ago >= 0; ago -= 5 / 60) {
+      const t = now - ago * HOUR;
+      const ev = events.find((e) => ago <= e.from && ago >= e.to) || events[events.length - 1];
+      const k = (ev.from - ago) / (ev.from - ev.to || 1);
+      const soc = ev.soc[0] + (ev.soc[1] - ev.soc[0]) * k;
+      if (ev.kind === "drive") odo += (ev.km / ((ev.from - ev.to) * 12));
+      series.battery.push([t, Math.round(soc)]);
+      series.range.push([t, Math.round(soc * 4.45)]);
+      series.power.push([t, ev.kind === "charge" ? +(10.6 + Math.sin(t / 6e5) * 0.3).toFixed(1) : 0]);
+      series.odometer.push([t, Math.round(odo)]);
+      series.charging.push([t, ev.kind === "charge"]);
+      series.driving.push([t, ev.kind === "drive"]);
+    }
+    const soc = charging ? 71.4 : 73.6;
+
+    /* ---------- last 7 days (cloud daily_detail) ---------- */
+    const km = [42, 0, 61, 87, 23, 38, 68];
+    const kwh = [6.4, 0, 9.3, 13.6, 3.9, 5.8, 10.2];
+    const daily = km.map((m, i) => {
+      const d = new Date(now - (6 - i) * DAY);
+      const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      return { date, mileage_km: m, driving_energy_kwh: kwh[i], energy_kwh: kwh[i] };
+    });
+
+    /* ---------- states ---------- */
+    const S = {};
+    const E = {};
+    const add = (entity_id, translation_key, state, attributes = {}) => {
+      S[entity_id] = { entity_id, state: String(state), attributes, last_updated: iso(now - 3 * MIN), last_changed: iso(now - 3 * MIN) };
+      E[entity_id] = { entity_id, platform: "leapmotor", device_id: "demo-c10", translation_key };
+    };
+    const meta = { vin: "DEMO-VIN", car_type: "C10", is_shared: false };
+    const u = (unit, extra = {}) => ({ ...meta, unit_of_measurement: unit, ...extra });
+
+    add("sensor.c10_battery", "battery_percent", Math.round(soc), u("%", { device_class: "battery" }));
+    add("sensor.c10_precise_battery", "battery_percent_precise", soc, u("%"));
+    add("sensor.c10_range", "remaining_range_km", Math.round(soc * 4.45), u("km"));
+    add("sensor.c10_odometer", "odometer_km", Math.round(odo), u("km"));
+    add("sensor.c10_speed", "speed_kmh", 0, u("km/h"));
+    add("sensor.c10_gear", "gear", "P", meta);
+    add("sensor.c10_interior_temperature", "interior_temp_c", scene === "day" ? 17.5 : 11.5, u("°C"));
+    add("sensor.c10_outdoor_temperature", "outdoor_temp_c", scene === "day" ? 9.4 : 2.8, u("°C"));
+    add("sensor.c10_charge_limit", "charge_limit_percent", 90, u("%"));
+    add("sensor.c10_remaining_charge_time", "remaining_charge_minutes", charging ? 74 : "unavailable", u("min"));
+    add("sensor.c10_charging_finish_time", "charging_finish_time", charging ? iso(now + 74 * MIN) : "unavailable", meta);
+    add("sensor.c10_charging_power", "charging_power_kw", charging ? 10.8 : 0, u("kW"));
+    add("sensor.c10_charging_current", "charging_current_a", charging ? -15.6 : 0, u("A"));
+    add("sensor.c10_charging_voltage", "charging_voltage_v", charging ? 401 : 0, u("V"));
+    add("sensor.c10_charging_connection", "charging_connection_state", charging ? "charging" : "unplugged", meta);
+    add("sensor.c10_vehicle_state", "vehicle_state", "parked", meta);
+    add("sensor.c10_last_vehicle_update", "last_vehicle_update", iso(now - 3 * MIN), meta);
+    add("sensor.c10_last_7_days_mileage", "last_7_days_mileage_km", km.reduce((a, b) => a + b, 0), u("km", { daily_detail: daily }));
+    add("sensor.c10_six_week_average_consumption", "average_consumption_6w_kwh_100km", 15.8, u("kWh/100 km"));
+    add("sensor.c10_last_week_driving_energy", "last_week_driving_energy_percent", 78.4, u("%"));
+    add("sensor.c10_last_week_climate_energy", "last_week_climate_energy_percent", 14.1, u("%"));
+    add("sensor.c10_last_week_other_energy", "last_week_other_energy_percent", 7.5, u("%"));
+    add("sensor.c10_last_charge_energy", "last_charge_energy_kwh", 31.6, u("kWh", { charge_type: "AC" }));
+    add("sensor.c10_front_left_tire_pressure", "tire_pressure_front_left_bar", 2.5, u("bar"));
+    add("sensor.c10_front_right_tire_pressure", "tire_pressure_front_right_bar", 2.5, u("bar"));
+    add("sensor.c10_rear_left_tire_pressure", "tire_pressure_rear_left_bar", attention ? 1.8 : 2.4, u("bar"));
+    add("sensor.c10_rear_right_tire_pressure", "tire_pressure_rear_right_bar", 2.4, u("bar"));
+    add("binary_sensor.c10_charging", "is_charging", charging ? "on" : "off", meta);
+    add("binary_sensor.c10_charge_cable_plugged_in", "is_plugged_in", charging ? "on" : "off", meta);
+    add("binary_sensor.c10_is_driving", "is_driving", "off", meta);
+    add("binary_sensor.c10_driver_door", "driver_door_open", attention ? "on" : "off", meta);
+    add("binary_sensor.c10_passenger_door", "passenger_door_open", "off", meta);
+    add("binary_sensor.c10_rear_left_door", "rear_left_door_open", "off", meta);
+    add("binary_sensor.c10_rear_right_door", "rear_right_door_open", "off", meta);
+    add("binary_sensor.c10_trunk", "trunk_open", "off", meta);
+    for (const w of ["front_left", "front_right", "rear_left", "rear_right"]) add(`binary_sensor.c10_${w}_window`, `${w}_window_open`, "off", meta);
+    add("binary_sensor.c10_skylight_open", "skylight_open", "off", meta);
+    add("binary_sensor.c10_climate", "climate_on", "off", meta);
+    add("lock.c10_lock", "vehicle_lock", attention ? "unlocked" : "locked", meta);
+    add("device_tracker.c10_location", "location", scenario === "parked" ? "not_home" : "home", { ...meta, latitude: 46.05, longitude: 14.5 });
+    add("switch.c10_climate", "climate_control", "off", meta);
+    add("switch.c10_battery_preheat", "battery_preheat", "off", meta);
+    add("switch.c10_steering_wheel_heating", "steering_wheel_heat", "off", meta);
+    add("switch.c10_mirror_heating", "rearview_mirror_heat", "off", meta);
+    add("switch.c10_charging_schedule", "charging_schedule", "on", meta);
+    for (const [slug, tk] of [["refresh_data", "refresh_data"], ["unlock_charger", "unlock_charger"], ["open_trunk", "open_trunk"],
+      ["close_trunk", "close_trunk"], ["find_vehicle", "find_vehicle"], ["open_windows", "open_windows"], ["close_windows", "close_windows"],
+      ["quick_cool", "quick_cool"], ["quick_heat", "quick_heat"], ["windshield_defrost", "windshield_defrost"],
+      ["open_sunshade", "open_sunshade"], ["close_sunshade", "close_sunshade"]]) add(`button.c10_${slug}`, tk, "unknown", meta);
+    if (q.get("pic")) add("image.c10_vehicle_picture", "vehicle_picture", iso(now - DAY), { ...meta, entity_picture: q.get("pic") });
+    S["sun.sun"] = { entity_id: "sun.sun", state: scene === "day" ? "above_horizon" : "below_horizon", attributes: {}, last_updated: iso(now) };
+    S["zone.home"] = { entity_id: "zone.home", state: "0", attributes: { friendly_name: "Home" }, last_updated: iso(now) };
+
+    const histIds = {
+      "sensor.c10_battery": series.battery, "sensor.c10_range": series.range, "sensor.c10_charging_power": series.power,
+      "sensor.c10_odometer": series.odometer, "binary_sensor.c10_charging": series.charging, "binary_sensor.c10_is_driving": series.driving,
+    };
+
+    const hass = {
+      states: S,
+      entities: E,
+      devices: { "demo-c10": { name: "Leapmotor C10 (Main)" } },
+      language: lang,
+      locale: { language: lang },
+      callWS: async (msg) => {
+        if (msg.type !== "history/history_during_period") return {};
+        const out = {};
+        for (const id of msg.entity_ids) {
+          const s = histIds[id];
+          if (!s) continue;
+          let last;
+          out[id] = s.filter(([, v]) => { const keep = v !== last; last = v; return keep; })
+            .map(([t, v]) => ({ s: typeof v === "boolean" ? (v ? "on" : "off") : String(v), lu: t / 1000 }));
+        }
+        return out;
+      },
+      callService: async (domain, service, data) => {
+        console.log("callService", domain, service, data);
+      },
+    };
+
+    const card = document.getElementById("card");
+    card.setConfig({ type: "custom:leapmotor-card", scene, language: lang, ...(sections ? { sections } : {}) });
+    card.hass = hass;
+    window.__card = card;
+  </script>
+</body>
+</html>
