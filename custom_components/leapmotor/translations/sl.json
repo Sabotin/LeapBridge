@@ -1,0 +1,684 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Poveži Leapmotor",
+        "description": "Nastavi podatke vozila Leapmotor. Za prijavo sta potrebna certifikat in zasebni ključ aplikacije; prilepi ali naloži ju tukaj ali ju najprej shrani kot app_cert.pem in app_key.pem v /config/leapmotor. PIN vozila ni obvezen; brez njega so na voljo samo podatki za branje, daljinsko upravljanje pa ne. Podatki v živo za ABRP niso obvezni; uporabi svoj ABRP Generic žeton iz nastavitev podatkov v živo za vozilo v ABRP. Neuradna integracija: uporaba na lastno odgovornost; brez odgovornosti za omejitve računa, spremembe API-ja ali posledice za vozilo.",
+        "data": {
+          "username": "Uporabniško ime / e-pošta",
+          "password": "Geslo",
+          "app_cert_file": "Naloži app_cert.pem (certifikat)",
+          "app_key_file": "Naloži app_key.pem (zasebni ključ)",
+          "app_cert_pem": "Prilepi PEM iz app_cert.pem (certifikat)",
+          "app_key_pem": "Prilepi PEM iz app_key.pem (zasebni ključ)",
+          "operation_password": "PIN vozila (neobvezno, za upravljanje)",
+          "scan_interval": "Interval posodabljanja v minutah",
+          "eco_polling_enabled": "Varčno poizvedovanje med parkiranjem",
+          "eco_scan_interval": "Varčni interval posodabljanja v minutah",
+          "abrp_enabled": "Omogoči podatke v živo za ABRP",
+          "abrp_token": "ABRP Generic žeton"
+        },
+        "data_description": {
+          "eco_polling_enabled": "Počasnejši varčni interval uporabi le, ko so vsa vozila zanesljivo zaklenjena, parkirana in odklopljena.",
+          "eco_scan_interval": "Interval poizvedovanja v varčnem načinu. Samodejno je omejen na najmanj običajni interval posodabljanja."
+        }
+      },
+      "init": {
+        "title": "Možnosti Leapmotor",
+        "description": "Spremeni nastavitve certifikatov in poizvedovanja za celoten račun. PIN vozila in ABRP se nastavita posebej za vsako vozilo.",
+        "data": {
+          "app_cert_file": "Naloži app_cert.pem (certifikat)",
+          "app_key_file": "Naloži app_key.pem (zasebni ključ)",
+          "app_cert_pem": "Prilepi PEM iz app_cert.pem (certifikat)",
+          "app_key_pem": "Prilepi PEM iz app_key.pem (zasebni ključ)",
+          "operation_password": "PIN vozila (neobvezno, za upravljanje)",
+          "scan_interval": "Interval posodabljanja v minutah",
+          "eco_polling_enabled": "Varčno poizvedovanje med parkiranjem",
+          "eco_scan_interval": "Varčni interval posodabljanja v minutah",
+          "abrp_enabled": "Omogoči podatke v živo za ABRP",
+          "abrp_token": "ABRP Generic žeton"
+        }
+      },
+      "certificates": {
+        "title": "Certifikati Leapmotor",
+        "description": "Naloži zahtevani certifikat in zasebni ključ aplikacije ali prilepi njuno vsebino PEM. Shranita se lokalno kot /config/leapmotor/app_cert.pem in /config/leapmotor/app_key.pem in nista del javnega repozitorija.",
+        "data": {
+          "app_cert_file": "Naloži app_cert.pem (certifikat)",
+          "app_key_file": "Naloži app_key.pem (zasebni ključ)",
+          "app_cert_pem": "Prilepi PEM iz app_cert.pem (certifikat)",
+          "app_key_pem": "Prilepi PEM iz app_key.pem (zasebni ključ)"
+        }
+      },
+      "account": {
+        "title": "Poveži račun Leapmotor",
+        "description": "Vnesi podatke za prijavo v račun Leapmotor. PIN vozila ni obvezen; brez njega so na voljo samo podatki za branje, daljinsko upravljanje pa ne. Podatki v živo za ABRP niso obvezni in potrebujejo le tvoj ABRP Generic žeton.",
+        "data": {
+          "username": "Uporabniško ime / e-pošta",
+          "password": "Geslo",
+          "operation_password": "PIN vozila (neobvezno, za upravljanje)",
+          "scan_interval": "Interval posodabljanja v minutah",
+          "eco_polling_enabled": "Varčno poizvedovanje med parkiranjem",
+          "eco_scan_interval": "Varčni interval posodabljanja v minutah",
+          "abrp_enabled": "Omogoči podatke v živo za ABRP",
+          "abrp_token": "ABRP Generic žeton"
+        },
+        "data_description": {
+          "eco_polling_enabled": "Počasnejši varčni interval uporabi le, ko so vsa vozila zanesljivo zaklenjena, parkirana in odklopljena.",
+          "eco_scan_interval": "Interval poizvedovanja v varčnem načinu. Samodejno je omejen na najmanj običajni interval posodabljanja."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Posodobi geslo Leapmotor",
+        "description": "Vnesi geslo za {username}. Obstoječa vozila in nastavitve se ohranijo.",
+        "data": {
+          "password": "Geslo"
+        }
+      },
+      "reconfigure": {
+        "title": "Posodobi geslo Leapmotor",
+        "description": "Vnesi geslo za {username}. Obstoječa vozila in nastavitve se ohranijo.",
+        "data": {
+          "password": "Geslo"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Preverjanje pristnosti ni uspelo.",
+      "account_cert_error": "Prijava je uspela, vendar certifikata računa ni bilo mogoče odpreti.",
+      "cannot_connect": "Povezava ali osvežitev API-ja ni uspela.",
+      "api_refresh_failed": "Prijava je uspela, vendar prva osvežitev podatkov vozila prek API-ja ni uspela.",
+      "no_vehicle": "Ta račun nima povezanega vozila.",
+      "unknown": "Nepričakovana napaka.",
+      "missing_app_cert": "Manjka certifikat ali zasebni ključ aplikacije. Prilepi obe vrednosti PEM ali shrani app_cert.pem in app_key.pem v /config/leapmotor.",
+      "certificate_import_error": "Uvoz certifikata ni uspel. Preveri certifikat PEM in zasebni ključ."
+    },
+    "abort": {
+      "already_configured": "Ta račun je že nastavljen.",
+      "reauth_successful": "Geslo računa je posodobljeno.",
+      "reconfigure_successful": "Geslo računa je posodobljeno."
+    }
+  },
+  "config_subentries": {
+    "vehicle": {
+      "entry_type": "Vozilo",
+      "initiate_flow": {
+        "user": "Dodaj vozilo"
+      },
+      "step": {
+        "user": {
+          "title": "Izberi vozilo",
+          "data": {
+            "vin": "Vozilo"
+          }
+        },
+        "vehicle": {
+          "title": "Nastavi vozilo",
+          "description": "PIN in žeton ABRP veljata samo za to vozilo.",
+          "data": {
+            "operation_password": "PIN vozila (neobvezno, za upravljanje)",
+            "abrp_enabled": "Omogoči podatke v živo za ABRP",
+            "abrp_token": "ABRP Generic žeton"
+          }
+        },
+        "reconfigure": {
+          "title": "Nastavi {vehicle}",
+          "description": "Spremeni PIN in žeton ABRP samo za to vozilo.",
+          "data": {
+            "operation_password": "PIN vozila (neobvezno, za upravljanje)",
+            "abrp_enabled": "Omogoči podatke v živo za ABRP",
+            "abrp_token": "ABRP Generic žeton"
+          }
+        }
+      },
+      "abort": {
+        "all_vehicles_configured": "Vsa vozila v tem računu so že nastavljena."
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_percent": {
+        "name": "Baterija"
+      },
+      "remaining_range_km": {
+        "name": "Doseg"
+      },
+      "fuel_level_percent": {
+        "name": "Raven goriva"
+      },
+      "fuel_range_km": {
+        "name": "Doseg z gorivom"
+      },
+      "combined_range_km": {
+        "name": "Skupni doseg"
+      },
+      "odometer_km": {
+        "name": "Števec kilometrov"
+      },
+      "interior_temp_c": {
+        "name": "Notranja temperatura"
+      },
+      "climate_set_temp_left_c": {
+        "name": "Ciljna temperatura levo"
+      },
+      "climate_set_temp_right_c": {
+        "name": "Ciljna temperatura desno"
+      },
+      "charge_limit_percent": {
+        "name": "Meja polnjenja"
+      },
+      "charging_planned_start": {
+        "name": "Začetek urnika polnjenja"
+      },
+      "charging_planned_end": {
+        "name": "Konec urnika polnjenja"
+      },
+      "charging_planned_circulation": {
+        "name": "Ponavljanje urnika polnjenja"
+      },
+      "charging_plan_updated_at": {
+        "name": "Urnik polnjenja posodobljen"
+      },
+      "vehicle_state": {
+        "name": "Stanje vozila"
+      },
+      "last_successful_refresh": {
+        "name": "Zadnja osvežitev iz oblaka"
+      },
+      "last_vehicle_update": {
+        "name": "Zadnja posodobitev vozila"
+      },
+      "total_mileage_km": {
+        "name": "Skupna prevožena razdalja"
+      },
+      "tire_pressure_front_left_bar": {
+        "name": "Tlak v sprednji levi pnevmatiki"
+      },
+      "tire_pressure_front_right_bar": {
+        "name": "Tlak v sprednji desni pnevmatiki"
+      },
+      "tire_pressure_rear_left_bar": {
+        "name": "Tlak v zadnji levi pnevmatiki"
+      },
+      "tire_pressure_rear_right_bar": {
+        "name": "Tlak v zadnji desni pnevmatiki"
+      },
+      "battery_percent_precise": {
+        "name": "Natančna baterija"
+      },
+      "wltp_max_range_km": {
+        "name": "Preostali doseg CLTC"
+      },
+      "live_remaining_range_km": {
+        "name": "Doseg v živo"
+      },
+      "range_mode": {
+        "name": "Način dosega"
+      },
+      "speed_kmh": {
+        "name": "Hitrost"
+      },
+      "gear": {
+        "name": "Prestava"
+      },
+      "remaining_charge_minutes": {
+        "name": "Preostali čas polnjenja"
+      },
+      "charging_power_kw": {
+        "name": "Moč polnjenja"
+      },
+      "charging_current_a": {
+        "name": "Tok baterije"
+      },
+      "charging_voltage_v": {
+        "name": "Napetost polnjenja"
+      },
+      "charging_connection_state": {
+        "name": "Priključek za polnjenje"
+      },
+      "charging_finish_time": {
+        "name": "Predviden konec polnjenja"
+      },
+      "evcc_status": {
+        "name": "Stanje polnjenja EVCC",
+        "state": {
+          "A": "Odklopljeno",
+          "B": "Priklopljeno",
+          "C": "Polnjenje"
+        }
+      },
+      "battery_min_temp_c": {
+        "name": "Najnižja temperatura baterije"
+      },
+      "battery_thermal_request": {
+        "name": "Toplotno upravljanje baterije"
+      },
+      "ptc_power_w": {
+        "name": "Moč grelnika PTC"
+      },
+      "climate_mode": {
+        "name": "Način klime"
+      },
+      "steering_wheel_heating_remaining_minutes": {
+        "name": "Preostali čas gretja volana"
+      },
+      "driver_seat_heating_level": {
+        "name": "Stopnja gretja voznikovega sedeža"
+      },
+      "passenger_seat_heating_level": {
+        "name": "Stopnja gretja sovoznikovega sedeža"
+      },
+      "driver_seat_ventilation_level": {
+        "name": "Stopnja prezračevanja voznikovega sedeža"
+      },
+      "passenger_seat_ventilation_level": {
+        "name": "Stopnja prezračevanja sovoznikovega sedeža"
+      },
+      "speed_limit_kmh": {
+        "name": "Omejitev hitrosti"
+      },
+      "front_left_window_position_percent": {
+        "name": "Položaj sprednjega levega okna"
+      },
+      "front_right_window_position_percent": {
+        "name": "Položaj sprednjega desnega okna"
+      },
+      "rear_left_window_position_percent": {
+        "name": "Položaj zadnjega levega okna"
+      },
+      "rear_right_window_position_percent": {
+        "name": "Položaj zadnjega desnega okna"
+      },
+      "total_energy_kwh": {
+        "name": "Skupna poraba energije"
+      },
+      "last_7_days_mileage_km": {
+        "name": "Prevoženo v zadnjih 7 dneh"
+      },
+      "last_7_days_energy_kwh": {
+        "name": "Energija v zadnjih 7 dneh"
+      },
+      "average_consumption_6w_kwh_100km": {
+        "name": "Povprečna poraba v 6 tednih (kWh/100 km)"
+      },
+      "average_consumption_6w_mi_kwh": {
+        "name": "Povprečna poraba v 6 tednih (mi/kWh)"
+      },
+      "last_week_driving_energy_percent": {
+        "name": "Energija za vožnjo prejšnji teden"
+      },
+      "last_week_climate_energy_percent": {
+        "name": "Energija za klimo prejšnji teden"
+      },
+      "last_week_other_energy_percent": {
+        "name": "Ostala energija prejšnji teden"
+      },
+      "today_driving_energy_percent": {
+        "name": "Energija za vožnjo danes"
+      },
+      "today_climate_energy_percent": {
+        "name": "Energija za klimo danes"
+      },
+      "today_other_energy_percent": {
+        "name": "Ostala energija danes"
+      },
+      "unread_message_count": {
+        "name": "Neprebrana sporočila"
+      },
+      "last_message_title": {
+        "name": "Zadnje sporočilo"
+      },
+      "last_message_time": {
+        "name": "Čas zadnjega sporočila"
+      },
+      "lock_state_source": {
+        "name": "Vir stanja zaklepanja"
+      },
+      "lock_state_age_seconds": {
+        "name": "Starost stanja zaklepanja"
+      },
+      "raw_lock_status_code": {
+        "name": "Surova koda stanja zaklepanja"
+      },
+      "ptc_state": {
+        "name": "Stanje PTC (surova koda)"
+      },
+      "ptc_power_setting_value": {
+        "name": "Nastavitev moči PTC"
+      },
+      "available_energy_kwh": {
+        "name": "Razpoložljiva energija"
+      },
+      "outdoor_temp_c": {
+        "name": "Zunanja temperatura"
+      },
+      "climate_fan_volume": {
+        "name": "Moč ventilatorja klime"
+      },
+      "climate_fan_volume_setting": {
+        "name": "Nastavitev moči ventilatorja klime"
+      },
+      "climate_air_direction": {
+        "name": "Smer zraka klime (surova koda)"
+      },
+      "climate_cooling_heating_mode": {
+        "name": "Način hlajenja/gretja klime"
+      },
+      "climate_min_single_temp_c": {
+        "name": "Najnižja enotna temperatura klime"
+      },
+      "sunshade_position": {
+        "name": "Položaj senčnika"
+      },
+      "last_charge_energy_kwh": {
+        "name": "Energija zadnjega polnjenja"
+      },
+      "ac_operation_mode": {
+        "name": "Način delovanja klime",
+        "state": {
+          "auto": "Samodejno",
+          "manual": "Ročno"
+        }
+      },
+      "max_fuel_range_km": {
+        "name": "Največji doseg z gorivom"
+      },
+      "max_combined_range_km": {
+        "name": "Največji skupni doseg"
+      },
+      "fuel_level_liters": {
+        "name": "Raven goriva (litri)"
+      },
+      "fuel_average_consumption": {
+        "name": "Povprečna poraba goriva"
+      }
+    },
+    "binary_sensor": {
+      "is_charging": {
+        "name": "Polnjenje"
+      },
+      "charging_planned_weekly": {
+        "name": "Tedenski urnik polnjenja"
+      },
+      "charging_planned_enabled": {
+        "name": "Načrtovano polnjenje"
+      },
+      "is_plugged_in": {
+        "name": "Kabel za polnjenje priključen"
+      },
+      "is_regening": {
+        "name": "Regenerativno zaviranje"
+      },
+      "dc_cable_connected": {
+        "name": "Kabel za polnjenje DC priključen"
+      },
+      "remote_session_active": {
+        "name": "Oddaljena seja aktivna"
+      },
+      "vehicle_ready": {
+        "name": "Vozilo READY"
+      },
+      "vehicle_security_active": {
+        "name": "Varovanje vozila aktivno"
+      },
+      "parking_brake_active": {
+        "name": "Parkirna zavora aktivna"
+      },
+      "battery_heating": {
+        "name": "Gretje baterije"
+      },
+      "driver_door_open": {
+        "name": "Voznikova vrata"
+      },
+      "passenger_door_open": {
+        "name": "Sovoznikova vrata"
+      },
+      "rear_left_door_open": {
+        "name": "Zadnja leva vrata"
+      },
+      "rear_right_door_open": {
+        "name": "Zadnja desna vrata"
+      },
+      "trunk_open": {
+        "name": "Prtljažnik"
+      },
+      "front_left_window_open": {
+        "name": "Sprednje levo okno"
+      },
+      "front_right_window_open": {
+        "name": "Sprednje desno okno"
+      },
+      "rear_left_window_open": {
+        "name": "Zadnje levo okno"
+      },
+      "rear_right_window_open": {
+        "name": "Zadnje desno okno"
+      },
+      "skylight_open": {
+        "name": "Panoramska streha odprta"
+      },
+      "climate_on": {
+        "name": "Klimatska naprava"
+      },
+      "fast_cooling_active": {
+        "name": "Hitro hlajenje aktivno"
+      },
+      "fast_heating_active": {
+        "name": "Hitro gretje aktivno"
+      },
+      "windshield_defrosting": {
+        "name": "Odmrzovanje vetrobranskega stekla"
+      },
+      "rear_window_heating": {
+        "name": "Gretje zadnjega stekla"
+      },
+      "air_recirculation": {
+        "name": "Kroženje zraka"
+      },
+      "steering_wheel_heating": {
+        "name": "Gretje volana"
+      },
+      "left_mirror_heating": {
+        "name": "Gretje levega ogledala"
+      },
+      "right_mirror_heating": {
+        "name": "Gretje desnega ogledala"
+      },
+      "speed_limit_enabled": {
+        "name": "Omejitev hitrosti vklopljena"
+      },
+      "park_assist_enabled": {
+        "name": "Pomoč pri parkiranju vklopljena"
+      },
+      "sentinel_mode": {
+        "name": "Stražarski način"
+      },
+      "parking_photo": {
+        "name": "Fotografija parkiranja"
+      },
+      "fully_charged": {
+        "name": "Polno napolnjeno"
+      },
+      "healthy_charging_enabled": {
+        "name": "Zdravo polnjenje vklopljeno"
+      },
+      "charging_schedule_cancelled_once": {
+        "name": "Urnik polnjenja enkrat preklican"
+      },
+      "climate_temp_mode": {
+        "name": "Temperaturni način klime"
+      },
+      "bluetooth_enabled": {
+        "name": "Bluetooth"
+      },
+      "hotspot_enabled": {
+        "name": "Dostopna točka"
+      },
+      "windows_remote_supported": {
+        "name": "Daljinsko upravljanje oken podprto"
+      },
+      "door_control_allowed": {
+        "name": "Upravljanje vrat dovoljeno"
+      },
+      "is_driving": {
+        "name": "Vožnja"
+      }
+    },
+    "image": {
+      "vehicle_picture": {
+        "name": "Slika vozila"
+      }
+    },
+    "button": {
+      "unlock_charger": {
+        "name": "Odkleni polnilni priključek"
+      },
+      "open_trunk": {
+        "name": "Odpri prtljažnik"
+      },
+      "close_trunk": {
+        "name": "Zapri prtljažnik"
+      },
+      "find_vehicle": {
+        "name": "Poišči vozilo"
+      },
+      "sunshade_action": {
+        "name": "Zapri senčnik"
+      },
+      "open_sunshade": {
+        "name": "Odpri senčnik"
+      },
+      "close_sunshade": {
+        "name": "Zapri senčnik"
+      },
+      "windows": {
+        "name": "Odpri okna"
+      },
+      "open_windows": {
+        "name": "Odpri okna"
+      },
+      "close_windows": {
+        "name": "Zapri okna"
+      },
+      "quick_cool": {
+        "name": "Hitro hlajenje"
+      },
+      "quick_heat": {
+        "name": "Hitro gretje"
+      },
+      "windshield_defrost": {
+        "name": "Odmrzovanje vetrobranskega stekla"
+      },
+      "refresh_data": {
+        "name": "Osveži podatke"
+      },
+      "ac_off": {
+        "name": "Izklopi klimo"
+      }
+    },
+    "lock": {
+      "vehicle_lock": {
+        "name": "Ključavnica"
+      }
+    },
+    "device_tracker": {
+      "location": {
+        "name": "Lokacija"
+      }
+    },
+    "number": {
+      "charge_limit_setting": {
+        "name": "Nastavi mejo polnjenja"
+      },
+      "driver_seat_heating": {
+        "name": "Gretje voznikovega sedeža"
+      },
+      "passenger_seat_heating": {
+        "name": "Gretje sovoznikovega sedeža"
+      },
+      "driver_seat_ventilation": {
+        "name": "Prezračevanje voznikovega sedeža"
+      },
+      "passenger_seat_ventilation": {
+        "name": "Prezračevanje sovoznikovega sedeža"
+      }
+    },
+    "switch": {
+      "climate_control": {
+        "name": "Klima"
+      },
+      "charging_schedule": {
+        "name": "Urnik polnjenja"
+      },
+      "battery_preheat": {
+        "name": "Predgretje baterije"
+      },
+      "steering_wheel_heat": {
+        "name": "Gretje volana"
+      },
+      "rearview_mirror_heat": {
+        "name": "Gretje ogledal"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Možnosti Leapmotor",
+        "description": "Spremeni nastavitve certifikatov in poizvedovanja za celoten račun. PIN vozila in ABRP se nastavita posebej za vsako vozilo.",
+        "data": {
+          "app_cert_file": "Naloži app_cert.pem (certifikat)",
+          "app_key_file": "Naloži app_key.pem (zasebni ključ)",
+          "app_cert_pem": "Prilepi PEM iz app_cert.pem (certifikat)",
+          "app_key_pem": "Prilepi PEM iz app_key.pem (zasebni ključ)",
+          "operation_password": "PIN vozila (neobvezno, za upravljanje)",
+          "scan_interval": "Interval posodabljanja v minutah",
+          "eco_polling_enabled": "Varčno poizvedovanje med parkiranjem",
+          "eco_scan_interval": "Varčni interval posodabljanja v minutah",
+          "abrp_enabled": "Omogoči podatke v živo za ABRP",
+          "abrp_token": "ABRP Generic žeton"
+        },
+        "data_description": {
+          "eco_polling_enabled": "Počasnejši varčni interval uporabi le, ko so vsa vozila zanesljivo zaklenjena, parkirana in odklopljena.",
+          "eco_scan_interval": "Interval poizvedovanja v varčnem načinu. Samodejno je omejen na najmanj običajni interval posodabljanja."
+        }
+      }
+    }
+  },
+  "services": {
+    "set_climate": {
+      "name": "Nastavi klimo",
+      "description": "Pošlje vozilu ukaz za klimo s parametri. Potreben je PIN.",
+      "fields": {
+        "mode": {
+          "name": "Način",
+          "description": "Način klime: cold (hlajenje), hot (gretje) ali wind (prezračevanje)."
+        },
+        "temperature": {
+          "name": "Temperatura",
+          "description": "Ciljna temperatura v °C, od 18 do 32. Privzeto 26."
+        },
+        "fan_speed": {
+          "name": "Hitrost ventilatorja",
+          "description": "Stopnja ventilatorja od 1 do 7. Privzeto 3."
+        },
+        "recirculate": {
+          "name": "Kroženje zraka",
+          "description": "Uporabi kroženje zraka v kabini namesto zunanjega zraka. Privzeto izklopljeno."
+        },
+        "windshield_defrost": {
+          "name": "Odmrzovanje vetrobranskega stekla",
+          "description": "Vklopi odmrzovanje vetrobranskega stekla. Privzeto izklopljeno."
+        },
+        "vin": {
+          "name": "VIN",
+          "description": "Identifikacijska številka vozila. Obvezna, kadar je nastavljenih več vozil."
+        },
+        "entity_id": {
+          "name": "ID entitete",
+          "description": "Neobvezna entiteta Leapmotor, iz katere se določi ciljno vozilo."
+        }
+      }
+    }
+  }
+}

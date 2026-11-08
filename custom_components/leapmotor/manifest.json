@@ -2,11 +2,11 @@
   "domain": "leapmotor",
   "name": "Leapmotor",
   "codeowners": [
-    "@kerniger"
+    "@sabotin"
   ],
   "config_flow": true,
-  "documentation": "https://github.com/kerniger/leapmotor-ha",
-  "issue_tracker": "https://github.com/kerniger/leapmotor-ha/issues",
+  "documentation": "https://github.com/sabotin/leapmotor",
+  "issue_tracker": "https://github.com/sabotin/leapmotor/issues",
   "iot_class": "cloud_polling",
   "requirements": [
     "cryptography>=42.0.0",

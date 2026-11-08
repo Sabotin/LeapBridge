@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Leapmotor Banner</title>
+  <style>
+    @font-face { font-family: "LM Outfit"; font-weight: 100 900; src: url("../../custom_components/leapmotor/frontend/fonts/outfit-latin-wght-normal.woff2") format("woff2"); }
+    @font-face { font-family: "LM JetBrains Mono"; font-weight: 100 900; src: url("../../custom_components/leapmotor/frontend/fonts/jetbrains-mono-latin-wght-normal.woff2") format("woff2"); }
+    :root { color-scheme: dark; }
+    html, body { margin: 0; background: transparent; }
+    .banner { position: relative; width: 1280px; height: 560px; overflow: hidden; border-radius: 28px; font-family: "LM Outfit", system-ui, sans-serif; color: #e9eef8; background: #0b1430; }
+    .scene, .scene svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(7,12,30,.82) 0%, rgba(7,12,30,.45) 42%, rgba(7,12,30,0) 70%); }
+    .copy { position: absolute; left: 64px; top: 60px; width: 600px; }
+    .eyebrow { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; letter-spacing: .24em; text-transform: uppercase; color: #c3cbe0; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #f6a823; box-shadow: 0 0 12px #f6a823; }
+    .brand { display: flex; align-items: center; gap: 20px; margin-top: 26px; }
+    .brand img { width: 84px; height: 84px; border-radius: 20px; box-shadow: 0 18px 40px -12px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.08); }
+    h1 { margin: 0; font-size: 80px; line-height: .95; font-weight: 700; letter-spacing: -.035em; }
+    h1 span { display: block; font-size: 30px; font-weight: 500; letter-spacing: -.01em; color: #ffc461; margin-top: 10px; }
+    p { margin: 26px 0 0; font-size: 19px; line-height: 1.5; color: #c3cbe0; max-width: 520px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+    .chip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: rgba(9,15,33,.62); border: 1px solid rgba(148,163,184,.2); font-size: 14px; font-weight: 600; backdrop-filter: blur(8px); }
+    .chip i { width: 7px; height: 7px; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px var(--c); }
+    .car { position: absolute; right: 70px; bottom: 58px; width: 520px; }
+    .car svg.carsvg { width: 100%; height: auto; display: block; }
+    .wallbox { position: absolute; left: -36px; bottom: 12px; width: 22px; height: 74px; border-radius: 7px; background: linear-gradient(180deg,#26324f,#141c33); border: 1px solid rgba(148,163,184,.25); }
+    .wallbox::after { content: ""; position: absolute; left: 50%; top: 13px; width: 7px; height: 7px; margin-left: -3.5px; border-radius: 50%; background: #34d399; box-shadow: 0 0 12px #34d399; }
+    .cable { position: absolute; left: -26px; bottom: 6%; width: calc(16% + 26px); height: 52%; overflow: visible; }
+    .cable path { fill: none; stroke: #34d399; stroke-width: 2.6; stroke-linecap: round; stroke-dasharray: 5 7; filter: drop-shadow(0 0 4px #34d399); }
+    .glow { position: absolute; left: 8%; right: 8%; bottom: -8px; height: 40px; border-radius: 50%; background: radial-gradient(closest-side, rgba(52,211,153,.5), transparent); filter: blur(6px); }
+    .stat { position: absolute; right: 86px; top: 70px; padding: 18px 22px; border-radius: 18px; background: rgba(9,15,33,.6); border: 1px solid rgba(148,163,184,.18); backdrop-filter: blur(12px); min-width: 260px; }
+    .stat small { display: block; font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: #8a95ab; font-weight: 600; }
+    .stat b { display: block; font-size: 54px; line-height: 1; margin-top: 10px; letter-spacing: -.04em; }
+    .stat b em { font-style: normal; font-size: 22px; color: #f6a823; font-weight: 500; margin-left: 4px; vertical-align: top; }
+    .stat .row { display: flex; gap: 14px; margin-top: 12px; font-family: "LM JetBrains Mono", monospace; font-size: 13px; color: #c3cbe0; }
+    .stat .row span { display: inline-flex; align-items: center; gap: 6px; }
+  </style>
+</head>
+<body>
+  <div class="banner" id="banner">
+    <div class="scene" id="scene"></div>
+    <div class="shade"></div>
+    <div class="copy">
+      <div class="eyebrow"><span class="dot"></span>Home Assistant integration</div>
+      <div class="brand">
+        <img src="../../custom_components/leapmotor/logo.svg" alt="">
+        <h1>Leapmotor<span>for Home Assistant</span></h1>
+      </div>
+      <p>Battery, charging, doors, tires, trips and remote control — with a built-in night-sky dashboard.</p>
+      <div class="chips">
+        <span class="chip"><i style="--c:#f6a823"></i>HACS ready</span>
+        <span class="chip"><i style="--c:#34d399"></i>C10 · B10 · T03 · A10</span>
+        <span class="chip"><i style="--c:#38bdf8"></i>Dashboard card included</span>
+      </div>
+    </div>
+    <div class="stat">
+      <small>Now · charging</small>
+      <b>71,4<em>%</em></b>
+      <div class="row"><span style="color:#34d399">● 10.8 kW</span><span>1 h 14 min</span><span>318 km</span></div>
+    </div>
+    <div class="car" id="car"><div class="glow"></div><div class="wallbox"></div>
+      <svg class="cable" viewBox="0 0 100 96" preserveAspectRatio="none"><path d="M8 50C14 98 70 102 96 30" vector-effect="non-scaling-stroke"/></svg>
+    </div>
+  </div>
+  <script type="module">
+    import "../../custom_components/leapmotor/frontend/leapmotor-card.js";
+    const art = customElements.get("leapmotor-card").art;
+    document.getElementById("scene").innerHTML = art.sceneSvg("night");
+    document.getElementById("car").insertAdjacentHTML("beforeend", art.carSvg(true));
+  </script>
+</body>
+</html>
