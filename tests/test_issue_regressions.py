@@ -213,6 +213,36 @@ class OctoberChargingTests(unittest.TestCase):
             result = self.normalize(**signals)
             self.assertEqual(tuple(result[k] for k in ("is_plugged_in", "is_charging", "connection_state")), expected)
 
+    def test_t03_measured_inflow_is_charging_despite_state_code_or_ready(self):
+        parked = {"1010": 0, "1319": 0, "1177": 340, "1178": -6.5, "1200": 95}
+        for extra in ({"1149": 0, "47": 0}, {"1149": 1, "1258": 1}, {"1149": 6}, {"1149": 0, "1258": 1}):
+            with self.subTest(extra=extra):
+                result = self.normalize(**{**parked, **extra})
+                self.assertEqual(
+                    tuple(result[k] for k in ("is_plugged_in", "is_charging", "connection_state")),
+                    (True, True, "charging"))
+                self.assertEqual(result["charging_power_kw"], 2.21)
+
+    def test_t03_inflow_rule_ignores_driving_discharge_and_unknown_standstill(self):
+        for signals in (
+            {"1010": 1, "1319": 30, "1149": 5, "1177": 340, "1178": -40, "1200": 0},
+            {"1010": 0, "1319": 0, "1149": 0, "1258": 1, "1177": 340, "1178": 5, "1200": 0},
+            {"1149": 0, "1177": 340, "1178": -6.5, "1200": 95},
+        ):
+            with self.subTest(signals=signals):
+                result = self.normalize(**signals)
+                self.assertFalse(result["is_charging"])
+                self.assertEqual(result["connection_state"], "unplugged")
+
+    def test_other_models_keep_ready_and_cable_state_authoritative(self):
+        parked = {"1010": 0, "1319": 0, "1177": 340, "1178": -6.5, "1200": 95}
+        for model in ("B10", "C10", "B05"):
+            for extra in ({"1149": 0}, {"1149": 2, "1258": 1}):
+                with self.subTest(model=model, extra=extra):
+                    result = self.normalize(model, **{**parked, **extra})
+                    self.assertFalse(result["is_charging"])
+                    self.assertEqual(result["connection_state"], "unplugged")
+
     def test_login_service_errors_do_not_ask_for_a_new_password(self):
         client = api.LeapmotorApiClient(username="synthetic", password="synthetic")
         self.addCleanup(client.close)
