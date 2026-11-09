@@ -44,6 +44,9 @@ type:
 type: custom:leapmotor-card
 ```
 
+Four pages with tabs: **Overview** (car, vehicle check, remote control),
+**Trips**, **Charging** and **Vehicle** (maintenance, tires, insights).
+
 <table>
   <tr>
     <td width="33%" valign="top">
@@ -52,17 +55,17 @@ type: custom:leapmotor-card
     </td>
     <td width="33%" valign="top">
       <b>✅ Vehicle check</b><br>
-      <sub>“All secure” or “Needs attention” at a glance — lock, doors, windows, trunk, tires, battery and data freshness.</sub>
+      <sub>“All secure” or “Needs attention” at a glance, with a status tile for lock, doors, windows, trunk, tires and data freshness.</sub>
     </td>
     <td width="33%" valign="top">
       <b>⚡ Charging &amp; costs</b><br>
-      <sub>State of charge against your limit, live power, finish time — and what the last session and this month cost.</sub>
+      <sub>State of charge against your limit, live power, finish time, the charge limit (tap Set twice) — and what the last session and this month cost.</sub>
     </td>
   </tr>
   <tr>
     <td valign="top">
-      <b>🛣️ Trip log</b><br>
-      <sub>Every drive with distance, duration, energy, consumption and battery used — plus today's and this month's totals.</sub>
+      <b>🛣️ Trips</b><br>
+      <sub>Every drive grouped by day, and for each one the route on a map, a speed chart, energy, consumption, battery used and cost.</sub>
     </td>
     <td valign="top">
       <b>🗓️ Last 7 days</b><br>
@@ -70,7 +73,7 @@ type: custom:leapmotor-card
     </td>
     <td valign="top">
       <b>🎛️ Remote control</b><br>
-      <sub>Climate, quick heat/cool, defrost, battery preheat, steering-wheel and mirror heating, trunk, windows — tap twice to confirm.</sub>
+      <sub>Climate and Doors &amp; security groups: cabin presets, defrost, steering-wheel and mirror heating, trunk, windows, sentry, find car — tap twice to confirm.</sub>
     </td>
   </tr>
 </table>

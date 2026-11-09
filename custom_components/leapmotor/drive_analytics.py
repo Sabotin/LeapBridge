@@ -55,6 +55,8 @@ MAX_TRIPS = 500
 MAX_SESSIONS = 500
 MAX_FULL_CHARGE_DAYS = 400
 RECENT_ITEMS = 10
+#: Trips listed on the card's trips page (attributes are not recorded).
+RECENT_TRIPS = 30
 #: Vehicle timestamps further off than this are replaced by the poll time.
 MAX_VEHICLE_TS_AGE = 7 * 86400
 MAX_VEHICLE_TS_AHEAD = 300
@@ -1143,7 +1145,7 @@ class DriveAnalytics:
         return {
             "last_trip": _public(trips[-1]) if trips else None,
             "current_trip": _public(ongoing_trip),
-            "recent_trips": [_public(t) for t in reversed(trips[-RECENT_ITEMS:])],
+            "recent_trips": [_public(t) for t in reversed(trips[-RECENT_TRIPS:])],
             "today": trip_totals(day_ts),
             "month": trip_totals(month_ts),
             "last_session": _public(sessions[-1]) if sessions else None,
