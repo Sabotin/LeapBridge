@@ -8,8 +8,18 @@ from typing import Any
 
 from homeassistant.exceptions import HomeAssistantError
 
+from .const import DOMAIN
 from .coordinator import LeapmotorDataUpdateCoordinator
-from .leap_api import LeapmotorApiError, LeapmotorMissingAppCertError
+from .leap_api import (
+    LeapmotorApiError,
+    LeapmotorMissingAppCertError,
+    LeapmotorRemoteCommandUnconfirmedError,
+)
+
+SESSION_REJECTED_MESSAGE = (
+    "Leapmotor rejected the session even after logging in again. If the official "
+    "app is signed in with the same account, give Home Assistant its own (shared) account."
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,11 +53,21 @@ def resolve_target_vin(
     )
 
 
+def _unconfirmed_cause(exc: LeapmotorRemoteCommandUnconfirmedError) -> str:
+    """Return why an accepted command could not be confirmed."""
+    return str(exc.__cause__ or exc).strip() or exc.__class__.__name__
+
+
 def format_remote_error(exc: Exception) -> str:
     """Translate raw API errors into clearer Home Assistant error text."""
     message = str(exc).strip() or exc.__class__.__name__
     lowered = message.lower()
 
+    if isinstance(exc, LeapmotorRemoteCommandUnconfirmedError):
+        return (
+            "Leapmotor accepted the command but did not confirm the result "
+            f"({_unconfirmed_cause(exc)}). Check the car before trying again."
+        )
     if isinstance(exc, LeapmotorMissingAppCertError):
         return (
             "App certificate or private key is missing. "
@@ -69,7 +89,50 @@ def format_remote_error(exc: Exception) -> str:
         return "Leapmotor login failed. Check username, password and certificate material."
     if "shared" in lowered and "right" in lowered:
         return "This shared-car account does not have the required right for this action."
+    if _is_session_error(lowered):
+        return SESSION_REJECTED_MESSAGE
     return message
+
+
+def _is_session_error(lowered_message: str) -> bool:
+    """Match the token errors the API client could not recover from."""
+    return "token" in lowered_message and any(
+        marker in lowered_message
+        for marker in ("invalid", "expired", "expire", "unauthorized", "not valid")
+    )
+
+
+def failure_starts_cooldown(exc: Exception) -> bool:
+    """Return whether a failed remote action may have reached the car.
+
+    Only then does the cooldown guard against a second, duplicate command.
+    A rejected PIN also keeps the cooldown, so repeated presses cannot hammer
+    the PIN check. Session and network errors before sending can be retried
+    straight away.
+    """
+    if isinstance(exc, LeapmotorRemoteCommandUnconfirmedError):
+        return True
+    lowered = str(exc).lower()
+    return "remote verify" in lowered and not _is_session_error(lowered)
+
+
+def remote_action_error(exc: Exception) -> HomeAssistantError:
+    """Build a translatable Home Assistant error for a failed remote action."""
+    message = format_remote_error(exc)
+    if isinstance(exc, LeapmotorRemoteCommandUnconfirmedError):
+        return HomeAssistantError(
+            message,
+            translation_domain=DOMAIN,
+            translation_key="remote_unconfirmed",
+            translation_placeholders={"error": _unconfirmed_cause(exc)},
+        )
+    if message == SESSION_REJECTED_MESSAGE:
+        return HomeAssistantError(
+            message,
+            translation_domain=DOMAIN,
+            translation_key="session_rejected",
+        )
+    return HomeAssistantError(message)
 
 
 async def async_execute_remote_action(
@@ -82,7 +145,10 @@ async def async_execute_remote_action(
     cooldown = coordinator.remote_action_cooldown_remaining(vin)
     if cooldown:
         raise HomeAssistantError(
-            f"Remote action cooldown active. Try again in {cooldown} seconds."
+            f"Wait {cooldown} s before the next command; the previous one may still be running.",
+            translation_domain=DOMAIN,
+            translation_key="remote_cooldown",
+            translation_placeholders={"seconds": str(cooldown)},
         )
     if not coordinator.operation_password_configured(vin):
         raise HomeAssistantError(
@@ -100,8 +166,15 @@ async def async_execute_remote_action(
             spec.action,
             success=False,
             error=format_remote_error(exc),
+            cooldown=failure_starts_cooldown(exc),
         )
-        raise HomeAssistantError(format_remote_error(exc)) from exc
+        if isinstance(exc, LeapmotorRemoteCommandUnconfirmedError):
+            # The command may be running; show its effect as soon as it lands.
+            coordinator.schedule_remote_followup_refresh(
+                vin,
+                delay_seconds=spec.followup_refresh_delay or 4.0,
+            )
+        raise remote_action_error(exc) from exc
 
     coordinator.record_remote_action(
         vin,

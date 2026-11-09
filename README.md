@@ -131,6 +131,7 @@ Pri **Vzdrževanju** po servisu dvakrat tapni **Opravljeno** in rok se začne zn
 | Napačno geslo (`code 21`) | Če deluje v aplikaciji: odjavi se, enkrat spremeni geslo v aplikaciji, poskusi znova. |
 | Aplikacija te odjavlja | Uporabi drugi račun z deljenim vozilom. |
 | Ukaz ne deluje | Preveri PIN vozila in pravice deljenega računa. |
+| *Token is invalid* | Integracija se sama znova prijavi. Če se ponavlja, uporabi drugi račun z deljenim vozilom. |
 | Zastareli podatki | Tapni **Osveži** na kartici. Podatki prihajajo iz oblaka in lahko malo zamujajo. |
 
 <br>

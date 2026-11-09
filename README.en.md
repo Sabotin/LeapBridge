@@ -480,6 +480,8 @@ state, charging, `evcc_status`, charging power/current/voltage, odometer and
 | Phone app keeps logging out | Use a second account with shared vehicle access. |
 | Stale or wrong values | Press **Refresh data**, check **Last refresh**, then run `leapmotor.export_diagnostics`. |
 | Remote control does nothing | Configure the vehicle PIN; check account and shared-car permissions. |
+| *Token is invalid* / *Leapmotor rejected the session* | The integration logs in again and retries on its own. If it keeps happening, the official app is probably signed in with the same account — use a second account with the car shared to it. |
+| *Leapmotor accepted the command but did not confirm the result* | The command most likely reached the car. Wait a few seconds and check its state before sending it again. |
 | Card not found | Hard-refresh the browser (Ctrl + F5) or reset the companion-app frontend cache. |
 
 <details>

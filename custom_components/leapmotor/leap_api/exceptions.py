@@ -21,3 +21,11 @@ class LeapmotorMissingAppCertError(LeapmotorAuthError):
 
 class LeapmotorNoVehicleError(LeapmotorApiError):
     """The account login worked, but no vehicle is linked to the account."""
+
+
+class LeapmotorRemoteCommandUnconfirmedError(LeapmotorApiError):
+    """The cloud accepted a remote command, but its result could not be confirmed.
+
+    The command may already be running in the car, so callers must not resend
+    it automatically (toggles such as the trunk would flip back).
+    """

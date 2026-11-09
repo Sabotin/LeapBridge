@@ -9,6 +9,7 @@ import json
 import logging
 import random
 import tempfile
+import threading
 import time
 import uuid
 from datetime import UTC, datetime, timedelta, tzinfo
@@ -70,6 +71,7 @@ from .leap_api import (
     LeapmotorAuthError,
     LeapmotorMissingAppCertError,
     LeapmotorNoVehicleError,
+    LeapmotorRemoteCommandUnconfirmedError,
     Vehicle,
     build_seat_comfort_payload,
     derive_operate_password,
@@ -150,6 +152,10 @@ class LeapmotorApiClient:
         self.account_p12_password_source: str | None = None
         self.remote_cert_synced = False
         self.last_api_results: dict[str, dict[str, Any]] = {}
+        # Status polls and remote commands run in different executor threads.
+        # Serialise them so one thread's session recovery (which replaces the
+        # token) can never invalidate a command another thread is sending.
+        self._api_lock = threading.RLock()
         self.status_path_resolver = VehicleStatusPathResolver()
         cert_dir = Path(static_cert_dir) if static_cert_dir else Path(__file__).resolve().parent
         self.static_cert = str(cert_dir / STATIC_APP_CERT)
@@ -245,15 +251,16 @@ class LeapmotorApiClient:
 
     def fetch_data(self) -> dict[str, Any]:
         """Authenticate if needed and fetch all read-only vehicle data."""
-        if not self.token:
-            self._ensure_static_cert_files()
-            self.login()
+        with self._api_lock:
+            if not self.token:
+                self._ensure_static_cert_files()
+                self.login()
 
-        try:
-            return self._fetch_authenticated_data()
-        except LeapmotorApiError as exc:
-            self._recover_session(exc)
-            return self._fetch_authenticated_data()
+            try:
+                return self._fetch_authenticated_data()
+            except LeapmotorApiError as exc:
+                self._recover_session(exc)
+                return self._fetch_authenticated_data()
 
     def lock_vehicle(self, vin: str) -> dict[str, Any]:
         """Lock one vehicle via remote control."""
@@ -943,26 +950,27 @@ class LeapmotorApiClient:
 
     def login(self) -> None:
         """Login with the static app cert and load the account cert from the response."""
-        self._ensure_static_cert_files()
-        headers = self._build_login_headers()
-        body = self._build_login_form_body()
-        response = self._post_with_curl(
-            path="/carownerservice/oversea/acct/v1/login",
-            headers=headers,
-            data=body,
-            cert=(self.static_cert, self.static_key),
-        )
-        data = self._parse_api_body(response["status_code"], response["body"], "login")
-        login_data = data.get("data") or {}
-        self.user_id = str(login_data.get("id"))
-        self.token = str(login_data.get("token"))
-        self.device_id = derive_session_device_id(self.token, fallback=self.login_device_id)
-        self.sign_ikm = str(login_data.get("signIkm"))
-        self.sign_salt = str(login_data.get("signSalt"))
-        self.sign_info = str(login_data.get("signInfo"))
-        self.refresh_token = str(login_data.get("refreshToken") or "") or None
-        self._load_account_cert(login_data)
-        self.remote_cert_synced = False
+        with self._api_lock:
+            self._ensure_static_cert_files()
+            headers = self._build_login_headers()
+            body = self._build_login_form_body()
+            response = self._post_with_curl(
+                path="/carownerservice/oversea/acct/v1/login",
+                headers=headers,
+                data=body,
+                cert=(self.static_cert, self.static_key),
+            )
+            data = self._parse_api_body(response["status_code"], response["body"], "login")
+            login_data = data.get("data") or {}
+            self.user_id = str(login_data.get("id"))
+            self.token = str(login_data.get("token"))
+            self.device_id = derive_session_device_id(self.token, fallback=self.login_device_id)
+            self.sign_ikm = str(login_data.get("signIkm"))
+            self.sign_salt = str(login_data.get("signSalt"))
+            self.sign_info = str(login_data.get("signInfo"))
+            self.refresh_token = str(login_data.get("refreshToken") or "") or None
+            self._load_account_cert(login_data)
+            self.remote_cert_synced = False
 
     def token_refresh(self) -> None:
         """Refresh the access token without repeating the full account login."""
@@ -993,22 +1001,28 @@ class LeapmotorApiClient:
         self.refresh_token = (
             str(refresh_data.get("refreshToken") or "") or current_refresh_token
         )
+        # Keep the signing deviceId in step with the new token, as login does,
+        # and register the session for remote control again before the next
+        # command.
+        self.device_id = derive_session_device_id(self.token, fallback=self.device_id)
+        self.remote_cert_synced = False
         _LOGGER.debug("Leapmotor access token refreshed successfully")
 
     def _recover_session(self, exc: LeapmotorApiError) -> None:
         """Refresh an expired token, falling back to a complete login."""
-        if _is_token_error(exc) and self.refresh_token:
-            try:
-                self.token_refresh()
-                return
-            except LeapmotorApiError as refresh_exc:
-                _LOGGER.debug(
-                    "Leapmotor token refresh failed, using full login: %s",
-                    refresh_exc,
-                )
-        self._clear_auth()
-        self._ensure_static_cert_files()
-        self.login()
+        with self._api_lock:
+            if _is_token_error(exc) and self.refresh_token:
+                try:
+                    self.token_refresh()
+                    return
+                except LeapmotorApiError as refresh_exc:
+                    _LOGGER.debug(
+                        "Leapmotor token refresh failed, using full login: %s",
+                        refresh_exc,
+                    )
+            self._clear_auth()
+            self._ensure_static_cert_files()
+            self.login()
 
     def get_vehicle_list(self) -> list[Vehicle]:
         """Fetch the account vehicle list."""
@@ -1273,43 +1287,89 @@ class LeapmotorApiClient:
         cmd_content: dict[str, Any] | str | None = None,
     ) -> dict[str, Any]:
         """Execute a remote-control action using the verified operatePassword flow."""
-        if not self.token:
-            self.login()
-        self._ensure_account_cert_files()
-        if not self.operation_password_for_vin(vin):
-            raise LeapmotorAuthError(
-                "No vehicle PIN configured. Read-only data works without a PIN, "
-                "but remote-control actions require it."
-            )
-        if action not in REMOTE_ACTION_SPECS:
-            raise LeapmotorApiError(f"Remote action not configured: {action}")
+        with self._api_lock:
+            if not self.token:
+                self.login()
+            self._ensure_account_cert_files()
+            if not self.operation_password_for_vin(vin):
+                raise LeapmotorAuthError(
+                    "No vehicle PIN configured. Read-only data works without a PIN, "
+                    "but remote-control actions require it."
+                )
+            if action not in REMOTE_ACTION_SPECS:
+                raise LeapmotorApiError(f"Remote action not configured: {action}")
 
-        vehicle = self._find_vehicle_by_vin(vin)
-        if (
-            action == REMOTE_CTL_UNLOCK_CHARGER
-            and vehicle.abilities
-            and str(VEHICLE_ABILITY_UNLOCK_CHARGE_GUN) not in vehicle.abilities
-        ):
-            raise LeapmotorApiError(
-                f"Vehicle model {vehicle.car_type} does not declare remote charger-unlock support."
+            vehicle = self._find_vehicle_by_vin(vin)
+            if (
+                action == REMOTE_CTL_UNLOCK_CHARGER
+                and vehicle.abilities
+                and str(VEHICLE_ABILITY_UNLOCK_CHARGE_GUN) not in vehicle.abilities
+            ):
+                raise LeapmotorApiError(
+                    f"Vehicle model {vehicle.car_type} does not declare remote charger-unlock support."
+                )
+            spec = REMOTE_ACTION_SPECS[action]
+            resolved_cmd_content = spec.cmd_content
+            if isinstance(cmd_content, dict):
+                resolved_cmd_content = json.dumps(cmd_content, separators=(",", ":"))
+            elif isinstance(cmd_content, str):
+                resolved_cmd_content = cmd_content
+            if value is not None:
+                resolved_cmd_content = json.dumps({"value": str(value)}, separators=(",", ":"))
+            return self._remote_control_raw(
+                vin=vehicle.vin,
+                cmd_id=spec.cmd_id,
+                cmd_content=resolved_cmd_content,
+                action_label=action,
+                vehicle=vehicle,
             )
-        spec = REMOTE_ACTION_SPECS[action]
-        resolved_cmd_content = spec.cmd_content
-        if isinstance(cmd_content, dict):
-            resolved_cmd_content = json.dumps(cmd_content, separators=(",", ":"))
-        elif isinstance(cmd_content, str):
-            resolved_cmd_content = cmd_content
-        if value is not None:
-            resolved_cmd_content = json.dumps({"value": str(value)}, separators=(",", ":"))
-        return self._remote_control_raw(
-            vin=vehicle.vin,
-            cmd_id=spec.cmd_id,
-            cmd_content=resolved_cmd_content,
-            action_label=action,
-            vehicle=vehicle,
-        )
 
     def _remote_control_raw(
+        self,
+        *,
+        vin: str,
+        cmd_id: str,
+        cmd_content: str,
+        action_label: str,
+        vehicle: Vehicle | None = None,
+    ) -> dict[str, Any]:
+        """Execute one raw remote-control command, recovering an expired session once.
+
+        A token error before the cloud accepted the command (cert sync, PIN
+        verify, or the command request itself) means nothing reached the car,
+        so the session is renewed and the whole command is sent again. Once the
+        command is accepted, an expired token is handled while polling for the
+        result instead, so the car never gets the command twice.
+        """
+        with self._api_lock:
+            try:
+                return self._remote_control_raw_once(
+                    vin=vin,
+                    cmd_id=cmd_id,
+                    cmd_content=cmd_content,
+                    action_label=action_label,
+                    vehicle=vehicle,
+                )
+            except LeapmotorRemoteCommandUnconfirmedError:
+                raise
+            except LeapmotorApiError as exc:
+                if not _is_token_error(exc):
+                    raise
+                _LOGGER.info(
+                    "Leapmotor session expired before remote action %s was sent; "
+                    "renewing the session and retrying once",
+                    action_label,
+                )
+                self._recover_session(exc)
+                return self._remote_control_raw_once(
+                    vin=vin,
+                    cmd_id=cmd_id,
+                    cmd_content=cmd_content,
+                    action_label=action_label,
+                    vehicle=vehicle,
+                )
+
+    def _remote_control_raw_once(
         self,
         *,
         vin: str,
@@ -1407,6 +1467,43 @@ class LeapmotorApiClient:
         cmd_content: str,
         action_label: str,
     ) -> dict[str, Any]:
+        """Execute a PIN-less remote command, recovering an expired session once.
+
+        A token error here comes back from the command request itself, so the
+        cloud rejected it and retrying cannot send it twice.
+        """
+        with self._api_lock:
+            try:
+                return self._remote_control_without_pin_raw_once(
+                    vin=vin,
+                    cmd_id=cmd_id,
+                    cmd_content=cmd_content,
+                    action_label=action_label,
+                )
+            except LeapmotorApiError as exc:
+                if not _is_token_error(exc):
+                    raise
+                _LOGGER.info(
+                    "Leapmotor session expired before remote action %s was sent; "
+                    "renewing the session and retrying once",
+                    action_label,
+                )
+                self._recover_session(exc)
+                return self._remote_control_without_pin_raw_once(
+                    vin=vin,
+                    cmd_id=cmd_id,
+                    cmd_content=cmd_content,
+                    action_label=action_label,
+                )
+
+    def _remote_control_without_pin_raw_once(
+        self,
+        *,
+        vin: str,
+        cmd_id: str,
+        cmd_content: str,
+        action_label: str,
+    ) -> dict[str, Any]:
         """Execute a remote-control command that does not use operatePassword."""
         _LOGGER.debug(
             "Starting Leapmotor remote action %s for VIN %s",
@@ -1469,26 +1566,55 @@ class LeapmotorApiClient:
         timeout_ms: int,
         interval_ms: int,
     ) -> dict[str, Any]:
-        """Poll the remote-control result endpoint until the command finishes or times out."""
+        """Poll the remote-control result endpoint until the command finishes or times out.
+
+        The cloud has already accepted the command at this point. Every error
+        is therefore raised as LeapmotorRemoteCommandUnconfirmedError, and an
+        expired token is renewed once to keep polling the same command rather
+        than sending it again.
+        """
         del vin, car_id
         data = f"remoteCtlId={requests.utils.quote(remote_ctl_id, safe='')}"
 
         deadline = time.monotonic() + max(timeout_ms, 1000) / 1000.0
         last_result: dict[str, Any] | None = None
+        session_recovered = False
         while time.monotonic() < deadline:
-            headers = self._build_remote_ctl_result_headers(remote_ctl_id=remote_ctl_id)
-            headers.update(self._auth_headers(content_type="application/x-www-form-urlencoded"))
-            response = self._post_with_curl(
-                path="/carownerservice/oversea/vehicle/v1/app/remote/ctl/result/query",
-                headers=headers,
-                data=data,
-                cert=self.account_cert,
-            )
-            last_result = self._parse_api_body(
-                response["status_code"],
-                response["body"],
-                "remote control result",
-            )
+            try:
+                headers = self._build_remote_ctl_result_headers(remote_ctl_id=remote_ctl_id)
+                headers.update(
+                    self._auth_headers(content_type="application/x-www-form-urlencoded")
+                )
+                response = self._post_with_curl(
+                    path="/carownerservice/oversea/vehicle/v1/app/remote/ctl/result/query",
+                    headers=headers,
+                    data=data,
+                    cert=self.account_cert,
+                )
+                last_result = self._parse_api_body(
+                    response["status_code"],
+                    response["body"],
+                    "remote control result",
+                )
+            except LeapmotorApiError as exc:
+                if session_recovered or not _is_token_error(exc):
+                    raise LeapmotorRemoteCommandUnconfirmedError(
+                        "Leapmotor accepted the command, but its result could not be "
+                        f"confirmed: {exc}"
+                    ) from exc
+                session_recovered = True
+                _LOGGER.info(
+                    "Leapmotor session expired while waiting for a remote result; "
+                    "renewing the session and polling the same command again"
+                )
+                try:
+                    self._recover_session(exc)
+                except LeapmotorApiError as login_exc:
+                    raise LeapmotorRemoteCommandUnconfirmedError(
+                        "Leapmotor accepted the command, but its result could not be "
+                        f"confirmed: {login_exc}"
+                    ) from login_exc
+                continue
             if (last_result.get("data")) == 1:
                 return last_result
             sleep_seconds = max(interval_ms, 250) / 1000.0
@@ -1496,7 +1622,9 @@ class LeapmotorApiClient:
                 break
             time.sleep(sleep_seconds)
 
-        raise LeapmotorApiError(f"Timed out waiting for remote control result: {last_result}")
+        raise LeapmotorRemoteCommandUnconfirmedError(
+            f"Timed out waiting for remote control result: {last_result}"
+        )
 
     def _find_vehicle_by_vin(self, vin: str) -> Vehicle:
         """Resolve VIN to current vehicle metadata."""
