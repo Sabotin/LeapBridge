@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="images/dashboard.png" alt="Leapmotor dashboard card, Overview page" width="100%">
+  <img src="images/dashboard.png" alt="Leapmotor dashboard card, Overview page in the Car app theme" width="100%">
 </p>
 
 # Leapmotor dashboard card
 
-A night-sky dashboard for your Leapmotor, shipped inside the integration.
+A dashboard for your Leapmotor in three themes, shipped inside the integration.
 Home Assistant loads it automatically once the integration is set up — there
 is no Lovelace resource to add and nothing extra to install from HACS.
 
@@ -19,7 +19,7 @@ follows the language and units of your Home Assistant profile.
 
 ## Pages
 
-The card is split into four pages with tabs at the top. A dot on a tab shows
+The card is split into four pages with tabs at the top, plus a **Settings** tab. A dot on a tab shows
 when something on that page needs a look (open door, charging, driving,
 maintenance or tires).
 
@@ -29,10 +29,46 @@ maintenance or tires).
 | **Trips** | Trip details (map, stats, speed chart), trip log grouped by day, last 7 days |
 | **Charging** | Charging with charge limit and charging controls, last 24 hours, battery & efficiency |
 | **Vehicle** | Maintenance, tires, insights |
+| **Settings** (gear) | Theme, day or night, and language for you (see [Settings](#settings)) |
 
 The card always opens on **Overview** (set `page` to start elsewhere). In the
 Leapmotor sidebar panel the tabs stay at the top while you scroll. Set
 `tabs: false` to show every page one below the other instead.
+
+## Themes
+
+The theme decides how the car panel on Overview looks and which surfaces the
+panels use. Everything else (pages, panels, buttons, double-tap confirm) is the
+same in all three.
+
+| `look: classic` (default) | `look: cluster` — driver display | `look: console` — car app |
+| --- | --- | --- |
+| <img src="images/looks/classic-wide.webp" alt="Classic theme with night sky"> | <img src="images/looks/cluster-wide.webp" alt="Driver display theme"> | <img src="images/looks/console-wide.webp" alt="Car app theme"> |
+| <img src="images/looks/classic-drive.webp" alt="Classic theme while driving"> | <img src="images/looks/cluster-drive.webp" alt="Driver display while driving"> | <img src="images/looks/console-drive.webp" alt="Car app while driving"> |
+| <img src="images/looks/classic-phone.webp" alt="Classic theme on a phone" width="260"> | <img src="images/looks/cluster-phone.webp" alt="Driver display on a phone" width="260"> | <img src="images/looks/console-phone.webp" alt="Car app on a phone" width="260"> |
+
+- **Classic** — the night or day sky with your car, the battery as a large
+  figure and floating chips.
+- **Driver display** — a battery gauge with range and the charge-limit mark,
+  the car on a lit floor, a speed gauge with the speed-limit sign and
+  P R N D (charging power and finish time while charging), warning lights and
+  a trip-computer strip, on graphite panels.
+- **Car app** — range as the headline, a segmented battery bar, status chips,
+  tire pressures at the wheels and round quick buttons.
+
+## Settings
+
+<img src="images/looks/settings.webp" alt="Settings tab with theme and language" width="100%">
+
+The **Settings** tab (gear, last tab) lets each person pick the theme, day or
+night, and the language. The choice is saved for that Home Assistant user and
+follows them to every device (in Home Assistant's own per-user frontend
+storage; if that is not available, in the browser). It applies to all
+Leapmotor cards and the Leapmotor sidebar panel. The card configuration
+(`look`, `scene`, `language`) sets the defaults, and **Use card defaults**
+goes back to them.
+
+The tab is shown on cards that have tabs; set `settings: false` to hide it.
 
 ## Best layout
 
@@ -68,9 +104,11 @@ or pick just the parts you want with `sections` (see below).
 | `name` | `Leapmotor <model>` | Title shown in the hero. |
 | `sections` | all | Any of `hero`, `check`, `controls`, `map`, `trips`, `week`, `charging`, `chart`, `energy`, `maintenance`, `tires`, `insights`. Order is fixed; the list picks what is shown. Pages without a section are left out, and with only one page left there are no tabs. |
 | `tabs` | `true` | Split the card into the Overview, Trips, Charging and Vehicle pages. `false` shows everything on one page. |
-| `page` | `overview` | The page the card opens on: `overview`, `trips`, `charging` or `vehicle`. |
-| `scene` | `auto` | `auto` follows `sun.sun` (day sky / night sky), or force `night` / `day`. |
-| `language` | `auto` | `auto` follows your profile. Built in: `en`, `sl`, `de`. |
+| `page` | `overview` | The page the card opens on: `overview`, `trips`, `charging`, `vehicle` or `settings`. |
+| `settings` | `true` | Show the **Settings** tab, where each user picks the theme, day or night, and language. Only on cards with tabs. |
+| `look` | `classic` | Default theme (see [Themes](#themes)): `classic` (night or day sky), `cluster` (driver display) or `console` (car app). Each user can change it in the Settings tab. |
+| `scene` | `auto` | Day or night: the sky in Classic, the display brightness in the other themes. `auto` follows `sun.sun`, or force `night` / `day`. Each user can change it in the Settings tab. |
+| `language` | `auto` | `auto` follows your profile. Built in: `en`, `sl`, `de`. Each user can change it in the Settings tab. |
 | `confirm_actions` | `true` | Remote actions, logging a service and setting the charge limit need a second tap within 4 seconds. |
 | `backdrop` | `true` | Dark rounded backdrop behind the panels, so the card looks right on light themes too. |
 | `show_image` | `true` | Show **your own car**: the official render of your model and colour that the integration downloads from the Leapmotor cloud (`image.<model>_vehicle_picture`). Falls back to a drawn silhouette until it is available. |
@@ -111,7 +149,7 @@ confirm_actions: false
 
 | Panel | Page | Contents |
 | --- | --- | --- |
-| **Hero** | Overview | Night or day scene with your car, wallbox and animated cable while plugged in. The car shows its state: open doors, trunk, windows and sunroof, low tires, an amber ring when unlocked, a warm or cool glow while the climate runs, sentry, motion and headlights while driving, and a battery bar while plugged in. State of charge, lock and driving state (red *Too fast* chip above the speed limit), quick buttons (lock/unlock, quick heat, quick cool, open/close windows), location, range, inside temperature and a metric strip (outside/inside temperature, odometer, charge limit, speed, speed limit, consumption). |
+| **Hero** | Overview | Your car in the chosen theme, with wallbox and animated cable while plugged in. The car shows its state: open doors, trunk, windows and sunroof, low tires, an amber ring when unlocked, a warm or cool glow while the climate runs, sentry, motion and headlights while driving, and a battery bar while plugged in. *Classic:* night or day sky, the battery as a large figure, lock and driving state, location, range, inside temperature and a metric strip (outside/inside temperature, odometer, charge limit, speed, speed limit, consumption). *Driver display:* battery gauge with range and the charge limit, speed gauge with the speed limit sign and gear (charging power and finish time while charging), warning lights (lock, doors, trunk, windows, tires, cable, climate, sentry) and a trip-computer strip (odometer, today, consumption, outside and inside temperature). *Car app:* range, a segmented battery bar with the charge limit, lock/driving/charging chips, tire pressures at the wheels and a strip with odometer, today, consumption and outside temperature. All three have the quick buttons (lock/unlock, quick heat, quick cool, open/close windows). |
 | **Vehicle check** | Overview | One glance answer: *All secure* or *Needs attention*, then a tile each for lock, doors, windows and sunroof, trunk, tires and data freshness (and the battery when it is below 20 %). Green is fine, amber needs a look, red is a problem. No buttons: unlock is in the hero, Find car in the remote control. |
 | **Remote control** | Overview | Grouped into *Climate* (preheat, pre-cool and auto pre-condition with your presets, climate, quick heat/cool, defrost, steering wheel and mirror heating) and *Doors & security* (trunk, windows, sunroof, sunshade, sentry mode, find car) — only what your car supports. |
 | **Trip details** | Trips | The selected trip (or the live one): distance, day, time and duration, the route on a dark map coloured by speed (blue below the limit, amber close to it, red above; without a limit: up to 50, 50–90, over 90 km/h), energy, consumption, battery used, average and top speed, minutes above the limit, cost and outside temperature, and a speed chart with the limit as a dashed line. Built from the device tracker and speed history in the recorder. |

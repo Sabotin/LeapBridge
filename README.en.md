@@ -13,7 +13,7 @@
 <p align="center">
   <b>Your Leapmotor, at home in Home Assistant.</b><br>
   Battery, charging, doors, windows, tires, a trip log, charging costs and remote control —<br>
-  plus a built-in night-sky dashboard that installs itself.
+  plus a built-in dashboard in three themes that installs itself.
 </p>
 
 <p align="center">
@@ -33,7 +33,7 @@
 ## ✦ The dashboard
 
 <p align="center">
-  <img src="docs/images/dashboard.png" alt="Overview page at night while charging" width="100%">
+  <img src="docs/images/dashboard.png" alt="Overview page in the Car app theme while charging" width="100%">
 </p>
 
 One card, everything about the car. It ships **inside** the integration and is
@@ -45,13 +45,17 @@ type: custom:leapmotor-card
 ```
 
 Four pages with tabs: **Overview** (car, vehicle check, remote control),
-**Trips**, **Charging** and **Vehicle** (maintenance, tires, insights).
+**Trips**, **Charging** and **Vehicle** (maintenance, tires, insights), plus
+**Settings**, where everyone picks their theme and language for all their
+devices. The screenshots show the **Car app** theme; the others are the
+**Driver display** (gauges around the car) and **Classic** (night or day sky,
+the default). See [the card guide](docs/card.md#themes) for all three.
 
 <table>
   <tr>
     <td width="33%" valign="top">
-      <b>🌙 Live hero scene</b><br>
-      <sub>Night or day sky that follows the sun, <b>your own car</b> — the official render of your model and colour from the Leapmotor cloud — and a glowing wallbox cable while it charges.</sub>
+      <b>🚗 Your car, three themes</b><br>
+      <sub><b>Your own car</b> — the official render of your model and colour from the Leapmotor cloud — with range, battery bar, tire pressures at the wheels and a glowing wallbox cable while it charges. Or gauges, or the night sky.</sub>
     </td>
     <td width="33%" valign="top">
       <b>✅ Vehicle check</b><br>
