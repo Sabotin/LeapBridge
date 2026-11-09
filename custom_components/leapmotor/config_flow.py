@@ -143,6 +143,46 @@ def _write_uploaded_pem_if_provided(
         )
 
 
+def validate_app_certificate_material(hass: HomeAssistant) -> None:
+    """Check the stored cert and key parse and belong together.
+
+    Raises ValueError with a translation key so setup can tell the user which
+    file is the problem, instead of surfacing a generic login failure later.
+    """
+    from cryptography import x509
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ec, rsa
+
+    cert_dir = app_certificate_dir(hass)
+    cert_path = cert_dir / STATIC_APP_CERT
+    key_path = cert_dir / STATIC_APP_KEY
+    if not cert_path.exists() or not key_path.exists():
+        raise ValueError("missing_app_cert")
+
+    try:
+        certificate = x509.load_pem_x509_certificate(cert_path.read_bytes())
+    except Exception as exc:  # noqa: BLE001 - any parse failure is a bad cert file
+        raise ValueError("app_cert_invalid") from exc
+    try:
+        private_key = serialization.load_pem_private_key(key_path.read_bytes(), password=None)
+    except Exception as exc:  # noqa: BLE001 - any parse failure is a bad key file
+        raise ValueError("app_key_invalid") from exc
+
+    # The key belongs to the cert only when their public keys match.
+    cert_public = certificate.public_key().public_bytes(
+        serialization.Encoding.DER,
+        serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    if not isinstance(private_key, (rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey)):
+        return
+    key_public = private_key.public_key().public_bytes(
+        serialization.Encoding.DER,
+        serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    if cert_public != key_public:
+        raise ValueError("certificate_key_mismatch")
+
+
 def save_app_certificate_material(hass: HomeAssistant, data: dict[str, Any]) -> None:
     """Persist user-provided app certificate material locally, if supplied."""
     cert_dir = app_certificate_dir(hass)
@@ -256,8 +296,16 @@ class LeapmotorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "certificate_import_error"
             else:
                 if await self.hass.async_add_executor_job(has_app_certificate_material, self.hass):
-                    return await self.async_step_account()
-                errors["base"] = "missing_app_cert"
+                    try:
+                        await self.hass.async_add_executor_job(
+                            validate_app_certificate_material, self.hass
+                        )
+                    except ValueError as exc:
+                        errors["base"] = str(exc)
+                    else:
+                        return await self.async_step_account()
+                else:
+                    errors["base"] = "missing_app_cert"
 
         return self.async_show_form(
             step_id="certificates",
