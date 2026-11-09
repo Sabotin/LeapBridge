@@ -67,7 +67,7 @@ const STRINGS = {
     last24: "Last 24 hours", tabBattery: "Battery", tabRange: "Range", tabPower: "Power",
     sum24: "{charged} charged and {driven} driven in the last 24 h.",
     sumCharged: "{charged} charged in the last 24 h.", sumDriven: "{driven} driven in the last 24 h.",
-    peakLow: "Peak {max} at {tmax}, lowest {min} at {tmin}.",
+    peakLow: "Peak {max} at {tmax}, lowest {min} at {tmin}.", peakOnly: "Peak {max} at {tmax}.",
     sumNoChange: "Steady over the last 24 h.",
     noHistory: "No history yet — the chart fills in as Home Assistant records data.",
     nowPill: "now",
@@ -116,7 +116,7 @@ const STRINGS = {
     last24: "Zadnjih 24 ur", tabBattery: "Baterija", tabRange: "Doseg", tabPower: "Moč",
     sum24: "V zadnjih 24 urah {charged} napolnjeno in {driven} prevoženo.",
     sumCharged: "V zadnjih 24 urah {charged} napolnjeno.", sumDriven: "V zadnjih 24 urah {driven} prevoženo.",
-    peakLow: "Najvišje {max} ob {tmax}, najnižje {min} ob {tmin}.",
+    peakLow: "Najvišje {max} ob {tmax}, najnižje {min} ob {tmin}.", peakOnly: "Največ {max} ob {tmax}.",
     sumNoChange: "Zadnjih 24 ur brez sprememb.",
     noHistory: "Zgodovine še ni — graf se zapolni, ko Home Assistant beleži podatke.",
     nowPill: "zdaj",
@@ -165,7 +165,7 @@ const STRINGS = {
     last24: "Letzte 24 Stunden", tabBattery: "Akku", tabRange: "Reichweite", tabPower: "Leistung",
     sum24: "{charged} geladen und {driven} gefahren in den letzten 24 h.",
     sumCharged: "{charged} geladen in den letzten 24 h.", sumDriven: "{driven} gefahren in den letzten 24 h.",
-    peakLow: "Höchststand {max} um {tmax}, Tiefststand {min} um {tmin}.",
+    peakLow: "Höchststand {max} um {tmax}, Tiefststand {min} um {tmin}.", peakOnly: "Spitze {max} um {tmax}.",
     sumNoChange: "Keine Veränderung in den letzten 24 h.",
     noHistory: "Noch kein Verlauf — das Diagramm füllt sich, sobald Home Assistant Daten aufzeichnet.",
     nowPill: "jetzt",
@@ -1495,7 +1495,10 @@ class LeapmotorCard extends HTMLElement {
     let note = charged >= 1 && driven >= 1 ? t("sum24", { charged: chargedTxt, driven: drivenTxt })
       : charged >= 1 ? t("sumCharged", { charged: chargedTxt })
         : driven >= 1 ? t("sumDriven", { driven: drivenTxt }) : t("sumNoChange");
-    if (maxV !== minV) note += " " + t("peakLow", { max: `${fmtV(maxV)} ${unit}`, tmax: this._time(new Date(tMax)), min: `${fmtV(minV)} ${unit}`, tmin: this._time(new Date(tMin)) });
+    if (maxV !== minV) {
+      const peak = { max: `${fmtV(maxV)} ${unit}`, tmax: this._time(new Date(tMax)), min: `${fmtV(minV)} ${unit}`, tmin: this._time(new Date(tMin)) };
+      note += " " + (this._tab === "power" ? t("peakOnly", peak) : t("peakLow", peak));
+    }
 
     // Geometry
     const W = Math.max(260, this._chartSize.w || 560);
@@ -1551,7 +1554,7 @@ class LeapmotorCard extends HTMLElement {
 
     const labels = ticks.map((ts, i) => {
       const v = valueAt(series, ts);
-      if (v == null) return "";
+      if (v == null || (this._tab === "power" && v === 0)) return "";
       const px = x(ts), py = y(v);
       const anchor = i === 0 ? "start" : i === ticks.length - 1 ? "end" : "middle";
       const ty = py - 10 < padT - 4 ? py + 18 : py - 10;
