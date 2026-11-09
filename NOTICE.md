@@ -29,6 +29,48 @@ boundaries end a trip, net energy instead of absolute difference, flat
 per-tier charging prices, no regenerated-energy estimate and no stored
 coordinates.
 
+LeapConnect's time-of-use pricing, trip similarity scoring and maintenance
+due/overdue engine are ported into the same module.
+
+### leapmotor-api — GNU AGPL-3.0-or-later
+
+The remote-control payloads for sentry mode, start/stop charging, healthy
+charging and the sunroof (`custom_components/leapmotor/leap_api/remote.py`)
+are taken from [leapmotor-api](https://pypi.org/project/leapmotor-api/) 0.6.0
+by Marco Mancino, the library LeapConnect uses. Its payloads for actions this
+integration already had are identical.
+
+### LeapConnect maintenance packs — MIT
+
+`custom_components/leapmotor/maintenance_packs.json` bundles the factory and
+community schedules from
+[leapconnect-maintenance-packs](https://github.com/markoceri/leapconnect-maintenance-packs),
+normalised but otherwise unchanged:
+
+```
+MIT License
+
+Copyright (c) 2026 markoceri
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
 ### leapmotor-ha — MIT
 
 The Home Assistant integration is based on

@@ -1,0 +1,69 @@
+blueprint:
+  name: Leapmotor — plug-in reminder
+  description: In the evening, remind you to plug in when the car is home, the battery is low and the cable is not connected.
+  domain: automation
+  source_url: https://github.com/sabotin/leapmotor/blob/main/blueprints/automation/leapmotor/plug_in_reminder.yaml
+  input:
+    reminder_time:
+      name: Remind at
+      default: "20:30:00"
+      selector:
+        time:
+    battery_sensor:
+      name: Battery sensor
+      selector:
+        entity:
+          filter:
+            - integration: leapmotor
+              domain: sensor
+              device_class: battery
+    threshold:
+      name: Battery below
+      default: 40
+      selector:
+        number:
+          min: 5
+          max: 100
+          unit_of_measurement: "%"
+    plugged_sensor:
+      name: Charge cable plugged in
+      selector:
+        entity:
+          filter:
+            - integration: leapmotor
+              domain: binary_sensor
+    location_tracker:
+      name: Car location
+      selector:
+        entity:
+          filter:
+            - integration: leapmotor
+              domain: device_tracker
+    notify_device:
+      name: Phone
+      selector:
+        device:
+          filter:
+            - integration: mobile_app
+mode: single
+trigger:
+  - platform: time
+    at: !input reminder_time
+condition:
+  - condition: numeric_state
+    entity_id: !input battery_sensor
+    below: !input threshold
+  - condition: state
+    entity_id: !input plugged_sensor
+    state: "off"
+  - condition: state
+    entity_id: !input location_tracker
+    state: home
+variables:
+  battery_sensor: !input battery_sensor
+action:
+  - domain: mobile_app
+    type: notify
+    device_id: !input notify_device
+    title: Plug in your Leapmotor
+    message: "Battery is at {{ states(battery_sensor) }} % and the cable is not connected."

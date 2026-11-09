@@ -90,6 +90,9 @@ const STRINGS = {
     notFound: "No Leapmotor vehicle found. Set device_id or entity_prefix in the card configuration.",
     driverDoor: "Driver door", passengerDoor: "Passenger door",
     rearLeftDoor: "Rear left door", rearRightDoor: "Rear right door",
+    precoolCabin: "Pre-cool cabin", autoCabin: "Auto pre-condition", willCool: "will cool", willHeat: "will heat",
+    preheatCabin: "Preheat cabin", preheatSub: "{t} °C · fan {f}", recircShort: "recirc.",
+    mntTitle: "Maintenance", mntOk: "OK", mntSoon: "SOON", mntOverdue: "OVERDUE", kmLeft: "{x} km", daysLeft: "{x} days", overdueBy: "{x} overdue", mntAssumed: "assumed on schedule", mntLogged: "logged", mntDone: "Done", mntHint: "Tap Done twice after a service", mntNone: "No maintenance schedule yet.", insightsTitle: "Insights", driveCost: "Driving cost this month", per100: "{x} per 100 km", drain: "Parked drain", drainSub: "{p} % of battery per day", vsUsual: "{x} vs usual", usualSub: "last trip vs {n} similar trips", tempTitle: "Consumption by outside temperature", tiresOk: "Tires look fine", tiresWarn: "Check tires", tLow: "low", tUneven: "uneven", tDropping: "slowly dropping", noInsights: "Insights appear after a few days of driving and charging.", toLimit: "To {l} %: {e} kWh", costNowLow: "{now} now · {low} in low tariff", lowFrom: "from {t}", sentry: "Sentry mode", healthy: "Healthy charging", startCharge: "Start charging", stopCharge: "Stop charging", openRoof: "Open sunroof", closeRoof: "Close sunroof", logged: "Logged: {x}",
     tripsTitle: "Trip log", tripsMeta: "today {d} · this month {m}", drivingNow: "Driving now", yesterday: "Yesterday", noTrips: "Trips appear here after your next drive. For exact start and end times, set the update interval to 1 minute.", colTrip: "Trip", colDistance: "Distance", colDuration: "Duration", colEnergy: "Energy", colConsumption: "kWh/100 km", colSoc: "Battery", colSpeed: "Avg speed", monthTrips: "This month {d} · {n}× · {e}", monthCharging: "This month", lastSession: "Last session", tierHome: "Home", tierAC: "Public AC", tierDC: "Public DC", health: "Battery health", healthSub: "{c} of {r} kWh usable", healthPending: "estimate after 3 days with a full charge", sessionsN: "{n}× charged",
   },
   sl: {
@@ -140,6 +143,9 @@ const STRINGS = {
     notFound: "Vozilo Leapmotor ni najdeno. V nastavitvah kartice nastavi device_id ali entity_prefix.",
     driverDoor: "Voznikova vrata", passengerDoor: "Sovoznikova vrata",
     rearLeftDoor: "Zadnja leva vrata", rearRightDoor: "Zadnja desna vrata",
+    precoolCabin: "Ohladi kabino", autoCabin: "Samodejna priprava", willCool: "bo hladilo", willHeat: "bo grelo",
+    preheatCabin: "Predgrej kabino", preheatSub: "{t} °C · ventilator {f}", recircShort: "kroženje",
+    mntTitle: "Vzdrževanje", mntOk: "OK", mntSoon: "KMALU", mntOverdue: "ZAMUJENO", kmLeft: "{x} km", daysLeft: "{x} dni", overdueBy: "{x} čez rok", mntAssumed: "predpostavka: redno servisirano", mntLogged: "zabeleženo", mntDone: "Opravljeno", mntHint: "Po servisu dvakrat tapni Opravljeno", mntNone: "Servisnega načrta še ni.", insightsTitle: "Vpogledi", driveCost: "Strošek vožnje ta mesec", per100: "{x} na 100 km", drain: "Praznjenje med parkiranjem", drainSub: "{p} % baterije na dan", vsUsual: "{x} glede na običajno", usualSub: "zadnja vožnja proti {n} podobnim", tempTitle: "Poraba glede na zunanjo temperaturo", tiresOk: "Pnevmatike so v redu", tiresWarn: "Preveri pnevmatike", tLow: "nizek tlak", tUneven: "neenakomerno", tDropping: "počasi pada", noInsights: "Vpogledi se pojavijo po nekaj dneh vožnje in polnjenja.", toLimit: "Do {l} %: {e} kWh", costNowLow: "{now} zdaj · {low} v nizki tarifi", lowFrom: "od {t}", sentry: "Stražarski način", healthy: "Zdravo polnjenje", startCharge: "Začni polnjenje", stopCharge: "Ustavi polnjenje", openRoof: "Odpri strešno okno", closeRoof: "Zapri strešno okno", logged: "Zabeleženo: {x}",
     tripsTitle: "Dnevnik voženj", tripsMeta: "danes {d} · ta mesec {m}", drivingNow: "Vožnja poteka", yesterday: "Včeraj", noTrips: "Vožnje se pojavijo tukaj po naslednji vožnji. Za natančne čase začetka in konca nastavi interval posodabljanja na 1 minuto.", colTrip: "Vožnja", colDistance: "Razdalja", colDuration: "Trajanje", colEnergy: "Energija", colConsumption: "kWh/100 km", colSoc: "Baterija", colSpeed: "Povp. hitrost", monthTrips: "Ta mesec {d} · {n}× · {e}", monthCharging: "Ta mesec", lastSession: "Zadnje polnjenje", tierHome: "Doma", tierAC: "Javno AC", tierDC: "Javno DC", health: "Zdravje baterije", healthSub: "{c} od {r} kWh uporabnih", healthPending: "ocena po 3 dneh s polnim polnjenjem", sessionsN: "{n}× polnjeno",
   },
   de: {
@@ -190,7 +196,46 @@ const STRINGS = {
     notFound: "Kein Leapmotor-Fahrzeug gefunden. Setze device_id oder entity_prefix in der Kartenkonfiguration.",
     driverDoor: "Fahrertür", passengerDoor: "Beifahrertür",
     rearLeftDoor: "Tür hinten links", rearRightDoor: "Tür hinten rechts",
+    precoolCabin: "Innenraum vorkühlen", autoCabin: "Auto-Vorklimatisierung", willCool: "kühlt", willHeat: "heizt",
+    preheatCabin: "Innenraum vorheizen", preheatSub: "{t} °C · Lüfter {f}", recircShort: "Umluft",
+    mntTitle: "Wartung", mntOk: "OK", mntSoon: "BALD", mntOverdue: "FÄLLIG", kmLeft: "{x} km", daysLeft: "{x} Tage", overdueBy: "{x} überfällig", mntAssumed: "angenommen: planmäßig", mntLogged: "erfasst", mntDone: "Erledigt", mntHint: "Nach dem Service zweimal auf Erledigt tippen", mntNone: "Noch kein Wartungsplan.", insightsTitle: "Einblicke", driveCost: "Fahrkosten diesen Monat", per100: "{x} pro 100 km", drain: "Standverlust", drainSub: "{p} % Akku pro Tag", vsUsual: "{x} ggü. üblich", usualSub: "letzte Fahrt ggü. {n} ähnlichen", tempTitle: "Verbrauch nach Außentemperatur", tiresOk: "Reifen in Ordnung", tiresWarn: "Reifen prüfen", tLow: "niedrig", tUneven: "ungleich", tDropping: "fällt langsam", noInsights: "Einblicke erscheinen nach einigen Tagen Fahren und Laden.", toLimit: "Bis {l} %: {e} kWh", costNowLow: "{now} jetzt · {low} im Niedertarif", lowFrom: "ab {t}", sentry: "Wächtermodus", healthy: "Schonladen", startCharge: "Laden starten", stopCharge: "Laden stoppen", openRoof: "Schiebedach öffnen", closeRoof: "Schiebedach schließen", logged: "Erfasst: {x}",
     tripsTitle: "Fahrtenbuch", tripsMeta: "heute {d} · diesen Monat {m}", drivingNow: "Fahrt läuft", yesterday: "Gestern", noTrips: "Fahrten erscheinen hier nach der nächsten Fahrt. Für genaue Start- und Endzeiten das Aktualisierungsintervall auf 1 Minute stellen.", colTrip: "Fahrt", colDistance: "Strecke", colDuration: "Dauer", colEnergy: "Energie", colConsumption: "kWh/100 km", colSoc: "Akku", colSpeed: "Ø Tempo", monthTrips: "Diesen Monat {d} · {n}× · {e}", monthCharging: "Diesen Monat", lastSession: "Letzte Ladung", tierHome: "Zuhause", tierAC: "Öffentlich AC", tierDC: "Öffentlich DC", health: "Akkugesundheit", healthSub: "{c} von {r} kWh nutzbar", healthPending: "Schätzung nach 3 Tagen mit Vollladung", sessionsN: "{n}× geladen",
+  },
+};
+
+/** Localised maintenance item names (the bundled packs are English). */
+const SERVICE_NAMES = {
+  sl: {
+    brake_fluid_replace: "Zavorna tekočina — menjava (DOT4)", brake_fluid_inspect: "Zavorna tekočina — pregled",
+    brake_pads_inspect: "Zavorne ploščice — pregled", brake_discs_inspect: "Zavorni diski — pregled",
+    brake_hoses_inspect: "Zavorne cevi in vodi — pregled", tire_rotation: "Menjava položaja pnevmatik",
+    tire_inspect: "Pnevmatike — tlak, obraba, profil", tire_replace: "Pnevmatike — zamenjava",
+    cabin_filter_replace: "Kabinski filter — menjava", cabin_filter_clean: "Kabinski filter — čiščenje",
+    reducer_oil_replace: "Olje reduktorja — menjava", wiper_blades_replace: "Metlice brisalcev — menjava",
+    wiper_blades_inspect: "Metlice brisalcev — pregled", washer_fluid_topup: "Tekočina za pranje stekel — dolivanje",
+    aux_battery_12v_check: "12 V akumulator — pregled", coolant_inspect: "Hladilna tekočina — pregled",
+    lights_horn_check: "Luči, hupa, pranje — preizkus", battery_pack_inspect: "Visokonapetostna baterija — pregled",
+    engine_oil_replace: "Motorno olje in filter — menjava", engine_air_filter_replace: "Zračni filter motorja — menjava",
+    spark_plugs_replace: "Svečke — pregled/menjava", fuel_filter_replace: "Filter goriva — menjava",
+    hvac_system_check: "Klimatska naprava — tesnost in hrup", door_hinges_lube: "Tečaji vrat, pokrova, prtljažnika — mazanje",
+    chassis_bolts_check: "Vijaki podvozja — pritezni moment", drive_motor_inspect: "Pogonski motor in krmilnik — pregled",
+    charging_port_inspect: "Polnilni priključek — čiščenje in pregled", software_update_check: "Programska oprema — preverjanje posodobitev",
+  },
+  de: {
+    brake_fluid_replace: "Bremsflüssigkeit — Wechsel (DOT4)", brake_fluid_inspect: "Bremsflüssigkeit — Prüfung",
+    brake_pads_inspect: "Bremsbeläge — Prüfung", brake_discs_inspect: "Bremsscheiben — Prüfung",
+    brake_hoses_inspect: "Bremsleitungen — Prüfung", tire_rotation: "Reifen tauschen (Achswechsel)",
+    tire_inspect: "Reifen — Druck, Verschleiß, Profil", tire_replace: "Reifen — Ersatz",
+    cabin_filter_replace: "Innenraumfilter — Wechsel", cabin_filter_clean: "Innenraumfilter — Reinigung",
+    reducer_oil_replace: "Getriebeöl — Wechsel", wiper_blades_replace: "Wischerblätter — Wechsel",
+    wiper_blades_inspect: "Wischerblätter — Prüfung", washer_fluid_topup: "Scheibenwaschwasser — auffüllen",
+    aux_battery_12v_check: "12-V-Batterie — Prüfung", coolant_inspect: "Kühlmittel — Prüfung",
+    lights_horn_check: "Licht, Hupe, Waschanlage — Funktionsprüfung", battery_pack_inspect: "Hochvoltbatterie — Prüfung",
+    engine_oil_replace: "Motoröl und Filter — Wechsel", engine_air_filter_replace: "Motorluftfilter — Wechsel",
+    spark_plugs_replace: "Zündkerzen — Prüfung/Wechsel", fuel_filter_replace: "Kraftstofffilter — Wechsel",
+    hvac_system_check: "Klimaanlage — Dichtheit und Geräusche", door_hinges_lube: "Scharniere — reinigen und schmieren",
+    chassis_bolts_check: "Fahrwerksschrauben — Drehmoment", drive_motor_inspect: "Antriebsmotor und Steuerung — Prüfung",
+    charging_port_inspect: "Ladeanschluss — Reinigung und Prüfung", software_update_check: "Software — Update prüfen",
   },
 };
 
@@ -237,6 +282,23 @@ const SPEC = {
   monthCost: ["sensor", "charging_cost_month", "charging_cost_this_month"],
   monthEnergy: ["sensor", "charged_energy_month_kwh", "charged_energy_this_month"],
   health: ["sensor", "battery_health_percent", "battery_health"],
+  nextMaintenance: ["sensor", "next_maintenance", "next_maintenance"],
+  maintenanceDue: ["binary_sensor", "maintenance_due", "maintenance_due"],
+  attention: ["binary_sensor", "attention_needed", "attention_needed"],
+  tireWarning: ["binary_sensor", "tire_pressure_warning", "tire_pressure_warning"],
+  driveCost: ["sensor", "driving_cost_month", "driving_cost_this_month"],
+  costPer100: ["sensor", "driving_cost_per_100km", "driving_cost_per_100_km"],
+  drain: ["sensor", "parked_drain_kwh_day", "parked_battery_drain"],
+  toLimit: ["sensor", "energy_to_charge_limit_kwh", "energy_to_charge_limit"],
+  sentry: ["switch", "sentry_mode", "sentry_mode"],
+  healthyCharging: ["switch", "healthy_charging", "healthy_charging"],
+  startChargeBtn: ["button", "start_charging", "start_charging"],
+  stopChargeBtn: ["button", "stop_charging", "stop_charging"],
+  sunroofOpenBtn: ["button", "open_sunroof", "open_sunroof"],
+  preheatBtn: ["button", "preheat_cabin", "preheat_cabin"],
+  precoolBtn: ["button", "precool_cabin", "precool_cabin"],
+  preconditionBtn: ["button", "precondition_cabin", "precondition_cabin"],
+  sunroofCloseBtn: ["button", "close_sunroof", "close_sunroof"],
   isCharging: ["binary_sensor", "is_charging", "charging"],
   isPlugged: ["binary_sensor", "is_plugged_in", "charge_cable_plugged_in"],
   isDriving: ["binary_sensor", "is_driving", "is_driving"],
@@ -279,7 +341,7 @@ const DOORS = [
 ];
 const WINDOWS = ["winFL", "winFR", "winRL", "winRR", "skylight"];
 const TIRES = [["tireFL", "FL"], ["tireFR", "FR"], ["tireRL", "RL"], ["tireRR", "RR"]];
-const ALL_SECTIONS = ["hero", "check", "chart", "week", "charging", "energy", "trips", "controls"];
+const ALL_SECTIONS = ["hero", "check", "chart", "week", "charging", "energy", "trips", "maintenance", "insights", "controls"];
 const TIRE_LOW_BAR = 1.9;
 const STALE_MINUTES = 120;
 
@@ -320,6 +382,10 @@ const ICONS = {
   arrowUp: '<path d="M12 19V5.5M6.5 11 12 5.5 17.5 11"/>',
   road: '<path d="M8.5 3 4 21M15.5 3 20 21M12 4.5v2.5M12 10.5v3M12 17v2.5"/>',
   heart: '<path d="M12 20s-7.5-4.6-7.5-10.3A4.2 4.2 0 0 1 12 7.1a4.2 4.2 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20Z"/>',
+  wrench: '<path d="M14.5 6.5a4 4 0 0 0-5.3 5.3L4 17l3 3 5.2-5.2a4 4 0 0 0 5.3-5.3l-2.4 2.4-2.6-.6-.6-2.6 2.6-2.2Z"/>',
+  spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
+  cctv: '<path d="M3 7l12-3 2 6-12 3-2-6Z"/><path d="m17 10 3 1v4M5 13l1 4H3"/>',
+  roof: '<path d="M3 15 7 8h10l4 7"/><path d="M8.5 11h7M3 15h18v3H3z"/>',
   route: '<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/>',
 };
 
@@ -735,6 +801,37 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .health small{display:block;font-size:10.5px;color:var(--lm-dim);margin-top:1px}
 .health .mono{font-size:17px;font-weight:600}
 
+/* ---------- maintenance ---------- */
+.mrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.025);border:1px solid var(--lm-line-2)}
+.mrow+.mrow{margin-top:7px}
+.mrow .sq{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 15%,transparent)}
+.mrow b{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mrow small{display:block;font-size:10.5px;color:var(--lm-dim);margin-top:2px}
+.mbar{height:4px;border-radius:4px;background:rgba(148,163,184,.12);margin-top:6px;overflow:hidden}
+.mbar i{display:block;height:100%;border-radius:4px}
+.mdone{padding:6px 10px;border-radius:9px;font-size:11.5px;font-weight:600;color:var(--lm-soft);background:rgba(255,255,255,.04);border:1px solid var(--lm-line)}
+.mdone:hover{background:rgba(255,255,255,.08)}
+.mdone.armed{color:var(--lm-amber-2);border-color:var(--lm-amber)}
+/* ---------- insights ---------- */
+.irow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.025);border:1px solid var(--lm-line-2)}
+.irow+.irow{margin-top:7px}
+.irow .sq{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 15%,transparent)}
+.irow b{display:block;font-size:13px;font-weight:600}
+.irow small{display:block;font-size:10.5px;color:var(--lm-dim);margin-top:1px}
+.irow .mono{font-size:15px;font-weight:600;white-space:nowrap}
+.temps{margin-top:12px}
+.temps small.h{display:block;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--lm-dim);margin-bottom:8px}
+.trow2{display:grid;grid-template-columns:62px 1fr 48px;align-items:center;gap:8px;font-size:11px;color:var(--lm-muted)}
+.trow2+.trow2{margin-top:6px}
+.trow2 .b{height:6px;border-radius:6px;background:rgba(148,163,184,.12);overflow:hidden}
+.trow2 .b i{display:block;height:100%;border-radius:6px}
+.trow2 .mono{font-size:11px;text-align:right;color:var(--lm-text)}
+.vs{display:inline-block;margin-left:6px;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:700;font-family:var(--lm-font)}
+.vs.good{color:#34d399;background:rgba(52,211,153,.14)}
+.vs.bad{color:#fb923c;background:rgba(251,146,60,.14)}
+.climit{margin-top:8px;font-size:11px;color:var(--lm-muted)}
+.climit b{color:var(--lm-text);font-weight:600}
+
 /* ---------- controls ---------- */
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
 .tile{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:14px;border-radius:15px;text-align:left;min-width:0;
@@ -751,12 +848,14 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 /* ---------- layout ---------- */
 @container lmcard (min-width:760px){
   .lm{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .hero,.controls,.trips{grid-column:1/-1}
+  .hero,.controls,.trips,.maintenance,.insights{grid-column:1/-1}
 }
 @container lmcard (min-width:1180px){
   .lm{grid-template-columns:minmax(0,1.28fr) minmax(0,1.16fr) minmax(0,1fr)}
   .hero{grid-column:span 2}
   .lm.solo-hero .hero{grid-column:1/-1}
+  .maintenance{grid-column:span 2}
+  .insights{grid-column:span 1}
 }
 @container lmcard (max-width:640px){
   .hero{min-height:0}
@@ -817,7 +916,7 @@ class LeapmotorCard extends HTMLElement {
   static getConfigForm() {
     const sectionOptions = [
       ["hero", "Hero scene"], ["check", "Vehicle check"], ["chart", "Last 24 hours"], ["week", "Last 7 days"],
-      ["charging", "Charging"], ["energy", "Energy & tires"], ["trips", "Trip log"], ["controls", "Remote control"],
+      ["charging", "Charging"], ["energy", "Energy & tires"], ["trips", "Trip log"], ["maintenance", "Maintenance"], ["insights", "Insights"], ["controls", "Remote control"],
     ].map(([value, label]) => ({ value, label }));
     return {
       schema: [
@@ -1133,6 +1232,8 @@ class LeapmotorCard extends HTMLElement {
       parts.push(`<div class="stack">${has("charging") ? `<section class="panel charge" id="charging"></section>` : ""}${has("energy") ? `<section class="panel energy" id="energy"></section>` : ""}</div>`);
     }
     if (has("trips")) parts.push(`<section class="panel trips" id="trips"></section>`);
+    if (has("maintenance")) parts.push(`<section class="panel maintenance" id="maintenance"></section>`);
+    if (has("insights")) parts.push(`<section class="panel insights" id="insights"></section>`);
     if (has("controls")) parts.push(`<section class="panel controls" id="controls"></section>`);
     const solo = has("hero") && !has("check") ? " solo-hero" : "";
     this.shadowRoot.innerHTML = `<style>${STYLE}</style><div class="lm${this._config.backdrop ? " backdrop" : ""}${solo}" id="root">${parts.join("")}</div>`;
@@ -1150,9 +1251,11 @@ class LeapmotorCard extends HTMLElement {
       check: () => this._checkSig(),
       chart: () => this._chartSig(),
       week: () => this._sig(["week"]),
-      charging: () => this._sig(["battery", "chargeLimit", "isCharging", "isPlugged", "connection", "finish", "remaining", "power", "current", "voltage", "lastCharge", "range", "lastSession", "lastSessionCost", "monthCost", "monthEnergy"]) + Math.floor(Date.now() / MIN),
+      charging: () => this._sig(["battery", "chargeLimit", "isCharging", "isPlugged", "connection", "finish", "remaining", "power", "current", "voltage", "lastCharge", "range", "lastSession", "lastSessionCost", "monthCost", "monthEnergy", "toLimit"]) + Math.floor(Date.now() / MIN),
       energy: () => this._sig(["avg", "tireFL", "tireFR", "tireRL", "tireRR", "lwDriving", "lwClimate", "lwOther", "health"]),
       trips: () => this._sig(["lastTrip", "todayDistance", "monthDistance", "tripConsumption"]) + Math.floor(Date.now() / MIN),
+      maintenance: () => this._sig(["nextMaintenance", "maintenanceDue"]) + JSON.stringify(this._armed) + JSON.stringify(this._busy),
+      insights: () => this._sig(["driveCost", "costPer100", "drain", "tripConsumption", "tireWarning", "lastTrip"]),
       controls: () => this._controlsSig(),
     };
     const html = {
@@ -1161,6 +1264,8 @@ class LeapmotorCard extends HTMLElement {
       chart: () => this._chartHtml(),
       week: () => this._weekHtml(),
       trips: () => this._tripsHtml(),
+      maintenance: () => this._maintenanceHtml(),
+      insights: () => this._insightsHtml(),
       charging: () => this._chargingHtml(),
       energy: () => this._energyHtml(),
       controls: () => this._controlsHtml(),
@@ -1790,7 +1895,22 @@ class LeapmotorCard extends HTMLElement {
     const lastBits = [this._tierLabel(last?.attributes?.tier), this._money(this._v("lastSessionCost"), currency)].filter(Boolean);
     const sessions = this._s("monthCost")?.attributes?.sessions;
     const monthBits = [this._money(this._v("monthCost"), currency), sessions ? t("sessionsN", { n: sessions }) : null].filter(Boolean);
-    return `<div class="csum">
+    const tl = this._s("toLimit");
+    const tla = tl?.attributes || {};
+    let limitLine = "";
+    if (tl && this._v("toLimit") != null && this._v("toLimit") > 0.2) {
+      const head = t("toLimit", { l: this._num(tla.limit ?? 0), e: this._num(this._v("toLimit"), 1) });
+      const cur = currency;
+      let tail = "";
+      if (tla.cost_low_tariff != null && tla.cost_now != null && !tla.low_tariff_now) {
+        tail = t("costNowLow", { now: this._money(tla.cost_now, cur), low: this._money(tla.cost_low_tariff, cur) })
+          + (tla.next_low_tariff ? ` (${t("lowFrom", { t: this._time(new Date(tla.next_low_tariff)) })})` : "");
+      } else if (tla.cost_now != null) {
+        tail = this._money(tla.cost_now, cur);
+      }
+      limitLine = `<div class="climit clickable" data-more="toLimit"><b>${esc(head)}</b>${tail ? ` · ${esc(tail)}` : ""}</div>`;
+    }
+    return limitLine + `<div class="csum">
       <div class="clickable" data-more="lastSession"><small>${esc(t("lastSession"))}</small><b class="mono">${lastE != null ? `${this._num(lastE, 1)} kWh` : "—"}</b><span>${esc(lastBits.join(" · ") || "—")}</span></div>
       <div class="clickable" data-more="monthCost"><small>${esc(t("monthCharging"))}</small><b class="mono">${monthE != null ? `${this._num(monthE, 1)} kWh` : "—"}</b><span>${esc(monthBits.join(" · ") || "—")}</span></div>
     </div>`;
@@ -1843,6 +1963,108 @@ class LeapmotorCard extends HTMLElement {
       <span class="mono">${soh != null ? `${this._num(soh, 1)} %` : "—"}</span></div>`;
   }
 
+  /* ----- maintenance ----- */
+
+  _maintenanceDef(key) {
+    const service = key.slice(4);
+    const item = (this._s("nextMaintenance")?.attributes?.items || []).find((i) => i.service_type === service);
+    const target = this._ids.battery || this._ids.nextMaintenance;
+    if (!item || !target) return null;
+    return { domain: "leapmotor", service: "log_maintenance", label: this._serviceName(item),
+      data: { service_type: service, entity_id: target } };
+  }
+
+  _serviceName(item) {
+    const names = SERVICE_NAMES[this._lang.split("-")[0]];
+    return (names && names[item.service_type]) || item.label;
+  }
+
+  _maintenanceHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const s = this._s("nextMaintenance");
+    const a = s?.attributes || {};
+    const items = Array.isArray(a.items) ? a.items : [];
+    const head = `<div class="ptitle"><h3>${esc(t("mntTitle"))}</h3><span class="meta">${esc(a.schedule || "")}</span></div>`;
+    if (!items.length) return `${head}<div class="empty">${esc(t("mntNone"))}</div>`;
+    const colors = { overdue: "#fb7185", due_soon: "#f6a823", ok: "#34d399" };
+    const pills = { overdue: ["bad", t("mntOverdue")], due_soon: ["warn", t("mntSoon")], ok: ["", t("mntOk")] };
+    const rows = items.slice(0, 6).map((item) => {
+      const left = [];
+      if (item.remaining_km != null) left.push(item.remaining_km > 0 ? t("kmLeft", { x: this._num(item.remaining_km) }) : t("overdueBy", { x: `${this._num(-item.remaining_km)} km` }));
+      if (item.remaining_days != null) left.push(item.remaining_days > 0 ? t("daysLeft", { x: this._num(item.remaining_days) }) : t("overdueBy", { x: t("daysLeft", { x: this._num(-item.remaining_days) }) }));
+      const fracs = [];
+      if (item.interval_km && item.remaining_km != null) fracs.push(1 - item.remaining_km / item.interval_km);
+      if (item.interval_months && item.remaining_days != null) fracs.push(1 - item.remaining_days / (item.interval_months * 30));
+      const used = clamp(Math.max(0, ...fracs), 0, 1);
+      const key = `mnt:${item.service_type}`;
+      const armed = this._isArmed(key);
+      const [pcls, ptxt] = pills[item.status] || pills.ok;
+      return `<div class="mrow" style="--c:${colors[item.status] || "#94a3b8"}">
+        <span class="sq">${icon("wrench")}</span>
+        <div><b>${esc(this._serviceName(item))}</b><small>${esc(left.join(" · "))} · ${esc(item.baseline === "logged" ? t("mntLogged") : t("mntAssumed"))}</small>
+          <div class="mbar"><i style="width:${Math.round(used * 100)}%;background:${colors[item.status] || "#94a3b8"}"></i></div></div>
+        <span class="pill ${pcls}">${esc(ptxt)}</span>
+        <button class="mdone${armed ? " armed" : ""}" data-act="ctl" data-key="${esc(key)}">${esc(armed ? t("tapConfirm") : t("mntDone"))}</button>
+      </div>`;
+    }).join("");
+    return `${head}<div class="clickable" data-more="nextMaintenance">${rows}</div><div class="foot">${esc(t("mntHint"))}</div>`;
+  }
+
+  /* ----- insights ----- */
+
+  _insightsHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const rows = [];
+    const currency = this._unit("driveCost") || this._unit("monthCost");
+    const cost = this._v("driveCost");
+    if (cost != null) {
+      const per = this._v("costPer100");
+      rows.push(`<div class="irow clickable" data-more="driveCost" style="--c:#f6a823"><span class="sq">${icon("route")}</span>
+        <div><b>${esc(t("driveCost"))}</b><small>${per != null ? esc(t("per100", { x: this._money(per, currency) })) : ""}</small></div>
+        <span class="mono">${esc(this._money(cost, currency))}</span></div>`);
+    }
+    const drain = this._v("drain");
+    if (drain != null) {
+      const pct = this._s("drain")?.attributes?.pct_per_day;
+      rows.push(`<div class="irow clickable" data-more="drain" style="--c:#a78bfa"><span class="sq">${icon("battery")}</span>
+        <div><b>${esc(t("drain"))}</b><small>${pct != null ? esc(t("drainSub", { p: this._num(pct, 1) })) : ""}</small></div>
+        <span class="mono">${this._num(drain, 2)} kWh/d</span></div>`);
+    }
+    const tc = this._s("tripConsumption")?.attributes || {};
+    if (tc.vs_usual_pct != null) {
+      const good = tc.vs_usual_pct <= 0;
+      rows.push(`<div class="irow clickable" data-more="tripConsumption" style="--c:${good ? "#34d399" : "#fb923c"}"><span class="sq">${icon("spark")}</span>
+        <div><b>${esc(t("vsUsual", { x: `${tc.vs_usual_pct > 0 ? "+" : ""}${this._num(tc.vs_usual_pct, 0)} %` }))}</b><small>${esc(t("usualSub", { n: tc.similar_trips ?? 0 }))}</small></div>
+        <span class="mono">${this._num(tc.usual_consumption_kwh_100km, 1)}</span></div>`);
+    }
+    const tw = this._s("tireWarning");
+    if (tw) {
+      const warn = tw.state === "on";
+      const reasons = (tw.attributes?.reasons || []).map((r) => {
+        const m = /^(front|rear)_(left|right)_(low|uneven|dropping)$/.exec(r);
+        if (!m) return r;
+        const tire = { front_left: t("FL"), front_right: t("FR"), rear_left: t("RL"), rear_right: t("RR") }[`${m[1]}_${m[2]}`];
+        return `${tire} ${t({ low: "tLow", uneven: "tUneven", dropping: "tDropping" }[m[3]])}`;
+      });
+      rows.push(`<div class="irow clickable" data-more="tireWarning" style="--c:${warn ? "#fb7185" : "#34d399"}"><span class="sq">${icon("tire")}</span>
+        <div><b>${esc(warn ? t("tiresWarn") : t("tiresOk"))}</b><small>${esc(reasons.join(", "))}</small></div>
+        <span class="pill ${warn ? "bad" : ""}">${esc(warn ? t("open").replace(/.*/, "!") : t("ok"))}</span></div>`);
+    }
+    const bands = Array.isArray(tc.efficiency_by_temperature) ? tc.efficiency_by_temperature : [];
+    let temps = "";
+    if (bands.length) {
+      const labels = { below_0: "< 0 °C", "0_10": "0–10 °C", "10_20": "10–20 °C", above_20: "> 20 °C" };
+      const max = Math.max(...bands.map((b) => b.consumption_kwh_100km));
+      temps = `<div class="temps"><small class="h">${esc(t("tempTitle"))}</small>${bands.map((b) => {
+        const color = rampColor(EFFICIENCY_STOPS, clamp((b.consumption_kwh_100km - 10) / 20, 0, 1));
+        return `<div class="trow2"><span>${labels[b.band] || b.band}</span><div class="b"><i style="width:${Math.round(b.consumption_kwh_100km / max * 100)}%;background:${color}"></i></div><span class="mono">${this._num(b.consumption_kwh_100km, 1)}</span></div>`;
+      }).join("")}</div>`;
+    }
+    const head = `<div class="ptitle"><h3>${esc(t("insightsTitle"))}</h3></div>`;
+    if (!rows.length && !temps) return `${head}<div class="empty">${esc(t("noInsights"))}</div>`;
+    return `${head}${rows.join("")}${temps}`;
+  }
+
   /* ----- trip log ----- */
 
   _tripDay(date) {
@@ -1869,7 +2091,8 @@ class LeapmotorCard extends HTMLElement {
       ? `<div class="socbar"><i style="left:${Math.min(s0, s1)}%;width:${Math.max(2, Math.abs(s0 - s1))}%"></i></div>` : "";
     return `<div class="trow item${live ? " live" : ""}">
       <div class="tday"><b>${live ? `<span class="dot pulse" style="--c:var(--lm-sky);margin-right:6px"></span>${esc(t("drivingNow"))}` : esc(start ? this._tripDay(start) : "")}</b><small>${esc(when)}</small></div>
-      <div class="tc dist">${this._num(trip.distance_km ?? 0, 1)}<small>km</small></div>
+      <div class="tc dist">${this._num(trip.distance_km ?? 0, 1)}<small>km</small>${trip.vs_usual_pct != null
+        ? `<span class="vs ${trip.vs_usual_pct <= 0 ? "good" : "bad"}">${trip.vs_usual_pct > 0 ? "+" : ""}${this._num(trip.vs_usual_pct, 0)} %</span>` : ""}</div>
       <div class="tc tdur">${trip.duration_min != null ? esc(this._dur(trip.duration_min)) : "—"}</div>
       <div class="tc ten">${trip.energy_kwh != null ? `${this._num(trip.energy_kwh, 1)}<small>kWh</small>` : "—"}</div>
       <div class="tc">${cons != null ? `<span class="cons" style="background:${consColor}">${this._num(cons, 1)}</span>` : "—"}</div>
@@ -1890,7 +2113,9 @@ class LeapmotorCard extends HTMLElement {
     }))}</span></div>`;
     if (!recent.length && !current) return `${head}<div class="empty">${esc(t("noTrips"))}</div>`;
     const cols = `<div class="trow head"><span>${esc(t("colTrip"))}</span><span>${esc(t("colDistance"))}</span><span class="tdur">${esc(t("colDuration"))}</span><span class="ten">${esc(t("colEnergy"))}</span><span>${esc(t("colConsumption"))}</span><span class="tsoc">${esc(t("colSoc"))}</span><span class="tspd">${esc(t("colSpeed"))}</span></div>`;
-    const rows = (current ? this._tripRow(current, true) : "") + recent.slice(0, 6).map((trip) => this._tripRow(trip)).join("");
+    const latest = { ...(recent[0] || {}), vs_usual_pct: a.vs_usual_pct ?? this._s("tripConsumption")?.attributes?.vs_usual_pct };
+    const rows = (current ? this._tripRow(current, true) : "")
+      + recent.slice(0, 6).map((trip, i) => this._tripRow(i === 0 ? latest : trip)).join("");
     const ma = this._s("monthDistance")?.attributes || {};
     const foot = month != null
       ? `<div class="tfoot">${esc(t("monthTrips", { d: `${this._num(month)} km`, n: ma.trips ?? 0, e: ma.energy_kwh != null ? `${this._num(ma.energy_kwh, 1)} kWh` : "— kWh" }))}</div>`
@@ -1909,6 +2134,24 @@ class LeapmotorCard extends HTMLElement {
     if (lock) {
       const locked = lock.state === "locked";
       add(locked ? "unlockCar" : "lockCar", { entity: this._ids.lock, domain: "lock", service: locked ? "unlock" : "lock", label: locked ? t("unlock") : t("lock"), icon: locked ? "lock" : "unlock", color: "#f6a823", sub: locked ? t("locked") : t("unlocked"), on: !locked, tile: true });
+    }
+    const ph = this._s("preheatBtn")?.attributes;
+    if (ph) {
+      const sub = this._tr("preheatSub", { t: this._num(ph.temperature ?? 22), f: ph.fan_speed ?? 7 })
+        + (ph.recirculate ? ` · ${this._tr("recircShort")}` : "");
+      add("cabinPreheat", { entity: this._ids.preheatBtn, domain: "button", service: "press", label: t("preheatCabin"), icon: "flame", color: "#fb7185", sub, tile: true });
+    }
+    const pc = this._s("precoolBtn")?.attributes;
+    if (pc) {
+      const sub = this._tr("preheatSub", { t: this._num(pc.temperature ?? 18), f: pc.fan_speed ?? 7 })
+        + (pc.recirculate ? ` · ${this._tr("recircShort")}` : "");
+      add("cabinPrecool", { entity: this._ids.precoolBtn, domain: "button", service: "press", label: t("precoolCabin"), icon: "snow", color: "#7dd3fc", sub, tile: true });
+    }
+    const pa = this._s("preconditionBtn")?.attributes;
+    if (pa) {
+      const outside = this._v("outdoor");
+      const sub = `${pa.mode === "cold" ? t("willCool") : t("willHeat")}${outside != null ? ` · ${this._num(outside, 1)} °C` : ""}`;
+      add("cabinAuto", { entity: this._ids.preconditionBtn, domain: "button", service: "press", label: t("autoCabin"), icon: "thermo", color: "#a78bfa", sub, tile: true });
     }
     const swDef = (key, k, label, ic, color, extra = "") => {
       const s = sw(k);
@@ -1932,13 +2175,21 @@ class LeapmotorCard extends HTMLElement {
     const shade = this._v("sunshadePos");
     if (shade != null && shade > 0) btn("sunshade", "sunshadeCloseBtn", t("closeSunshade"), "sunshade", "#94a3b8");
     else btn("sunshade", "sunshadeOpenBtn", t("openSunshade"), "sunshade", "#94a3b8");
+    if (this._chargeState().plugged) {
+      if (this._chargeState().charging) btn("charge", "stopChargeBtn", t("stopCharge"), "plug", "#f6a823");
+      else btn("charge", "startChargeBtn", t("startCharge"), "bolt", "#34d399");
+    }
+    swDef("sentry", "sentry", t("sentry"), "cctv", "#f472b6");
+    swDef("healthy", "healthyCharging", t("healthy"), "heart", "#34d399");
+    if (this._on("skylight")) btn("sunroof", "sunroofCloseBtn", t("closeRoof"), "roof", "#94a3b8");
+    else btn("sunroof", "sunroofOpenBtn", t("openRoof"), "roof", "#94a3b8");
     if (this._chargeState().plugged) btn("unlockCharger", "unlockCharger", t("unlockCharger"), "plug", "#34d399");
     btn("find", "findBtn", t("findCar"), "find", "#f472b6");
     return defs;
   }
 
   _controlsSig() {
-    return [this._sig(["lock", "climateSwitch", "preheat", "steeringHeat", "mirrorHeat", "chargeSchedule", "trunk", "sunshadePos", "isPlugged", "isCharging", "connection", "interior"]),
+    return [this._sig(["lock", "climateSwitch", "preheat", "steeringHeat", "mirrorHeat", "chargeSchedule", "trunk", "sunshadePos", "isPlugged", "isCharging", "connection", "interior", "sentry", "healthyCharging", "skylight", "preheatBtn", "precoolBtn", "preconditionBtn", "outdoor"]),
       this._sig(WINDOWS), JSON.stringify(this._armed), JSON.stringify(this._busy)].join("#");
   }
 
@@ -1961,7 +2212,7 @@ class LeapmotorCard extends HTMLElement {
   }
 
   _rerenderInteractive() {
-    for (const name of ["check", "controls", "hero"]) if (this._config.sections.includes(name)) this._renderSection(name);
+    for (const name of ["check", "controls", "hero", "maintenance"]) if (this._config.sections.includes(name)) this._renderSection(name);
   }
 
   _onClick(ev) {
@@ -2004,7 +2255,7 @@ class LeapmotorCard extends HTMLElement {
   }
 
   async _control(key) {
-    const def = this._controlDefs()[key];
+    const def = key.startsWith("mnt:") ? this._maintenanceDef(key) : this._controlDefs()[key];
     if (!def) return;
     if (this._config.confirm_actions && !this._isArmed(key)) {
       this._armed = { key, until: Date.now() + 4000 };
@@ -2021,8 +2272,8 @@ class LeapmotorCard extends HTMLElement {
     this._busy[key] = true;
     this._rerenderInteractive();
     try {
-      await this._hass.callService(def.domain, def.service, { entity_id: def.entity });
-      this._toast(this._tr("sent", { x: def.label }));
+      await this._hass.callService(def.domain, def.service, def.data || { entity_id: def.entity });
+      this._toast(def.data ? this._tr("logged", { x: def.label }) : this._tr("sent", { x: def.label }));
     } catch (err) {
       this._toast(this._tr("failed", { x: err?.message || String(err) }));
     }

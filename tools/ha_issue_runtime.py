@@ -334,6 +334,125 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
         await self.hass.async_block_till_done()
         self.assertEqual(float(state("last_trip_distance_km").state), 10.0)
 
+    async def test_stage_two_three_entities_services_and_payloads(self):
+        import copy
+
+        from custom_components.leapmotor.leap_api.remote import REMOTE_ACTION_SPECS
+
+        # Payloads ported from leapmotor-api must stay byte-identical.
+        expected = {
+            "sentry_mode_on": ("220", '{"value":"1"}'), "sentry_mode_off": ("220", '{"value":"0"}'),
+            "charging_start": ("193", '{"value":"start"}'), "charging_stop": ("193", '{"value":"stop"}'),
+            "healthy_charging_on": ("480", '{"value":"1"}'), "healthy_charging_off": ("480", '{"value":"0"}'),
+            "sunroof_open": ("300", '{"value":"open"}'), "sunroof_close": ("300", '{"value":"close"}'),
+        }
+        for action, (cmd_id, content) in expected.items():
+            self.assertEqual((REMOTE_ACTION_SPECS[action].cmd_id, REMOTE_ACTION_SPECS[action].cmd_content), (cmd_id, content))
+
+        self.hass.config.currency = "EUR"
+        entry = await self.load_entry(model="C10")
+        coordinator = self.hass.data["leapmotor"][entry.entry_id]
+        data = copy.deepcopy(self.client.fetch_data.return_value)
+        vehicle = data["vehicles"][VIN]
+        vehicle["status"]["odometer_km"] = 18450
+        vehicle["diagnostics"].update(sentinel_mode=False, healthy_charging_enabled=True, skylight_open=False)
+        self.client.fetch_data.return_value = data
+        await self.hass.config_entries.async_reload(entry.entry_id)
+        await self.hass.async_block_till_done()
+        coordinator = self.hass.data["leapmotor"][entry.entry_id]
+        registry = entity_registry.async_get(self.hass)
+
+        def entity(domain, suffix):
+            entity_id = registry.async_get_entity_id(domain, "leapmotor", f"{VIN}_{suffix}")
+            self.assertIsNotNone(entity_id, f"{domain}.{suffix}")
+            return entity_id
+
+        nxt = self.hass.states.get(entity("sensor", "next_maintenance"))
+        self.assertEqual(nxt.attributes["schedule"], "C10")
+        self.assertGreater(len(nxt.attributes["items"]), 10)
+        self.assertIn(self.hass.states.get(entity("binary_sensor", "maintenance_due")).state, ("on", "off"))
+        self.assertEqual(self.hass.states.get(entity("binary_sensor", "attention_needed")).state, "off")
+        self.assertEqual(self.hass.states.get(entity("sensor", "driving_cost_month")).attributes["unit_of_measurement"], "EUR")
+        entity("sensor", "energy_to_charge_limit_kwh")
+        entity("binary_sensor", "tire_pressure_warning")
+        entity("button", "sunroof_open")
+
+        # Logging a service moves its due point to now + interval.
+        await self.hass.services.async_call(
+            "leapmotor", "log_maintenance", {"service_type": "tire_rotation", "vin": VIN}, blocking=True
+        )
+        await self.hass.async_block_till_done()
+        items = {i["service_type"]: i for i in self.hass.states.get(entity("sensor", "next_maintenance")).attributes["items"]}
+        self.assertEqual(items["tire_rotation"]["baseline"], "logged")
+        self.assertEqual(items["tire_rotation"]["remaining_km"], 10000)
+        await self.hass.services.async_call(
+            "leapmotor", "reset_maintenance", {"service_type": "tire_rotation", "vin": VIN}, blocking=True
+        )
+        await self.hass.async_block_till_done()
+        items = {i["service_type"]: i for i in self.hass.states.get(entity("sensor", "next_maintenance")).attributes["items"]}
+        self.assertEqual(items["tire_rotation"]["baseline"], "assumed")
+
+        # Sentry switch and start-charging service send the ported payloads.
+        # Only login and certificate files are stubbed; action lookup and
+        # payload building run for real.
+        self.client.token = "synthetic-token"
+        self.client._ensure_account_cert_files = Mock()
+        self.client._remote_control_raw.reset_mock()
+        await self.hass.services.async_call(
+            "switch", "turn_on", {"entity_id": entity("switch", "sentry_mode")}, blocking=True
+        )
+        kwargs = self.client._remote_control_raw.call_args.kwargs
+        self.assertEqual((kwargs["cmd_id"], kwargs["cmd_content"]), ("220", '{"value":"1"}'))
+        coordinator._last_remote_results.clear()  # skip the remote-action cooldown
+        self.client._remote_control_raw.reset_mock()
+        await self.hass.services.async_call("leapmotor", "charging_start", {"vin": VIN}, blocking=True)
+        kwargs = self.client._remote_control_raw.call_args.kwargs
+        self.assertEqual((kwargs["cmd_id"], kwargs["cmd_content"]), ("193", '{"value":"start"}'))
+
+        # Cabin preheat: preset 22 °C, fan 7, recirculation only (cmd 170).
+        coordinator._last_remote_results.clear()
+        self.client._remote_control_raw.reset_mock()
+        preheat = entity("button", "preheat_cabin")
+        self.assertEqual(self.hass.states.get(preheat).attributes["fan_speed"], 7)
+        await self.hass.services.async_call("button", "press", {"entity_id": preheat}, blocking=True)
+        kwargs = self.client._remote_control_raw.call_args.kwargs
+        self.assertEqual(kwargs["cmd_id"], "170")
+        self.assertEqual(json.loads(kwargs["cmd_content"]), {
+            "circle": "in", "mode": "hot", "operate": "manual", "position": "all",
+            "temperature": "22", "windlevel": "7", "wshld": "1",
+        })
+        coordinator._last_remote_results.clear()
+        await self.hass.services.async_call(
+            "leapmotor", "preheat_cabin", {"vin": VIN, "temperature": 25}, blocking=True
+        )
+        self.assertEqual(json.loads(self.client._remote_control_raw.call_args.kwargs["cmd_content"])["temperature"], "25")
+
+        # Pre-cool: A/C, lowest temperature, full fan (cmd 170, mode cold).
+        coordinator._last_remote_results.clear()
+        await self.hass.services.async_call(
+            "button", "press", {"entity_id": entity("button", "precool_cabin")}, blocking=True
+        )
+        body = json.loads(self.client._remote_control_raw.call_args.kwargs["cmd_content"])
+        self.assertEqual((body["mode"], body["temperature"], body["windlevel"], body["circle"]), ("cold", "18", "7", "in"))
+
+        # Auto pre-condition follows the outside temperature.
+        for outside, mode in ((28.0, "cold"), (5.0, "hot")):
+            coordinator.data["vehicles"][VIN]["diagnostics"]["outdoor_temp_c"] = outside
+            coordinator._last_remote_results.clear()
+            await self.hass.services.async_call(
+                "button", "press", {"entity_id": entity("button", "precondition_cabin")}, blocking=True
+            )
+            body = json.loads(self.client._remote_control_raw.call_args.kwargs["cmd_content"])
+            self.assertEqual(body["mode"], mode, outside)
+
+        # New vehicles and the setup form default to the factory PIN 0000.
+        from custom_components.leapmotor import config_flow
+        def default_of(schema, key):
+            return next(k.default() for k in schema.schema if str(k) == key)
+        self.assertEqual(default_of(config_flow._vehicle_settings_schema({}), "operation_password"), "0000")
+        self.assertEqual(default_of(config_flow._vehicle_settings_schema({"operation_password": ""}), "operation_password"), "")
+        self.assertEqual(default_of(config_flow.STEP_USER_DATA_SCHEMA, "operation_password"), "0000")
+
 
 if __name__ == "__main__":
     unittest.main()

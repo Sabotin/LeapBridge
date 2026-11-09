@@ -169,6 +169,37 @@
     add("sensor.c10_charging_cost_this_month", "charging_cost_month", 18.4, u("EUR", { device_class: "monetary", sessions: 4, energy_kwh: 92.1, home_energy_kwh: 74.6, public_energy_kwh: 17.5 }));
     add("sensor.c10_charged_energy_this_month", "charged_energy_month_kwh", 92.1, u("kWh"));
     add("sensor.c10_battery_health", "battery_health_percent", 97.8, u("%", { capacity_kwh: 67.4, reference_kwh: 68.9, reference_source: "observed", samples: 21 }));
+    /* stage 2/3 and extras */
+    const mItem = (service_type, label, status, remaining_km, remaining_days, interval_km, interval_months, baseline = "assumed") =>
+      ({ service_type, label, status, remaining_km, remaining_days, interval_km, interval_months, baseline, priority: "routine", category: "x" });
+    const mItems = [
+      mItem("tire_rotation", "Tire rotation", "due_soon", 620, null, 10000, null),
+      mItem("cabin_filter_replace", "Cabin (A/C) filter — replacement", "due_soon", 1550, 41, 20000, 12, "logged"),
+      mItem("brake_fluid_inspect", "Brake fluid — inspection", "ok", 1550, 211, 20000, 12),
+      mItem("wiper_blades_replace", "Wiper blades — replacement", "ok", null, 248, null, 12),
+      mItem("brake_fluid_replace", "Brake fluid — replacement (DOT4)", "ok", 21550, 576, 40000, 24),
+      mItem("tire_replace", "Tires — replacement", "ok", 41550, 941, 60000, 36),
+    ];
+    add("sensor.c10_next_maintenance", "next_maintenance", mItems[0].label, { ...meta, ...mItems[0], overdue: 0, due_soon: 2, schedule: "C10", items: mItems });
+    add("binary_sensor.c10_maintenance_due", "maintenance_due", "on", { ...meta, device_class: "problem", overdue: 0, due_soon: 2 });
+    add("binary_sensor.c10_attention_needed", "attention_needed", attention ? "on" : "off", { ...meta, device_class: "problem", reasons: attention ? ["unlocked", "door_open", "tire_pressure"] : [] });
+    add("binary_sensor.c10_tire_pressure_warning", "tire_pressure_warning", attention ? "on" : "off", { ...meta, device_class: "problem", reasons: attention ? ["rear_left_low"] : [] });
+    add("sensor.c10_driving_cost_this_month", "driving_cost_month", 12.68, u("EUR", { device_class: "monetary", today: 2.6, last_trip: 1.38, avg_price_kwh: 0.2 }));
+    add("sensor.c10_driving_cost_per_100_km", "driving_cost_per_100km", 3.08, u("EUR/100 km"));
+    add("sensor.c10_parked_battery_drain", "parked_drain_kwh_day", 0.62, u("kWh/d", { pct_per_day: 0.9, hours_observed: 21.5 }));
+    add("sensor.c10_energy_to_charge_limit", "energy_to_charge_limit_kwh", charging ? 13.0 : 11.5,
+      u("kWh", { limit: 90, soc: soc, capacity_kwh: 69.9, low_tariff_now: false, cost_now: 3.25, cost_low_tariff: 1.56, saving: 1.69, next_low_tariff: iso(now + 4 * HOUR) }));
+    add("switch.c10_sentry_mode", "sentry_mode", "off", meta);
+    add("switch.c10_healthy_charging", "healthy_charging", "on", meta);
+    add("button.c10_start_charging", "start_charging", "unknown", meta);
+    add("button.c10_stop_charging", "stop_charging", "unknown", meta);
+    add("button.c10_preheat_cabin", "preheat_cabin", "unknown", { ...meta, mode: "hot", temperature: 22, fan_speed: 7, recirculate: true });
+    add("button.c10_precool_cabin", "precool_cabin", "unknown", { ...meta, mode: "cold", temperature: 18, fan_speed: 7, recirculate: true });
+    add("button.c10_precondition_cabin", "precondition_cabin", "unknown", { ...meta, mode: scene === "day" ? "cold" : "hot", temperature: scene === "day" ? 18 : 22, fan_speed: 7, recirculate: true });
+    S["sensor.c10_last_trip_consumption"].attributes = { ...S["sensor.c10_last_trip_consumption"].attributes,
+      similar_trips: 6, usual_consumption_kwh_100km: 20.4, vs_usual_pct: -6.9,
+      efficiency_by_temperature: [{ band: "below_0", trips: 4, consumption_kwh_100km: 21.6 }, { band: "0_10", trips: 19, consumption_kwh_100km: 18.4 },
+                                  { band: "10_20", trips: 31, consumption_kwh_100km: 15.1 }, { band: "above_20", trips: 12, consumption_kwh_100km: 14.2 }] };
     if (q.get("pic")) add("image.c10_vehicle_picture", "vehicle_picture", iso(now - DAY), { ...meta, entity_picture: q.get("pic") });
     S["sun.sun"] = { entity_id: "sun.sun", state: scene === "day" ? "above_horizon" : "below_horizon", attributes: {}, last_updated: iso(now) };
     S["zone.home"] = { entity_id: "zone.home", state: "0", attributes: { friendly_name: "Home" }, last_updated: iso(now) };

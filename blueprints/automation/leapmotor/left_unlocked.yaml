@@ -1,0 +1,52 @@
+blueprint:
+  name: Leapmotor — car left unlocked
+  description: >-
+    Notify when the car stays unlocked for a while, and optionally lock it
+    automatically. Locking needs the vehicle PIN in the integration settings.
+  domain: automation
+  source_url: https://github.com/sabotin/leapmotor/blob/main/blueprints/automation/leapmotor/left_unlocked.yaml
+  input:
+    lock_entity:
+      name: Car lock
+      selector:
+        entity:
+          filter:
+            - integration: leapmotor
+              domain: lock
+    delay:
+      name: Unlocked for
+      default: { minutes: 10 }
+      selector:
+        duration:
+    auto_lock:
+      name: Lock automatically
+      default: false
+      selector:
+        boolean:
+    notify_device:
+      name: Phone
+      selector:
+        device:
+          filter:
+            - integration: mobile_app
+mode: single
+trigger:
+  - platform: state
+    entity_id: !input lock_entity
+    to: unlocked
+    for: !input delay
+variables:
+  auto_lock: !input auto_lock
+action:
+  - domain: mobile_app
+    type: notify
+    device_id: !input notify_device
+    title: Car is unlocked
+    message: "{{ 'Locking it now.' if auto_lock else 'Your Leapmotor has been unlocked for a while.' }}"
+  - if:
+      - condition: template
+        value_template: "{{ auto_lock }}"
+    then:
+      - service: lock.lock
+        target:
+          entity_id: !input lock_entity

@@ -44,7 +44,7 @@ or pick just the parts you want with `sections` (see below).
 | --- | --- | --- |
 | `device_id` | first Leapmotor | Which vehicle to show when you have more than one. The visual editor offers a picker. |
 | `name` | `Leapmotor <model>` | Title shown in the hero. |
-| `sections` | all | Any of `hero`, `check`, `chart`, `week`, `charging`, `energy`, `trips`, `controls`. Order is fixed; the list picks what is shown. |
+| `sections` | all | Any of `hero`, `check`, `chart`, `week`, `charging`, `energy`, `trips`, `maintenance`, `insights`, `controls`. Order is fixed; the list picks what is shown. |
 | `scene` | `auto` | `auto` follows `sun.sun` (day sky / night sky), or force `night` / `day`. |
 | `language` | `auto` | `auto` follows your profile. Built in: `en`, `sl`, `de`. |
 | `confirm_actions` | `true` | Remote actions need a second tap within 4 seconds. |
@@ -84,8 +84,10 @@ confirm_actions: false
 | **Last 7 days** | Kilometres per day from the Leapmotor cloud, with energy and consumption per day. |
 | **Charging** | Arc from 0 to 100 % with the charge limit, power, current and voltage, finish time and remaining time. Below it: the last charging session (energy, home/public, cost) and this month's energy and cost. |
 | **Energy & tires** | Six-week average consumption on an efficiency scale, four tire pressures, battery health and last week's driving/climate/other split. |
+| **Maintenance** | The next six service items with status (OK / soon / overdue), km and days left, a progress bar and a **Done** button (tap twice) that logs the service. |
+| **Insights** | Driving cost this month and per 100 km, parked drain, last trip vs. your usual, tire status and consumption by outside temperature. |
 | **Trip log** | Recent drives with time, distance, duration, energy, consumption (colour-coded), battery used and average speed; a live row while driving; today's and this month's totals. |
-| **Remote control** | Climate, quick heat/cool, defrost, battery preheat, steering wheel and mirror heating, charge schedule, trunk, windows, sunshade, cable release and find car — only the ones your car supports. |
+| **Remote control** | Preheat cabin, pre-cool cabin and auto pre-condition (with your presets), climate, quick heat/cool, defrost, battery preheat, steering wheel and mirror heating, charge schedule, start/stop charging, sentry mode, healthy charging, trunk, windows, sunshade, sunroof, cable release and find car — only the ones your car supports. |
 
 Click any value to open Home Assistant's detail dialog for that entity.
 

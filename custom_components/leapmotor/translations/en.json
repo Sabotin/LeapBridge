@@ -11,7 +11,7 @@
           "app_key_file": "Upload app_key.pem (private key)",
           "app_cert_pem": "Paste app_cert.pem PEM (certificate)",
           "app_key_pem": "Paste app_key.pem PEM (private key)",
-          "operation_password": "Vehicle PIN (optional, for control)",
+          "operation_password": "Vehicle PIN (default 0000, needed for remote control)",
           "scan_interval": "Update interval in minutes",
           "eco_polling_enabled": "Enable eco polling when parked",
           "eco_scan_interval": "Eco update interval in minutes",
@@ -31,7 +31,7 @@
           "app_key_file": "Upload app_key.pem (private key)",
           "app_cert_pem": "Paste app_cert.pem PEM (certificate)",
           "app_key_pem": "Paste app_key.pem PEM (private key)",
-          "operation_password": "Vehicle PIN (optional, for control)",
+          "operation_password": "Vehicle PIN (default 0000, needed for remote control)",
           "scan_interval": "Update interval in minutes",
           "eco_polling_enabled": "Enable eco polling when parked",
           "eco_scan_interval": "Eco update interval in minutes",
@@ -39,12 +39,20 @@
           "abrp_token": "ABRP Generic token",
           "price_home_kwh": "Home charging price per kWh",
           "price_public_ac_kwh": "Public AC charging price per kWh",
-          "price_public_dc_kwh": "Public DC fast charging price per kWh"
+          "price_public_dc_kwh": "Public DC fast charging price per kWh",
+          "price_home_low_kwh": "Home low-tariff price per kWh",
+          "low_tariff_start": "Low tariff starts",
+          "low_tariff_end": "Low tariff ends",
+          "low_tariff_weekends": "Low tariff all day on weekends"
         },
         "data_description": {
           "price_home_kwh": "Used for sessions that start inside your Home zone. Leave 0 to skip cost tracking.",
           "price_public_ac_kwh": "Used for sessions away from home at AC power.",
-          "price_public_dc_kwh": "Used for sessions away from home on a DC fast charger."
+          "price_public_dc_kwh": "Used for sessions away from home on a DC fast charger.",
+          "price_home_low_kwh": "Optional. With a low-tariff price, home charging is split between the low and the normal home price by time. Leave 0 for a single price.",
+          "low_tariff_start": "For example 22:00.",
+          "low_tariff_end": "For example 06:00. Overnight windows are supported.",
+          "low_tariff_weekends": "Common for two-rate tariffs such as the Slovenian MT/VT."
         }
       },
       "certificates": {
@@ -63,7 +71,7 @@
         "data": {
           "username": "Username / email",
           "password": "Password",
-          "operation_password": "Vehicle PIN (optional, for control)",
+          "operation_password": "Vehicle PIN (default 0000, needed for remote control)",
           "scan_interval": "Update interval in minutes",
           "eco_polling_enabled": "Enable eco polling when parked",
           "eco_scan_interval": "Eco update interval in minutes",
@@ -126,26 +134,58 @@
           "title": "Configure vehicle",
           "description": "The PIN and ABRP token apply only to this vehicle.",
           "data": {
-            "operation_password": "Vehicle PIN (optional, for control)",
+            "operation_password": "Vehicle PIN (default 0000, needed for remote control)",
             "abrp_enabled": "Enable ABRP live data",
             "abrp_token": "ABRP Generic token",
-            "battery_reference_kwh": "Usable battery capacity (optional)"
+            "battery_reference_kwh": "Usable battery capacity (optional)",
+            "maintenance_severe_use": "Severe or city use maintenance schedule",
+            "preheat_temperature": "Preheat temperature",
+            "preheat_fan_speed": "Preheat fan level",
+            "preheat_recirculate": "Preheat with recirculation only",
+            "precool_temperature": "Pre-cool temperature",
+            "precool_fan_speed": "Pre-cool fan level",
+            "precool_recirculate": "Pre-cool with recirculation only",
+            "precondition_cool_above": "Auto: cool when it is warmer than"
           },
           "data_description": {
-            "battery_reference_kwh": "Usable capacity of the new battery in kWh, used as 100 % for battery health. Leave 0 to compare against the best capacity measured so far."
+            "battery_reference_kwh": "Usable capacity of the new battery in kWh, used as 100 % for battery health. Leave 0 to compare against the best capacity measured so far.",
+            "maintenance_severe_use": "Shorter intervals for frequent short trips, dusty or mountain roads, towing or stop-and-go traffic (C10 and T03).",
+            "preheat_temperature": "Temperature for the Preheat cabin button and service.",
+            "preheat_fan_speed": "1–7; 7 is maximum.",
+            "preheat_recirculate": "Heat cabin air only (no outside air) for a faster warm-up.",
+            "precool_temperature": "A/C target; 18 °C is the lowest.",
+            "precool_fan_speed": "1–7; 7 is maximum.",
+            "precool_recirculate": "Cool cabin air only for faster cooling.",
+            "precondition_cool_above": "The auto button cools at or above this outside temperature and heats below it."
           }
         },
         "reconfigure": {
           "title": "Configure {vehicle}",
           "description": "Change the PIN and ABRP token for this vehicle only.",
           "data": {
-            "operation_password": "Vehicle PIN (optional, for control)",
+            "operation_password": "Vehicle PIN (default 0000, needed for remote control)",
             "abrp_enabled": "Enable ABRP live data",
             "abrp_token": "ABRP Generic token",
-            "battery_reference_kwh": "Usable battery capacity (optional)"
+            "battery_reference_kwh": "Usable battery capacity (optional)",
+            "maintenance_severe_use": "Severe or city use maintenance schedule",
+            "preheat_temperature": "Preheat temperature",
+            "preheat_fan_speed": "Preheat fan level",
+            "preheat_recirculate": "Preheat with recirculation only",
+            "precool_temperature": "Pre-cool temperature",
+            "precool_fan_speed": "Pre-cool fan level",
+            "precool_recirculate": "Pre-cool with recirculation only",
+            "precondition_cool_above": "Auto: cool when it is warmer than"
           },
           "data_description": {
-            "battery_reference_kwh": "Usable capacity of the new battery in kWh, used as 100 % for battery health. Leave 0 to compare against the best capacity measured so far."
+            "battery_reference_kwh": "Usable capacity of the new battery in kWh, used as 100 % for battery health. Leave 0 to compare against the best capacity measured so far.",
+            "maintenance_severe_use": "Shorter intervals for frequent short trips, dusty or mountain roads, towing or stop-and-go traffic (C10 and T03).",
+            "preheat_temperature": "Temperature for the Preheat cabin button and service.",
+            "preheat_fan_speed": "1–7; 7 is maximum.",
+            "preheat_recirculate": "Heat cabin air only (no outside air) for a faster warm-up.",
+            "precool_temperature": "A/C target; 18 °C is the lowest.",
+            "precool_fan_speed": "1–7; 7 is maximum.",
+            "precool_recirculate": "Cool cabin air only for faster cooling.",
+            "precondition_cool_above": "The auto button cools at or above this outside temperature and heats below it."
           }
         }
       },
@@ -437,6 +477,21 @@
       },
       "battery_health_percent": {
         "name": "Battery health"
+      },
+      "next_maintenance": {
+        "name": "Next maintenance"
+      },
+      "driving_cost_month": {
+        "name": "Driving cost this month"
+      },
+      "driving_cost_per_100km": {
+        "name": "Driving cost per 100 km"
+      },
+      "parked_drain_kwh_day": {
+        "name": "Parked battery drain"
+      },
+      "energy_to_charge_limit_kwh": {
+        "name": "Energy to charge limit"
       }
     },
     "binary_sensor": {
@@ -568,6 +623,15 @@
       },
       "is_driving": {
         "name": "Driving"
+      },
+      "attention_needed": {
+        "name": "Attention needed"
+      },
+      "tire_pressure_warning": {
+        "name": "Tire pressure warning"
+      },
+      "maintenance_due": {
+        "name": "Maintenance due"
       }
     },
     "image": {
@@ -620,6 +684,27 @@
       },
       "ac_off": {
         "name": "Climate off"
+      },
+      "start_charging": {
+        "name": "Start charging"
+      },
+      "stop_charging": {
+        "name": "Stop charging"
+      },
+      "open_sunroof": {
+        "name": "Open sunroof"
+      },
+      "close_sunroof": {
+        "name": "Close sunroof"
+      },
+      "preheat_cabin": {
+        "name": "Preheat cabin"
+      },
+      "precool_cabin": {
+        "name": "Pre-cool cabin"
+      },
+      "precondition_cabin": {
+        "name": "Pre-condition cabin (auto)"
       }
     },
     "lock": {
@@ -664,6 +749,12 @@
       },
       "rearview_mirror_heat": {
         "name": "Mirror heating"
+      },
+      "sentry_mode": {
+        "name": "Sentry mode"
+      },
+      "healthy_charging": {
+        "name": "Healthy charging"
       }
     }
   },
@@ -677,7 +768,7 @@
           "app_key_file": "Upload app_key.pem (private key)",
           "app_cert_pem": "Paste app_cert.pem PEM (certificate)",
           "app_key_pem": "Paste app_key.pem PEM (private key)",
-          "operation_password": "Vehicle PIN (optional, for control)",
+          "operation_password": "Vehicle PIN (default 0000, needed for remote control)",
           "scan_interval": "Update interval in minutes",
           "eco_polling_enabled": "Enable eco polling when parked",
           "eco_scan_interval": "Eco update interval in minutes",
@@ -685,14 +776,22 @@
           "abrp_token": "ABRP Generic token",
           "price_home_kwh": "Home charging price per kWh",
           "price_public_ac_kwh": "Public AC charging price per kWh",
-          "price_public_dc_kwh": "Public DC fast charging price per kWh"
+          "price_public_dc_kwh": "Public DC fast charging price per kWh",
+          "price_home_low_kwh": "Home low-tariff price per kWh",
+          "low_tariff_start": "Low tariff starts",
+          "low_tariff_end": "Low tariff ends",
+          "low_tariff_weekends": "Low tariff all day on weekends"
         },
         "data_description": {
           "eco_polling_enabled": "Use the slower eco interval only while every vehicle is clearly locked, parked, and unplugged.",
           "eco_scan_interval": "Polling interval used in eco mode. It is automatically clamped to at least the normal update interval.",
           "price_home_kwh": "Used for sessions that start inside your Home zone. Leave 0 to skip cost tracking.",
           "price_public_ac_kwh": "Used for sessions away from home at AC power.",
-          "price_public_dc_kwh": "Used for sessions away from home on a DC fast charger."
+          "price_public_dc_kwh": "Used for sessions away from home on a DC fast charger.",
+          "price_home_low_kwh": "Optional. With a low-tariff price, home charging is split between the low and the normal home price by time. Leave 0 for a single price.",
+          "low_tariff_start": "For example 22:00.",
+          "low_tariff_end": "For example 06:00. Overnight windows are supported.",
+          "low_tariff_weekends": "Common for two-rate tariffs such as the Slovenian MT/VT."
         }
       }
     },
@@ -732,6 +831,144 @@
         "vin": {
           "name": "VIN",
           "description": "Vehicle identification number. Required when multiple vehicles are configured."
+        },
+        "entity_id": {
+          "name": "Entity ID",
+          "description": "Optional Leapmotor entity to resolve the target vehicle."
+        }
+      }
+    },
+    "log_maintenance": {
+      "name": "Log maintenance",
+      "description": "Record a completed service. It becomes the new starting point for that item's next due date and distance.",
+      "fields": {
+        "service_type": {
+          "name": "Service",
+          "description": "Service id from the Next maintenance sensor's items, e.g. tire_rotation."
+        },
+        "odometer_km": {
+          "name": "Odometer",
+          "description": "Odometer reading when the service was done. Defaults to the current reading."
+        },
+        "date": {
+          "name": "Date",
+          "description": "Date of the service. Defaults to today."
+        },
+        "vin": {
+          "name": "VIN",
+          "description": "Target VIN. Required when multiple vehicles are configured."
+        },
+        "entity_id": {
+          "name": "Entity ID",
+          "description": "Optional Leapmotor entity to resolve the target vehicle."
+        }
+      }
+    },
+    "reset_maintenance": {
+      "name": "Reset maintenance entry",
+      "description": "Forget a logged service so the item falls back to the on-schedule assumption.",
+      "fields": {
+        "service_type": {
+          "name": "Service",
+          "description": "Service id to reset."
+        },
+        "vin": {
+          "name": "VIN",
+          "description": "Target VIN. Required when multiple vehicles are configured."
+        },
+        "entity_id": {
+          "name": "Entity ID",
+          "description": "Optional Leapmotor entity to resolve the target vehicle."
+        }
+      }
+    },
+    "charging_start": {
+      "name": "Start charging",
+      "description": "Start charging while plugged in. Requires the vehicle PIN."
+    },
+    "charging_stop": {
+      "name": "Stop charging",
+      "description": "Stop charging while plugged in. Requires the vehicle PIN."
+    },
+    "sunroof_open": {
+      "name": "Open sunroof",
+      "description": "Open the sunroof. Requires the vehicle PIN."
+    },
+    "sunroof_close": {
+      "name": "Close sunroof",
+      "description": "Close the sunroof. Requires the vehicle PIN."
+    },
+    "preheat_cabin": {
+      "name": "Preheat cabin",
+      "description": "Heat the cabin with the vehicle's preheat preset (Settings → vehicle). Fields override the preset for this call. Requires the vehicle PIN.",
+      "fields": {
+        "temperature": {
+          "name": "Temperature",
+          "description": "18–32 °C."
+        },
+        "fan_speed": {
+          "name": "Fan level",
+          "description": "1–7."
+        },
+        "recirculate": {
+          "name": "Recirculation",
+          "description": "Cabin air only."
+        },
+        "vin": {
+          "name": "VIN",
+          "description": "Target VIN. Required when multiple vehicles are configured."
+        },
+        "entity_id": {
+          "name": "Entity ID",
+          "description": "Optional Leapmotor entity to resolve the target vehicle."
+        }
+      }
+    },
+    "precool_cabin": {
+      "name": "Pre-cool cabin",
+      "description": "Cool the cabin with A/C using the vehicle's pre-cool preset. Fields override the preset for this call. Requires the vehicle PIN.",
+      "fields": {
+        "temperature": {
+          "name": "Temperature",
+          "description": "18–32 °C."
+        },
+        "fan_speed": {
+          "name": "Fan level",
+          "description": "1–7."
+        },
+        "recirculate": {
+          "name": "Recirculation",
+          "description": "Cabin air only."
+        },
+        "vin": {
+          "name": "VIN",
+          "description": "Target VIN. Required when multiple vehicles are configured."
+        },
+        "entity_id": {
+          "name": "Entity ID",
+          "description": "Optional Leapmotor entity to resolve the target vehicle."
+        }
+      }
+    },
+    "precondition_cabin": {
+      "name": "Pre-condition cabin (auto)",
+      "description": "Pre-cool when it is warm outside, otherwise preheat. Fields override the chosen preset. Requires the vehicle PIN.",
+      "fields": {
+        "temperature": {
+          "name": "Temperature",
+          "description": "18–32 °C."
+        },
+        "fan_speed": {
+          "name": "Fan level",
+          "description": "1–7."
+        },
+        "recirculate": {
+          "name": "Recirculation",
+          "description": "Cabin air only."
+        },
+        "vin": {
+          "name": "VIN",
+          "description": "Target VIN. Required when multiple vehicles are configured."
         },
         "entity_id": {
           "name": "Entity ID",

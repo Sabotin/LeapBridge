@@ -1,0 +1,45 @@
+blueprint:
+  name: Leapmotor — attention, tires and maintenance alerts
+  description: >-
+    Notify when the car needs attention (unlocked while parked, door, window,
+    trunk or sunroof open), when a tire looks low, uneven or slowly leaking,
+    or when maintenance becomes due.
+  domain: automation
+  source_url: https://github.com/sabotin/leapmotor/blob/main/blueprints/automation/leapmotor/attention_alert.yaml
+  input:
+    problem_sensors:
+      name: Problem sensors
+      description: Attention needed, Tire pressure warning and Maintenance due.
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - integration: leapmotor
+              domain: binary_sensor
+              device_class: problem
+    delay:
+      name: Only after
+      default: { minutes: 5 }
+      selector:
+        duration:
+    notify_device:
+      name: Phone
+      selector:
+        device:
+          filter:
+            - integration: mobile_app
+mode: queued
+trigger:
+  - platform: state
+    entity_id: !input problem_sensors
+    to: "on"
+    for: !input delay
+action:
+  - domain: mobile_app
+    type: notify
+    device_id: !input notify_device
+    title: "{{ state_attr(trigger.entity_id, 'friendly_name') }}"
+    message: >-
+      {% set reasons = state_attr(trigger.entity_id, 'reasons') %}
+      {% set nxt = state_attr(trigger.entity_id, 'next') %}
+      {% if reasons %}{{ reasons | join(', ') | replace('_', ' ') }}{% elif nxt %}Next: {{ nxt }}{% else %}Check your Leapmotor.{% endif %}

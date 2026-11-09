@@ -11,7 +11,11 @@ from ..const import (
     REMOTE_CTL_AC_SWITCH,
     REMOTE_CTL_BATTERY_PREHEAT,
     REMOTE_CTL_BATTERY_PREHEAT_OFF,
+    REMOTE_CTL_CHARGE_START,
+    REMOTE_CTL_CHARGE_STOP,
     REMOTE_CTL_FIND_CAR,
+    REMOTE_CTL_HEALTHY_CHARGING_OFF,
+    REMOTE_CTL_HEALTHY_CHARGING_ON,
     REMOTE_CTL_LOCK,
     REMOTE_CTL_QUICK_COOL,
     REMOTE_CTL_QUICK_HEAT,
@@ -19,8 +23,12 @@ from ..const import (
     REMOTE_CTL_REARVIEW_MIRROR_HEAT_ON,
     REMOTE_CTL_SEAT_HEAT,
     REMOTE_CTL_SEAT_VENTILATION,
+    REMOTE_CTL_SENTRY_MODE_OFF,
+    REMOTE_CTL_SENTRY_MODE_ON,
     REMOTE_CTL_STEERING_WHEEL_HEAT_OFF,
     REMOTE_CTL_STEERING_WHEEL_HEAT_ON,
+    REMOTE_CTL_SUNROOF_CLOSE,
+    REMOTE_CTL_SUNROOF_OPEN,
     REMOTE_CTL_SUNSHADE,
     REMOTE_CTL_SUNSHADE_CLOSE,
     REMOTE_CTL_SUNSHADE_OPEN,
@@ -57,6 +65,16 @@ def build_seat_comfort_payload(position: str, level: int) -> str:
 
 
 REMOTE_ACTION_SPECS: dict[str, RemoteActionSpec] = {
+    # Ported from leapmotor-api 0.6.0 (AGPL-3.0, used by LeapConnect). Shared
+    # actions (lock 110, trunk 130, preheat 160) are byte-identical there.
+    REMOTE_CTL_SENTRY_MODE_ON: RemoteActionSpec(cmd_id="220", cmd_content='{"value":"1"}'),
+    REMOTE_CTL_SENTRY_MODE_OFF: RemoteActionSpec(cmd_id="220", cmd_content='{"value":"0"}'),
+    REMOTE_CTL_CHARGE_START: RemoteActionSpec(cmd_id="193", cmd_content='{"value":"start"}'),
+    REMOTE_CTL_CHARGE_STOP: RemoteActionSpec(cmd_id="193", cmd_content='{"value":"stop"}'),
+    REMOTE_CTL_HEALTHY_CHARGING_ON: RemoteActionSpec(cmd_id="480", cmd_content='{"value":"1"}'),
+    REMOTE_CTL_HEALTHY_CHARGING_OFF: RemoteActionSpec(cmd_id="480", cmd_content='{"value":"0"}'),
+    REMOTE_CTL_SUNROOF_OPEN: RemoteActionSpec(cmd_id="300", cmd_content='{"value":"open"}'),
+    REMOTE_CTL_SUNROOF_CLOSE: RemoteActionSpec(cmd_id="300", cmd_content='{"value":"close"}'),
     REMOTE_CTL_UNLOCK: RemoteActionSpec(cmd_id="110", cmd_content='{"value":"unlock"}'),
     REMOTE_CTL_LOCK: RemoteActionSpec(cmd_id="110", cmd_content='{"value":"lock"}'),
     REMOTE_CTL_UNLOCK_CHARGER: RemoteActionSpec(

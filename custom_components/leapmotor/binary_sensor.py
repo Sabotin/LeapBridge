@@ -61,6 +61,23 @@ class LeapmotorBinarySensorEntityDescription(BinarySensorEntityDescription):
     """Describes a Leapmotor binary sensor."""
 
     value_fn: Callable[[dict[str, Any]], Any]
+    extra_attrs_fn: Callable[[dict[str, Any]], dict[str, Any]] | None = None
+
+
+def _an(data: dict[str, Any], *path: str) -> Any:
+    current: Any = data.get("analytics") or {}
+    for part in path:
+        if not isinstance(current, dict):
+            return None
+        current = current.get(part)
+    return current
+
+
+def _maintenance_due(data: dict[str, Any]) -> bool | None:
+    maintenance = _an(data, "maintenance")
+    if not isinstance(maintenance, dict):
+        return None
+    return bool(maintenance.get("overdue") or maintenance.get("due_soon"))
 
 
 BINARY_SENSOR_DESCRIPTIONS: tuple[LeapmotorBinarySensorEntityDescription, ...] = (
@@ -355,6 +372,35 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[LeapmotorBinarySensorEntityDescription, ...] =
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data["diagnostics"].get("door_control_allowed"),
     ),
+    # Not in LeapConnect: summaries for automations.
+    LeapmotorBinarySensorEntityDescription(
+        key="attention_needed",
+        translation_key="attention_needed",
+        device_class=BinarySensorDeviceClass.PROBLEM,
+        icon="mdi:car-info",
+        value_fn=lambda data: _an(data, "attention", "needed"),
+        extra_attrs_fn=lambda data: {"reasons": _an(data, "attention", "reasons") or []},
+    ),
+    LeapmotorBinarySensorEntityDescription(
+        key="tire_pressure_warning",
+        translation_key="tire_pressure_warning",
+        device_class=BinarySensorDeviceClass.PROBLEM,
+        icon="mdi:car-tire-alert",
+        value_fn=lambda data: _an(data, "tires", "warning"),
+        extra_attrs_fn=lambda data: dict(_an(data, "tires") or {}),
+    ),
+    LeapmotorBinarySensorEntityDescription(
+        key="maintenance_due",
+        translation_key="maintenance_due",
+        device_class=BinarySensorDeviceClass.PROBLEM,
+        icon="mdi:wrench-clock",
+        value_fn=_maintenance_due,
+        extra_attrs_fn=lambda data: {
+            "overdue": _an(data, "maintenance", "overdue"),
+            "due_soon": _an(data, "maintenance", "due_soon"),
+            "next": (_an(data, "maintenance", "next") or {}).get("label"),
+        },
+    ),
 )
 
 
@@ -425,12 +471,15 @@ class LeapmotorBinarySensor(
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return useful vehicle metadata."""
         vehicle = self.vehicle_data["vehicle"]
-        return {
+        attributes = {
             "vin": self.vin,
             "car_id": vehicle.get("car_id"),
             "car_type": vehicle.get("car_type"),
             "is_shared": vehicle.get("is_shared"),
         }
+        if self.entity_description.extra_attrs_fn is not None:
+            attributes.update(self.entity_description.extra_attrs_fn(self.vehicle_data))
+        return attributes
 
 
 def _suggested_object_id(vehicle: dict[str, Any], slug: str) -> str:

@@ -68,6 +68,38 @@ REARVIEW_MIRROR_HEAT_OFF_ACTION = RemoteActionSpec(
     service_name="rearview_mirror_heat_off",
 )
 
+SENTRY_ON_ACTION = RemoteActionSpec(
+    action="sentry_mode_on",
+    translation_key="sentry_mode",
+    icon="mdi:cctv",
+    method_name="sentry_mode_on",
+    service_name="sentry_mode_on",
+)
+
+SENTRY_OFF_ACTION = RemoteActionSpec(
+    action="sentry_mode_off",
+    translation_key="sentry_mode",
+    icon="mdi:cctv",
+    method_name="sentry_mode_off",
+    service_name="sentry_mode_off",
+)
+
+HEALTHY_CHARGING_ON_ACTION = RemoteActionSpec(
+    action="healthy_charging_on",
+    translation_key="healthy_charging",
+    icon="mdi:battery-heart-outline",
+    method_name="healthy_charging_on",
+    service_name="healthy_charging_on",
+)
+
+HEALTHY_CHARGING_OFF_ACTION = RemoteActionSpec(
+    action="healthy_charging_off",
+    translation_key="healthy_charging",
+    icon="mdi:battery-heart-outline",
+    method_name="healthy_charging_off",
+    service_name="healthy_charging_off",
+)
+
 CLIMATE_ON_ACTION = RemoteActionSpec(
     action=REMOTE_CTL_AC_ON,
     translation_key="climate_control",
@@ -139,6 +171,28 @@ async def async_setup_entry(
                 state_keys=("left_mirror_heating", "right_mirror_heating"),
                 on_action=REARVIEW_MIRROR_HEAT_ON_ACTION,
                 off_action=REARVIEW_MIRROR_HEAT_OFF_ACTION,
+            ))
+        if diagnostics.get("sentinel_mode") is not None:
+            entities.append(LeapmotorRemoteStateSwitch(
+                coordinator,
+                vin,
+                unique_suffix="sentry_mode",
+                translation_key="sentry_mode",
+                icon="mdi:cctv",
+                state_keys=("sentinel_mode",),
+                on_action=SENTRY_ON_ACTION,
+                off_action=SENTRY_OFF_ACTION,
+            ))
+        if diagnostics.get("healthy_charging_enabled") is not None:
+            entities.append(LeapmotorRemoteStateSwitch(
+                coordinator,
+                vin,
+                unique_suffix="healthy_charging",
+                translation_key="healthy_charging",
+                icon="mdi:battery-heart-outline",
+                state_keys=("healthy_charging_enabled",),
+                on_action=HEALTHY_CHARGING_ON_ACTION,
+                off_action=HEALTHY_CHARGING_OFF_ACTION,
             ))
         async_add_entities(
             entities,
