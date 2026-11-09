@@ -24,6 +24,10 @@
   <a href="#-troubleshooting">Troubleshooting</a>
 </p>
 
+<p align="center">
+  🇸🇮 <b><a href="docs/navodila-sl.md">Navodila v slovenščini</a></b>
+</p>
+
 <br>
 
 ## ✦ The dashboard

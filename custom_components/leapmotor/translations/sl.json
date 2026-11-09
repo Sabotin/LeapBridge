@@ -90,7 +90,10 @@
       "no_vehicle": "Ta račun nima povezanega vozila.",
       "unknown": "Nepričakovana napaka.",
       "missing_app_cert": "Manjka certifikat ali zasebni ključ aplikacije. Prilepi obe vrednosti PEM ali shrani app_cert.pem in app_key.pem v /config/leapmotor.",
-      "certificate_import_error": "Uvoz certifikata ni uspel. Preveri certifikat PEM in zasebni ključ."
+      "certificate_import_error": "Uvoz certifikata ni uspel. Preveri certifikat PEM in zasebni ključ.",
+      "app_cert_invalid": "Datoteka certifikata ni veljaven certifikat PEM. Preveri, da app_cert.pem vsebuje celoten blok BEGIN/END CERTIFICATE.",
+      "app_key_invalid": "Datoteka zasebnega ključa ni veljaven zasebni ključ PEM. Preveri, da app_key.pem vsebuje celoten blok BEGIN/END PRIVATE KEY in ni šifriran.",
+      "certificate_key_mismatch": "Certifikat in zasebni ključ se ne ujemata. Poskrbi, da sta app_cert.pem in app_key.pem ujemajoč se par iz istega vira."
     },
     "abort": {
       "already_configured": "Ta račun je že nastavljen.",

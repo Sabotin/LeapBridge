@@ -90,7 +90,10 @@
       "no_vehicle": "This account has no linked vehicle.",
       "unknown": "Unexpected error.",
       "missing_app_cert": "Missing app certificate/private key. Paste both PEM values or place app_cert.pem and app_key.pem in /config/leapmotor.",
-      "certificate_import_error": "Certificate import failed. Check the PEM certificate and private key."
+      "certificate_import_error": "Certificate import failed. Check the PEM certificate and private key.",
+      "app_cert_invalid": "The certificate file is not a valid PEM certificate. Check that app_cert.pem contains the full BEGIN/END CERTIFICATE block.",
+      "app_key_invalid": "The private key file is not a valid PEM private key. Check that app_key.pem contains the full BEGIN/END PRIVATE KEY block and is not encrypted.",
+      "certificate_key_mismatch": "The certificate and private key do not match. Make sure app_cert.pem and app_key.pem are the matching pair from the same source."
     },
     "abort": {
       "already_configured": "This account is already configured.",
