@@ -21,6 +21,11 @@
 - **More readable:** small text one size up and more contrast for secondary
   text on every page; section headings without letter-spaced capitals.
 - The map-less trip drawing keeps its stars only in Classic.
+- **Docs:** shorter Slovenian README; the English README now follows it
+  section by section, with English screenshots of every page and the remote
+  control. The full English details (manual install, all settings, services,
+  behaviour notes, debugging) moved to `docs/guide-en.md`, next to the
+  Slovenian `docs/navodila-sl.md`.
 
 ## Unreleased — card pages, trips page, readable panels
 
