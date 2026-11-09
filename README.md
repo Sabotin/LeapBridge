@@ -91,7 +91,7 @@ Kartico lahko dodaš tudi na svojo nadzorno ploščo: **Dodaj kartico → Leapmo
 type: custom:leapmotor-card
 ```
 
-Kartica je videti kot armaturna plošča avta (možnost `look`: `cluster` za merilnike ali `console` za videz aplikacije), ponoči je zaslon temnejši, med polnjenjem pa se ob avtu prižge polnilnica. Če kartice ne najde, enkrat osveži brskalnik (**Ctrl + F5**).
+Kartica ima tri teme: klasično (nočno ali dnevno nebo), voznikov zaslon (merilniki ob avtu) in aplikacijo. Temo, dan ali noč in jezik si vsak uporabnik izbere v zavihku **Nastavitve** (zobnik); izbira velja za tega uporabnika na vseh napravah. Med polnjenjem se ob avtu prižge polnilnica. Če kartice ne najde, enkrat osveži brskalnik (**Ctrl + F5**).
 
 <br>
 

@@ -1,6 +1,6 @@
 /*!
  * Leapmotor Card
- * A car-style dashboard for the Leapmotor Home Assistant integration.
+ * Dashboard for the Leapmotor Home Assistant integration, in three looks.
  *
  * Part of https://github.com/sabotin/leapmotor (MIT License).
  * Bundled fonts: Outfit and JetBrains Mono, SIL Open Font License 1.1.
@@ -103,6 +103,12 @@ const STRINGS = {
     todayL: "Today", monthL: "This month", tripsN: "{n}×", tiresTitle: "Tires", tireHint: "low below {x} bar", tiresOkShort: "Tires OK",
     FLl: "Front left", FRl: "Front right", RLl: "Rear left", RRl: "Rear right", batteryEff: "Battery & efficiency",
     efficiency: "Consumption", maxL: "max {x}", startL: "Start", endL: "End",
+    lookL: "Theme", look_classic: "Classic", look_cluster: "Driver display", look_console: "Car app",
+    look_classic_d: "Night or day sky with your car", look_cluster_d: "Gauges around the car, warning lights", look_console_d: "Range, battery bar, round buttons",
+    pageSettings: "Settings", setLanguage: "Language", langAuto: "Auto", langAutoSub: "from your profile",
+    setScene: "Day or night", sceneAuto: "Auto", sceneDay: "Day", sceneNight: "Night", sceneHint: "Auto follows sunrise and sunset.",
+    setSavedUser: "Saved for your Home Assistant user, on every device. The card configuration sets the defaults.",
+    setSavedLocal: "Saved in this browser. The card configuration sets the defaults.", setReset: "Use card defaults",
   },
   sl: {
     now: "Zdaj", justNow: "pravkar", updated: "posodobljeno {x}",
@@ -165,6 +171,12 @@ const STRINGS = {
     todayL: "Danes", monthL: "Ta mesec", tripsN: "{n}×", tiresTitle: "Pnevmatike", tireHint: "nizko pod {x} bar", tiresOkShort: "Pnevmatike OK",
     FLl: "Spredaj levo", FRl: "Spredaj desno", RLl: "Zadaj levo", RRl: "Zadaj desno", batteryEff: "Baterija in poraba",
     efficiency: "Poraba", maxL: "največ {x}", startL: "Začetek", endL: "Konec",
+    lookL: "Tema", look_classic: "Klasično", look_cluster: "Voznikov zaslon", look_console: "Aplikacija",
+    look_classic_d: "Nočno ali dnevno nebo z avtom", look_cluster_d: "Merilniki ob avtu, opozorilne lučke", look_console_d: "Doseg, vrstica baterije, okrogli gumbi",
+    pageSettings: "Nastavitve", setLanguage: "Jezik", langAuto: "Samodejno", langAutoSub: "iz profila",
+    setScene: "Dan ali noč", sceneAuto: "Samodejno", sceneDay: "Dan", sceneNight: "Noč", sceneHint: "Samodejno sledi sončnemu vzhodu in zahodu.",
+    setSavedUser: "Shranjeno za tvojega uporabnika Home Assistanta, na vseh napravah. Privzete vrednosti so v nastavitvah kartice.",
+    setSavedLocal: "Shranjeno v tem brskalniku. Privzete vrednosti so v nastavitvah kartice.", setReset: "Uporabi privzete",
   },
   de: {
     now: "Jetzt", justNow: "gerade eben", updated: "aktualisiert {x}",
@@ -227,6 +239,12 @@ const STRINGS = {
     todayL: "Heute", monthL: "Diesen Monat", tripsN: "{n}×", tiresTitle: "Reifen", tireHint: "niedrig unter {x} bar", tiresOkShort: "Reifen OK",
     FLl: "Vorne links", FRl: "Vorne rechts", RLl: "Hinten links", RRl: "Hinten rechts", batteryEff: "Akku & Effizienz",
     efficiency: "Verbrauch", maxL: "max. {x}", startL: "Start", endL: "Ende",
+    lookL: "Design", look_classic: "Klassisch", look_cluster: "Fahrerdisplay", look_console: "Auto-App",
+    look_classic_d: "Nacht- oder Taghimmel mit deinem Auto", look_cluster_d: "Rundinstrumente am Auto, Warnleuchten", look_console_d: "Reichweite, Akkubalken, runde Tasten",
+    pageSettings: "Einstellungen", setLanguage: "Sprache", langAuto: "Automatisch", langAutoSub: "aus deinem Profil",
+    setScene: "Tag oder Nacht", sceneAuto: "Automatisch", sceneDay: "Tag", sceneNight: "Nacht", sceneHint: "Automatisch folgt Sonnenauf- und -untergang.",
+    setSavedUser: "Für deinen Home-Assistant-Benutzer auf allen Geräten gespeichert. Die Kartenkonfiguration legt die Vorgaben fest.",
+    setSavedLocal: "In diesem Browser gespeichert. Die Kartenkonfiguration legt die Vorgaben fest.", setReset: "Vorgaben verwenden",
   },
 };
 
@@ -381,15 +399,29 @@ const PAGES = [
   { id: "vehicle", label: "pageVehicle", icon: "wrench", sections: ["maintenance", "tires", "insights"] },
 ];
 const ALL_SECTIONS = PAGES.flatMap((p) => p.sections);
-const PAGE_OF = Object.fromEntries(PAGES.flatMap((p) => p.sections.map((s) => [s, p.id])));
+/** Per-user theme and language; shown as the last tab, not one of the `sections`. */
+const SETTINGS_PAGE = { id: "settings", label: "pageSettings", icon: "gear", sections: ["settings"] };
+const PAGE_OF = Object.fromEntries([...PAGES, SETTINGS_PAGE].flatMap((p) => p.sections.map((s) => [s, p.id])));
+const LANGS = [["en", "English"], ["sl", "Slovenščina"], ["de", "Deutsch"]];
+const SCENES = ["auto", "day", "night"];
+/** Key of the per-user preferences in Home Assistant's frontend user data (and the browser fallback). */
+const PREFS_KEY = "leapmotor_card";
 const OK_C = "#34d399";
 const WARN_C = "#f6a823";
 const BAD_C = "#fb7185";
 const TRIPS_SHOWN = 8;
 const TIRE_LOW_BAR = 1.9;
 const STALE_MINUTES = 120;
-/** Hero designs: "cluster" (driver display with gauges) and "console" (car app / centre screen). */
-const LOOKS = ["cluster", "console"];
+/**
+ * Looks of the Overview car panel: "classic" (the night or day sky scene),
+ * "cluster" (driver display with gauges) and "console" (car app / centre screen).
+ */
+const LOOKS = ["classic", "cluster", "console"];
+const LOOK_LABELS = {
+  classic: "Classic (night or day sky)",
+  cluster: "Driver display (gauges around the car)",
+  console: "Car app (range, battery bar, round buttons)",
+};
 const GEARS = ["P", "R", "N", "D"];
 
 /* ------------------------------------------------------------------ */
@@ -437,6 +469,17 @@ const ICONS = {
   fuel: '<path d="M4.5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h13M4.5 10h10"/><path d="M14.5 8.5 18 11v6.5a1.5 1.5 0 0 0 3 0V8l-3-3"/>',
   sign: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/>',
 };
+
+ICONS.gear = (() => {
+  const pts = [];
+  for (let i = 0; i < 8; i++) {
+    const a = (i * Math.PI) / 4;
+    for (const [da, r] of [[-0.3, 7.2], [-0.2, 9.6], [0.2, 9.6], [0.3, 7.2]]) {
+      pts.push(`${(12 + r * Math.cos(a + da)).toFixed(2)} ${(12 + r * Math.sin(a + da)).toFixed(2)}`);
+    }
+  }
+  return `<path d="M${pts.join("L")}Z"/><circle cx="12" cy="12" r="3"/>`;
+})();
 
 const icon = (name, cls = "") =>
   `<svg class="ic ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ` +
@@ -557,7 +600,7 @@ function trackRuns(points, speeds, limit) {
 }
 
 /** Map-less route drawing: used when Home Assistant's map is not available. */
-function routeSvg(track, startLabel, endLabel, W = 640, H = 300) {
+function routeSvg(track, startLabel, endLabel, W = 640, H = 300, starry = false) {
   const PAD = 34;
   const pts = track.points;
   const midLat = pts.reduce((a, p) => a + p[1], 0) / pts.length;
@@ -569,6 +612,10 @@ function routeSvg(track, startLabel, endLabel, W = 640, H = 300) {
   const ox = (W - (maxX - minX) * scale) / 2, oy = (H - (maxY - minY) * scale) / 2;
   const xy = (lat, lon) => [f1(ox + (lon * kx - minX) * scale), f1(oy + (-lat - minY) * scale)];
   const line = (run) => run.pts.map(([la, lo], i) => `${i ? "L" : "M"}${xy(la, lo).join(" ")}`).join("");
+  const r = rng(Math.round(Math.abs(pts[0][1] * 1e4)));
+  const stars = starry
+    ? Array.from({ length: 34 }, () => `<circle cx="${f1(r() * W)}" cy="${f1(r() * H)}" r="${f1(0.4 + r())}" fill="#c7d2fe" opacity="${f1(0.15 + r() * 0.35)}"/>`).join("")
+    : "";
   const [sx, sy] = xy(pts[0][1], pts[0][2]);
   const [ex, ey] = xy(pts[pts.length - 1][1], pts[pts.length - 1][2]);
   return `<svg class="routesvg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(startLabel)} → ${esc(endLabel)}">
@@ -576,7 +623,7 @@ function routeSvg(track, startLabel, endLabel, W = 640, H = 300) {
       <pattern id="lm-grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="rgba(148,163,184,.1)"/></pattern>
       <filter id="lm-routeglow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     </defs>
-    <rect width="${W}" height="${H}" fill="url(#lm-grid)"/>
+    <rect width="${W}" height="${H}" fill="url(#lm-grid)"/>${stars}
     ${track.runs.map((run) => `<path d="${line(run)}" fill="none" stroke="${run.color}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#lm-routeglow)"/>`).join("")}
     <circle cx="${sx}" cy="${sy}" r="7" fill="${SPEED_SLOW}" stroke="#e9eef8" stroke-width="2"/>
     <circle cx="${ex}" cy="${ey}" r="8" fill="${SPEED_MID}" stroke="#e9eef8" stroke-width="2"/>
@@ -733,6 +780,43 @@ function gaugeSvg({ frac = 0, color = "#f6a823", mark = null, flow = false }) {
     `<path d="${arc(a0, a0 + sweep)}" class="gtrack"/>${ticks}${val}${mk}</svg>`;
 }
 
+/** Small picture of each theme for the settings page. */
+function lookThumb(look) {
+  const car = (x, y, s, fill) =>
+    `<g transform="translate(${x} ${y}) scale(${s})"><path d="M0 13 1.5 8Q3 5 9 4L15 1.6Q23 0 31 1.2Q36 2 39.5 5.6L44 7.4Q48 8.6 48 11.5V13Z" fill="${fill}"/>` +
+    `<circle cx="11" cy="13.5" r="3.6" fill="#05070b"/><circle cx="37" cy="13.5" r="3.6" fill="#05070b"/></g>`;
+  const arc = (cx, cy, r, f, c) => {
+    const p = (a) => `${f1(cx + r * Math.cos((a * Math.PI) / 180))} ${f1(cy + r * Math.sin((a * Math.PI) / 180))}`;
+    const end = 150 + 240 * f;
+    return `<path d="M${p(150)}A${r} ${r} 0 1 1 ${p(390)}" fill="none" stroke="rgba(148,163,184,.22)" stroke-width="3.5" stroke-linecap="round"/>` +
+      `<path d="M${p(150)}A${r} ${r} 0 ${end - 150 > 180 ? 1 : 0} 1 ${p(end)}" fill="none" stroke="${c}" stroke-width="3.5" stroke-linecap="round"/>`;
+  };
+  let body;
+  if (look === "classic") {
+    body = `<defs><linearGradient id="lm-th-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#070d24"/><stop offset="1" stop-color="#1b2a60"/></linearGradient></defs>` +
+      `<rect width="160" height="90" fill="url(#lm-th-sky)"/><circle cx="104" cy="0" r="12" fill="#e8ecf8"/>` +
+      [[20, 8], [58, 14], [140, 10], [128, 30], [76, 6], [150, 44]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r=".9" fill="#fff" opacity=".8"/>`).join("") +
+      `<path d="M0 62C40 52 80 56 120 54S150 50 160 52V90H0Z" fill="#121c43"/><path d="M0 74C50 68 110 70 160 68V90H0Z" fill="#0d1534"/>` +
+      `<rect x="10" y="20" width="34" height="18" rx="3" fill="#f1f4fa"/><rect x="47" y="20" width="7" height="7" rx="1.5" fill="#f6a823"/>` +
+      `<rect x="10" y="44" width="40" height="4" rx="2" fill="rgba(241,244,250,.55)"/>` + car(88, 52, 1.35, "#c9d1e0");
+  } else if (look === "cluster") {
+    body = `<rect width="160" height="90" fill="#0a0d14"/>` +
+      [0, 1, 2, 3, 4, 5].map((i) => `<circle cx="${62 + i * 7}" cy="9" r="2" fill="${i === 0 ? "#34d399" : i === 4 ? "#38bdf8" : "rgba(148,163,184,.35)"}"/>`).join("") +
+      arc(25, 44, 16, 0.72, "#f6a823") + arc(135, 44, 16, 0, "#38bdf8") +
+      `<text x="135" y="48" text-anchor="middle" font-size="12" font-weight="700" fill="#f1f4fa" font-family="sans-serif">P</text>` +
+      `<path d="M52 66H108" stroke="rgba(125,211,252,.4)" stroke-width=".8"/>` + car(57, 46, 0.95, "#c9d1e0") +
+      `<rect x="8" y="74" width="144" height="10" rx="3" fill="rgba(0,0,0,.45)" stroke="rgba(148,163,184,.25)" stroke-width=".6"/>`;
+  } else {
+    body = `<rect width="160" height="90" fill="#121b33"/><ellipse cx="112" cy="58" rx="44" ry="20" fill="rgba(165,190,255,.16)"/>` +
+      `<rect x="10" y="12" width="30" height="13" rx="2.5" fill="#f1f4fa"/><rect x="43" y="17" width="9" height="8" rx="2" fill="#f6a823"/>` +
+      Array.from({ length: 10 }, (_, i) => `<rect x="${10 + i * 5}" y="31" width="4" height="7" rx="1" fill="${i < 7 ? "#fbbf24" : "rgba(148,163,184,.3)"}"/>`).join("") +
+      `<rect x="10" y="44" width="20" height="6" rx="3" fill="rgba(255,255,255,.14)"/><rect x="33" y="44" width="22" height="6" rx="3" fill="rgba(52,211,153,.35)"/>` +
+      car(80, 40, 1.45, "#c9d1e0") +
+      [0, 1, 2, 3].map((i) => `<circle cx="${56 + i * 16}" cy="80" r="5" fill="rgba(255,255,255,.1)" stroke="rgba(148,163,184,.4)" stroke-width=".7"/>`).join("");
+  }
+  return `<svg class="thumb" viewBox="0 0 160 90" aria-hidden="true">${body}</svg>`;
+}
+
 /** Perspective floor under the car in the driver display. */
 function floorSvg() {
   const W = 600, H = 150, vx = 300, vy = -170;
@@ -829,49 +913,49 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:8px}
 .subh{font-size:14px;font-weight:650;color:var(--lm-soft);margin:20px 0 10px 2px}
 
-/* ---------- hero (shared frame) ---------- */
-.hero{padding:0;display:flex;min-height:0}
-.stage{position:absolute;inset:0;overflow:hidden;pointer-events:none}
-.hero-ui{position:relative;z-index:2;flex:1;display:grid;min-width:0;padding:18px 22px 20px;gap:14px 20px;align-items:center}
-.h-top{grid-area:top;display:flex;align-items:center;gap:10px 16px;min-width:0;flex-wrap:wrap}
-.h-left{grid-area:left;min-width:0}
-.h-right{grid-area:right;min-width:0}
-.h-quick{grid-area:quick;min-width:0}
-.h-quick:empty,.h-right:empty,.stripwrap:empty{display:none}
-.idb{min-width:0;flex:1 1 180px}
-.idb h2{margin:0;font-size:22px;line-height:1.15;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.idb .sub{margin-top:4px;font-size:14px;line-height:1.4;color:var(--lm-muted)}
-.idb .sub .ic{width:14px;height:14px;margin-right:5px;vertical-align:-2px;color:var(--lm-amber)}
-.h-top .refresh{margin-left:auto;flex:none}
-.carzone{grid-area:car;position:relative;min-width:0;min-height:170px;align-self:stretch;display:flex;align-items:flex-end;justify-content:center;padding:0 0 16px}
-.car{position:relative;width:min(100%,520px);display:flex;align-items:flex-end;justify-content:center;z-index:1}
-.car img{display:block;max-width:100%;max-height:220px;object-fit:contain;filter:drop-shadow(0 18px 14px rgba(0,0,0,.6))}
-.car img.flip{transform:scaleX(-1)}
-.car .carsvg{width:100%;height:auto;display:block}
-.car.charging::after{content:"";position:absolute;left:8%;right:8%;bottom:-6px;height:36px;border-radius:50%;
+/* ---------- hero (shared frame of the driver display and car app looks) ---------- */
+:where(.lm:not(.look-classic)) .hero{padding:0;display:flex;min-height:0}
+:where(.lm:not(.look-classic)) .stage{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+:where(.lm:not(.look-classic)) .hero-ui{position:relative;z-index:2;flex:1;display:grid;min-width:0;padding:18px 22px 20px;gap:14px 20px;align-items:center}
+:where(.lm:not(.look-classic)) .h-top{grid-area:top;display:flex;align-items:center;gap:10px 16px;min-width:0;flex-wrap:wrap}
+:where(.lm:not(.look-classic)) .h-left{grid-area:left;min-width:0}
+:where(.lm:not(.look-classic)) .h-right{grid-area:right;min-width:0}
+:where(.lm:not(.look-classic)) .h-quick{grid-area:quick;min-width:0}
+:where(.lm:not(.look-classic)) .h-quick:empty,:where(.lm:not(.look-classic)) .h-right:empty,:where(.lm:not(.look-classic)) .stripwrap:empty{display:none}
+:where(.lm:not(.look-classic)) .idb{min-width:0;flex:1 1 180px}
+:where(.lm:not(.look-classic)) .idb h2{margin:0;font-size:22px;line-height:1.15;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:where(.lm:not(.look-classic)) .idb .sub{margin-top:4px;font-size:14px;line-height:1.4;color:var(--lm-muted)}
+:where(.lm:not(.look-classic)) .idb .sub .ic{width:14px;height:14px;margin-right:5px;vertical-align:-2px;color:var(--lm-amber)}
+:where(.lm:not(.look-classic)) .h-top .refresh{margin-left:auto;flex:none}
+:where(.lm:not(.look-classic)) .carzone{grid-area:car;position:relative;min-width:0;min-height:170px;align-self:stretch;display:flex;align-items:flex-end;justify-content:center;padding:0 0 16px}
+:where(.lm:not(.look-classic)) .car{position:relative;width:min(100%,520px);display:flex;align-items:flex-end;justify-content:center;z-index:1}
+:where(.lm:not(.look-classic)) .car img{display:block;max-width:100%;max-height:220px;object-fit:contain;filter:drop-shadow(0 18px 14px rgba(0,0,0,.6))}
+:where(.lm:not(.look-classic)) .car img.flip{transform:scaleX(-1)}
+:where(.lm:not(.look-classic)) .car .carsvg{width:100%;height:auto;display:block}
+:where(.lm:not(.look-classic)) .car.charging::after{content:"";position:absolute;left:8%;right:8%;bottom:-6px;height:36px;border-radius:50%;
   background:radial-gradient(closest-side,rgba(52,211,153,.55),transparent);filter:blur(6px);animation:lm-pulse 2.4s ease-in-out infinite;z-index:-1}
-.wallbox{position:absolute;left:-30px;bottom:8px;width:20px;height:66px;border-radius:7px;background:linear-gradient(180deg,#26324f,#141c33);
+:where(.lm:not(.look-classic)) .wallbox{position:absolute;left:-30px;bottom:8px;width:20px;height:66px;border-radius:7px;background:linear-gradient(180deg,#26324f,#141c33);
   border:1px solid rgba(148,163,184,.25);box-shadow:0 10px 20px rgba(0,0,0,.4)}
-.wallbox i{position:absolute;left:50%;top:12px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--c,#34d399);box-shadow:0 0 10px var(--c,#34d399)}
-.cable{position:absolute;left:-22px;bottom:6%;width:calc(16% + 22px);height:52%;overflow:visible}
-.cable path{fill:none;stroke:var(--c,#34d399);stroke-width:2.4;stroke-linecap:round;stroke-dasharray:5 7;animation:lm-flow 1.1s linear infinite;filter:drop-shadow(0 0 4px var(--c,#34d399))}
-.cable.idle path{animation:none;stroke-dasharray:none;opacity:.7}
-.btn-amber{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:8px 15px;border-radius:999px;font-size:13.5px;font-weight:600;
+:where(.lm:not(.look-classic)) .wallbox i{position:absolute;left:50%;top:12px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--c,#34d399);box-shadow:0 0 10px var(--c,#34d399)}
+:where(.lm:not(.look-classic)) .cable{position:absolute;left:-22px;bottom:6%;width:calc(16% + 22px);height:52%;overflow:visible}
+:where(.lm:not(.look-classic)) .cable path{fill:none;stroke:var(--c,#34d399);stroke-width:2.4;stroke-linecap:round;stroke-dasharray:5 7;animation:lm-flow 1.1s linear infinite;filter:drop-shadow(0 0 4px var(--c,#34d399))}
+:where(.lm:not(.look-classic)) .cable.idle path{animation:none;stroke-dasharray:none;opacity:.7}
+:where(.lm:not(.look-classic)) .btn-amber{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:8px 15px;border-radius:999px;font-size:13.5px;font-weight:600;
   color:var(--lm-amber-2);background:rgba(246,168,35,.13);border:1px solid rgba(246,168,35,.5);transition:background .2s,transform .2s}
-.btn-amber:hover{background:rgba(246,168,35,.22)}
-.btn-amber .ic{width:15px;height:15px}
-.spin .ic{animation:lm-spin 1s linear infinite}
-.strip{display:grid;min-width:0}
-.cell{min-width:0;display:flex}
-.cell .cx{min-width:0;display:flex;flex-direction:column;gap:5px}
-.cell .l{font-size:13px;font-weight:600;line-height:1.2;color:var(--lm-muted);overflow-wrap:anywhere;hyphens:auto}
-.cell .v{font-family:var(--lm-mono);font-size:18px;font-weight:600;line-height:1.1;white-space:nowrap;color:var(--lm-text)}
-.cell .v small{font-size:12px;color:var(--lm-muted);font-weight:500;margin-left:4px}
-.quick{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
-.qbtn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;font:600 14px var(--lm-font);color:var(--lm-text);transition:background .2s,border-color .2s}
-.qbtn .qi{display:grid;place-items:center;flex:none}
-.qbtn .ic{width:18px;height:18px;color:var(--c)}
-.qbtn.busy{opacity:.55;pointer-events:none}
+:where(.lm:not(.look-classic)) .btn-amber:hover{background:rgba(246,168,35,.22)}
+:where(.lm:not(.look-classic)) .btn-amber .ic{width:15px;height:15px}
+:where(.lm:not(.look-classic)) .spin .ic{animation:lm-spin 1s linear infinite}
+:where(.lm:not(.look-classic)) .strip{display:grid;min-width:0}
+:where(.lm:not(.look-classic)) .cell{min-width:0;display:flex}
+:where(.lm:not(.look-classic)) .cell .cx{min-width:0;display:flex;flex-direction:column;gap:5px}
+:where(.lm:not(.look-classic)) .cell .l{font-size:13px;font-weight:600;line-height:1.2;color:var(--lm-muted);overflow-wrap:anywhere;hyphens:auto}
+:where(.lm:not(.look-classic)) .cell .v{font-family:var(--lm-mono);font-size:18px;font-weight:600;line-height:1.1;white-space:nowrap;color:var(--lm-text)}
+:where(.lm:not(.look-classic)) .cell .v small{font-size:12px;color:var(--lm-muted);font-weight:500;margin-left:4px}
+:where(.lm:not(.look-classic)) .quick{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+:where(.lm:not(.look-classic)) .qbtn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;font:600 14px var(--lm-font);color:var(--lm-text);transition:background .2s,border-color .2s}
+:where(.lm:not(.look-classic)) .qbtn .qi{display:grid;place-items:center;flex:none}
+:where(.lm:not(.look-classic)) .qbtn .ic{width:18px;height:18px;color:var(--c)}
+:where(.lm:not(.look-classic)) .qbtn.busy{opacity:.55;pointer-events:none}
 
 /* ---------- hero: driver display (look: cluster) ---------- */
 .look-cluster .hero{background:radial-gradient(46% 60% at 50% 52%,rgba(56,189,248,.075),transparent 72%),radial-gradient(120% 80% at 50% -12%,#161d2b 0%,transparent 62%),linear-gradient(180deg,#0b0e15,#05070b)}
@@ -972,6 +1056,65 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .look-console .cell .ci .ic{width:18px;height:18px}
 .look-console .cell .v{order:-1;font-family:var(--lm-font);font-size:18px;font-weight:700}
 .look-console .cell .l{font-weight:500}
+
+/* ---------- hero: night sky (look: classic, the original card) ---------- */
+:where(.look-classic) .hero{padding:0;min-height:470px;display:flex;background:#0b1430}
+:where(.look-classic) .scene{position:absolute;inset:0;overflow:hidden}
+:where(.look-classic) .scene svg.sky{position:absolute;inset:0;width:100%;height:100%;display:block}
+:where(.look-classic) .hero-ui{position:relative;z-index:2;flex:1;display:grid;min-width:0;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);grid-template-rows:1fr auto;
+  grid-template-areas:"info car" "strip strip";padding:22px 24px 18px;column-gap:18px}
+:where(.look-classic) .info{grid-area:info;min-width:0}
+:where(.look-classic) .eyebrow{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--lm-soft)}
+:where(.look-classic) .name{margin:8px 0 2px;font-size:27px;line-height:1.1;font-weight:700;letter-spacing:-.01em;text-shadow:0 2px 18px rgba(0,0,0,.4)}
+:where(.look-classic) .sub{font-size:14px;color:#c0c9dc;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+:where(.look-classic) .big{display:flex;align-items:flex-start;margin:16px 0 6px;font-weight:700;font-size:98px;line-height:.86;letter-spacing:-.045em;text-shadow:0 6px 30px rgba(0,0,0,.35)}
+:where(.look-classic) .big .u{font-size:30px;line-height:1;font-weight:500;color:var(--lm-amber);margin:8px 0 0 6px;letter-spacing:0}
+:where(.look-classic) .state{display:flex;align-items:center;gap:9px;font-size:16px;font-weight:600;margin-top:4px}
+:where(.look-classic) .state .ic{width:17px;height:17px;color:var(--lm-amber-2)}
+:where(.look-classic) .metaline{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:13.5px;color:#b3bdd2;margin-top:10px}
+:where(.look-classic) .metaline b{color:var(--lm-text);font-weight:600}
+:where(.look-classic) .metaline .ic{width:12px;height:12px;vertical-align:-1px}
+:where(.look-classic) .carzone{grid-area:car;position:relative;min-height:150px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:12px}
+:where(.look-classic) .car{position:relative;width:min(100%,540px);display:flex;align-items:flex-end;justify-content:center}
+:where(.look-classic) .car img{display:block;max-width:100%;max-height:230px;object-fit:contain;filter:drop-shadow(0 20px 16px rgba(0,0,0,.55)) brightness(.94)}
+:where(.look-classic) .car img.flip{transform:scaleX(-1)}
+:where(.look-classic) .car .carsvg{width:100%;height:auto;display:block}
+:where(.look-classic) .car.charging::after{content:"";position:absolute;left:8%;right:8%;bottom:-6px;height:36px;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(52,211,153,.55),transparent);filter:blur(6px);animation:lm-pulse 2.4s ease-in-out infinite;z-index:-1}
+:where(.look-classic) .wallbox{position:absolute;left:-30px;bottom:8px;width:20px;height:66px;border-radius:7px;background:linear-gradient(180deg,#26324f,#141c33);
+  border:1px solid rgba(148,163,184,.25);box-shadow:0 10px 20px rgba(0,0,0,.4)}
+:where(.look-classic) .wallbox i{position:absolute;left:50%;top:12px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--c,#34d399);box-shadow:0 0 10px var(--c,#34d399)}
+:where(.look-classic) .cable{position:absolute;left:-22px;bottom:6%;width:calc(16% + 22px);height:52%;overflow:visible}
+:where(.look-classic) .cable path{fill:none;stroke:var(--c,#34d399);stroke-width:2.4;stroke-linecap:round;stroke-dasharray:5 7;animation:lm-flow 1.1s linear infinite;filter:drop-shadow(0 0 4px var(--c,#34d399))}
+:where(.look-classic) .cable.idle path{animation:none;stroke-dasharray:none;opacity:.7}
+:where(.look-classic) .chip{position:absolute;z-index:3;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;
+  background:rgba(9,15,33,.62);border:1px solid rgba(148,163,184,.17);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  font-size:13.5px;font-weight:600;white-space:nowrap;box-shadow:0 10px 24px -12px rgba(0,0,0,.6)}
+:where(.look-classic) .chip .ic{width:13px;height:13px;color:var(--lm-amber)}
+:where(.look-classic) .chip.a{top:22px;left:36%}
+:where(.look-classic) .chip.b{top:70px;right:22px}
+:where(.look-classic) .chip.c{top:44%;left:52%}
+:where(.look-classic) .btn-amber{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:8px 15px;border-radius:999px;font-size:12.5px;font-weight:600;
+  color:var(--lm-amber-2);background:rgba(246,168,35,.13);border:1px solid rgba(246,168,35,.5);transition:background .2s,transform .2s}
+:where(.look-classic) .btn-amber:hover{background:rgba(246,168,35,.22)}
+:where(.look-classic) .btn-amber .ic{width:14px;height:14px}
+:where(.look-classic) .hero .refresh{position:absolute;z-index:3;top:20px;right:22px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+:where(.look-classic) .spin .ic{animation:lm-spin 1s linear infinite}
+:where(.look-classic) .strip{grid-area:strip;display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:12px 8px;padding:13px 16px;border-radius:15px;
+  background:rgba(8,13,29,.58);border:1px solid rgba(148,163,184,.15);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+:where(.look-classic) .cell{min-width:0;display:flex;flex-direction:column;justify-content:space-between}
+:where(.look-classic) .cell .l{font-size:11px;font-weight:600;letter-spacing:.14em;line-height:1.25;text-transform:uppercase;color:var(--lm-muted);overflow-wrap:anywhere;hyphens:auto}
+:where(.look-classic) .cell .v{font-family:var(--lm-mono);font-size:16.5px;font-weight:600;margin-top:6px;white-space:nowrap}
+:where(.look-classic) .cell .v small{font-size:11.5px;color:var(--lm-muted);font-weight:500;margin-left:3px}
+:where(.look-classic) .quick{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+:where(.look-classic) .qbtn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:8px 14px;border-radius:999px;font:600 13.5px var(--lm-font);color:var(--lm-text);
+  background:rgba(9,15,33,.55);border:1px solid rgba(148,163,184,.22);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);cursor:pointer;transition:background .2s,border-color .2s}
+:where(.look-classic) .qbtn .ic{width:16px;height:16px;color:var(--c)}
+:where(.look-classic) .qbtn:hover{background:rgba(255,255,255,.07);border-color:var(--c)}
+:where(.look-classic) .qbtn.on{border-color:var(--c)}
+:where(.look-classic) .qbtn.armed{border-color:var(--lm-amber);box-shadow:0 0 0 3px rgba(246,168,35,.18);animation:lm-armed 1s ease-in-out infinite}
+:where(.look-classic) .qbtn.busy{opacity:.55;pointer-events:none}
 
 /* ---------- vehicle check ---------- */
 .summary{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;margin-bottom:12px;
@@ -1200,11 +1343,36 @@ button.trip:hover{background:rgba(255,255,255,.06)}
 .tile.busy .sq .ic{animation:lm-spin 1s linear infinite}
 .controls .subh:first-of-type{margin-top:4px}
 
+/* ---------- settings ---------- */
+.sgrp+.sgrp{margin-top:10px}
+.settings .subh{margin-top:6px}
+.looks{display:grid;grid-template-columns:repeat(3,minmax(0,300px));gap:10px}
+.lk{display:flex;flex-direction:column;gap:10px;padding:10px;border-radius:16px;text-align:left;min-width:0;
+  background:rgba(255,255,255,.03);border:1px solid var(--lm-line-2);transition:border-color .2s,background .2s}
+.lk:hover{background:rgba(255,255,255,.06);border-color:var(--lm-line)}
+.lk.on{border-color:rgba(246,168,35,.7);background:rgba(246,168,35,.07);box-shadow:inset 0 0 0 1px rgba(246,168,35,.3)}
+.lk .thumb{display:block;width:100%;height:auto;border-radius:10px;border:1px solid rgba(148,163,184,.14)}
+.lkt{min-width:0;padding:0 4px 2px}
+.lkt b{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:650}
+.lk.on .lkt b{color:var(--lm-amber-2)}
+.lk.on .lkt b::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--lm-amber);box-shadow:0 0 8px var(--lm-amber)}
+.lkt small{display:block;font-size:13px;color:var(--lm-muted);margin-top:3px;line-height:1.35}
+.srow{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;margin-top:14px}
+.slab{font-size:14.5px;font-weight:600;color:var(--lm-soft)}
+.sseg{display:inline-flex;flex-wrap:wrap;gap:4px;padding:4px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid var(--lm-line-2);max-width:100%}
+.sseg button{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;min-height:44px;padding:6px 16px;border-radius:10px;color:var(--lm-soft);text-align:left;transition:background .2s,color .2s}
+.sseg button b{font-size:14.5px;font-weight:600}
+.sseg button small{font-size:12px;color:var(--lm-muted);margin-top:1px}
+.sseg button:hover{background:rgba(255,255,255,.06)}
+.sseg button.on{color:var(--lm-amber-2);background:rgba(246,168,35,.14);box-shadow:inset 0 0 0 1px rgba(246,168,35,.45)}
+.sfoot{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;margin-top:20px;padding-top:14px;border-top:1px solid var(--lm-line-2);font-size:13px;color:var(--lm-muted)}
+.lk:focus-visible,.sseg button:focus-visible,.tab:focus-visible,.mdone:focus-visible{outline:2px solid var(--lm-amber-2);outline-offset:2px}
+
 /* ---------- layout ---------- */
 .pg-overview .check,.pg-vehicle .maintenance,.pg-charging .chart,.pg-charging .charge{align-self:stretch}
 @container lmcard (min-width:760px){
   .page{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .hero,.map,.energy,.maintenance{grid-column:1/-1}
+  .hero,.map,.energy,.maintenance,.settings{grid-column:1/-1}
   .pg-overview:not(:has(.check)) .controls{grid-column:1/-1}
   .pg-charging .charge:only-child,.pg-trips .trips:last-child:nth-child(2){grid-column:1/-1}
 }
@@ -1223,11 +1391,22 @@ button.trip:hover{background:rgba(255,255,255,.06)}
   .maintenance{grid-column:span 2;grid-row:span 2}
 }
 @container lmcard (max-width:640px){
-  .hero-ui{padding:16px 14px 16px;gap:12px}
+  :where(.look-classic) .hero{min-height:0}
+  :where(.look-classic) .hero-ui{grid-template-columns:minmax(0,1fr);grid-template-areas:"info" "car" "strip";padding:18px 16px 14px}
+  :where(.look-classic) .chip{display:none}
+  :where(.look-classic) .hero .refresh{top:16px;right:16px;padding:7px 12px}
+  :where(.look-classic) .name{font-size:24px;padding-right:110px}
+  :where(.look-classic) .big{font-size:80px}
+  :where(.look-classic) .carzone{min-height:120px;padding:4px 0 10px 34px}
+  :where(.look-classic) .car img{max-height:170px}
+  :where(.look-classic) .quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  :where(.look-classic) .strip{grid-template-columns:repeat(3,minmax(0,1fr));padding:12px}
+  :where(.look-classic) .cell .l{letter-spacing:.04em;font-size:10.5px}
+  :where(.lm:not(.look-classic)) .hero-ui{padding:16px 14px 16px;gap:12px}
   .idb h2{font-size:20px}
   .h-top .refresh{padding:7px 12px}
-  .carzone{min-height:130px;padding-left:34px}
-  .car img{max-height:170px}
+  :where(.lm:not(.look-classic)) .carzone{min-height:130px;padding-left:34px}
+  :where(.lm:not(.look-classic)) .car img{max-height:170px}
   .look-cluster .hero-ui{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"top top" "left right" "car car" "quick quick" "strip strip"}
   .look-cluster .idb{flex:1 1 0}
   .look-cluster .h-top .upd{display:none}
@@ -1249,7 +1428,7 @@ button.trip:hover{background:rgba(255,255,255,.06)}
   .look-console .qbtn{width:76px;font-size:13px}
   .look-console .qbtn .qi{width:54px;height:54px}
   .look-console .strip{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .cell .v{font-size:16.5px}
+  :where(.lm:not(.look-classic)) .cell .v{font-size:16.5px}
   .mapbox{height:260px}
   .fxpin b{font-size:10px;padding:2px 6px}
   .panel{padding:16px}
@@ -1265,6 +1444,15 @@ button.trip:hover{background:rgba(255,255,255,.06)}
   .wstats{grid-template-columns:repeat(2,minmax(0,1fr))}
   .wrow{grid-template-columns:48px minmax(0,1fr) 86px;gap:10px;padding:7px 8px}
   .tab{flex-direction:column;gap:4px;min-height:54px;padding:7px 4px;font-size:13px}
+  .tabs.has-set{grid-template-columns:repeat(var(--n),minmax(0,1fr));grid-auto-columns:50px}
+  .tab.set .tlb{display:none}
+  .looks{grid-template-columns:minmax(0,1fr)}
+  .srow{display:grid;gap:8px}
+  .lk{flex-direction:row;align-items:center;gap:12px}
+  .lk .thumb{width:116px;flex:none}
+  .sseg{display:flex;width:100%}
+  .sseg button{flex:1 1 0;min-width:0;padding:6px 10px}
+  .sseg.langs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
   .soc{font-size:50px}
   .tdh .dist{font-size:34px}
 }
@@ -1353,10 +1541,7 @@ class LeapmotorCard extends HTMLElement {
         { name: "device_id", selector: { device: { filter: { integration: "leapmotor" } } } },
         { name: "name", selector: { text: {} } },
         { name: "sections", selector: { select: { multiple: true, mode: "list", options: sectionOptions } } },
-        { name: "look", selector: { select: { mode: "dropdown", options: [
-          { value: "cluster", label: "Driver display (gauges around the car)" },
-          { value: "console", label: "Car app (range, battery bar, round buttons)" },
-        ] } } },
+        { name: "look", selector: { select: { mode: "dropdown", options: LOOKS.map((value) => ({ value, label: LOOK_LABELS[value] })) } } },
         {
           type: "grid", name: "", schema: [
             { name: "scene", selector: { select: { mode: "dropdown", options: [
@@ -1374,19 +1559,21 @@ class LeapmotorCard extends HTMLElement {
             { name: "image_flip", selector: { boolean: {} } },
             { name: "quick_actions", selector: { boolean: {} } },
             { name: "tabs", selector: { boolean: {} } },
+            { name: "settings", selector: { boolean: {} } },
           ],
         },
         { name: "page", selector: { select: { mode: "dropdown", options: [
           { value: "overview", label: "Overview" }, { value: "trips", label: "Trips" },
-          { value: "charging", label: "Charging" }, { value: "vehicle", label: "Vehicle" },
+          { value: "charging", label: "Charging" }, { value: "vehicle", label: "Vehicle" }, { value: "settings", label: "Settings" },
         ] } } },
         { name: "entity_prefix", selector: { text: {} } },
       ],
       computeLabel: (s) => ({
-        device_id: "Vehicle", name: "Title (optional)", sections: "Sections", look: "Look", scene: "Display brightness (day / night)",
+        device_id: "Vehicle", name: "Title (optional)", sections: "Sections", look: "Look", scene: "Day or night (sky in Classic, display in the other looks)",
         language: "Language", confirm_actions: "Tap twice to confirm remote actions",
         backdrop: "Dark backdrop", image_flip: "Mirror the car picture", quick_actions: "Quick buttons under the battery", entity_prefix: "Entity prefix (optional, e.g. c10)",
         tabs: "Pages with tabs (Overview, Trips, Charging, Vehicle)", page: "First page",
+        settings: "Settings tab (each user picks theme and language)",
       })[s.name],
     };
   }
@@ -1427,6 +1614,8 @@ class LeapmotorCard extends HTMLElement {
   connectedCallback() {
     ensureFonts();
     this._tick = setInterval(() => this._render(true), 30 * 1000);
+    if (!this._onPrefs) this._onPrefs = (ev) => { if (ev.detail?.from !== this) this._applyPrefs(ev.detail?.value); };
+    window.addEventListener("leapmotor-card-prefs", this._onPrefs);
     if (window.ResizeObserver && !this._ro) {
       this._ro = new ResizeObserver(() => this._measureChart());
     }
@@ -1440,13 +1629,14 @@ class LeapmotorCard extends HTMLElement {
 
   disconnectedCallback() {
     clearInterval(this._tick);
+    window.removeEventListener("leapmotor-card-prefs", this._onPrefs);
     if (this._ro) this._ro.disconnect();
   }
 
   /* ----- i18n & formatting ----- */
 
   get _lang() {
-    const cfg = this._config?.language;
+    const cfg = this._prefs?.language ?? this._config?.language;
     const raw = cfg && cfg !== "auto" ? cfg : this._hass?.locale?.language || this._hass?.language || navigator.language || "en";
     return String(raw).toLowerCase();
   }
@@ -1592,7 +1782,7 @@ class LeapmotorCard extends HTMLElement {
   }
 
   _sceneMode() {
-    const mode = this._config.scene;
+    const mode = this._prefs?.scene ?? this._config.scene;
     if (mode === "night" || mode === "day") return mode;
     const sun = this._hass.states["sun.sun"];
     if (sun) return sun.state === "above_horizon" ? "day" : "night";
@@ -1659,24 +1849,42 @@ class LeapmotorCard extends HTMLElement {
     }
     if (!this._built) this._build();
     this._renderTabs();
-    for (const name of this._config.sections) this._renderSection(name, force);
+    for (const name of this._sections) this._renderSection(name, force);
     this._maybeFetchHistory();
+    this._loadPrefs();
   }
 
   /* ----- pages ----- */
 
   /** Pages with at least one configured section, in their fixed order. */
-  _pages() {
+  /** Pages with at least one configured section, in their fixed order. */
+  _contentPages() {
     return PAGES.map((p) => ({ ...p, sections: p.sections.filter((s) => this._config.sections.includes(s)) }))
       .filter((p) => p.sections.length);
   }
 
+  /** The settings tab joins cards that already have tabs (option `settings`). */
+  get _hasSettings() {
+    return this._config.settings !== false && this._config.tabs !== false && this._contentPages().length > 1;
+  }
+
+  _pages() {
+    const pages = this._contentPages();
+    return this._hasSettings ? [...pages, SETTINGS_PAGE] : pages;
+  }
+
+  /** Sections drawn on this card: the configured ones plus the settings page. */
+  get _sections() {
+    return this._hasSettings ? [...this._config.sections, "settings"] : this._config.sections;
+  }
+
   get _look() {
-    return LOOKS.includes(this._config.look) ? this._config.look : LOOKS[0];
+    const look = this._prefs?.look ?? this._config.look;
+    return LOOKS.includes(look) ? look : LOOKS[0];
   }
 
   get _tabbed() {
-    return this._config.tabs !== false && this._pages().length > 1;
+    return this._config.tabs !== false && this._contentPages().length > 1;
   }
 
   /** Only the open page is drawn; the others catch up when they are opened. */
@@ -1692,9 +1900,11 @@ class LeapmotorCard extends HTMLElement {
     const tabbed = this._tabbed;
     const sticky = tabbed && this._config.sticky_tabs;
     const markup = {
-      hero: `<section class="panel hero" id="hero"><div class="stage" id="scene"></div><div class="hero-ui" id="heroui">` +
-        `<div class="h-top" id="htop"></div><div class="h-left" id="hleft"></div><div class="carzone" id="hcar"></div>` +
-        `<div class="h-right" id="hright"></div><div class="h-quick" id="hquick"></div><div class="stripwrap" id="hstrip"></div></div></section>`,
+      hero: this._look === "classic"
+        ? `<section class="panel hero" id="hero"><div class="scene" id="scene"></div><div class="hero-ui" id="heroui"><div class="contents" id="hchips"></div><div class="info" id="hinfo"></div><div class="carzone" id="hcar"></div><div class="stripwrap" id="hstrip"></div></div></section>`
+        : `<section class="panel hero" id="hero"><div class="stage" id="scene"></div><div class="hero-ui" id="heroui">` +
+          `<div class="h-top" id="htop"></div><div class="h-left" id="hleft"></div><div class="carzone" id="hcar"></div>` +
+          `<div class="h-right" id="hright"></div><div class="h-quick" id="hquick"></div><div class="stripwrap" id="hstrip"></div></div></section>`,
       check: `<section class="panel check" id="check"></section>`,
       controls: `<section class="panel controls" id="controls"></section>`,
       map: `<section class="panel map" id="map"><div id="maphead"></div><div class="mapbox" id="mapbox"></div><div id="mapfoot"></div></section>`,
@@ -1706,6 +1916,7 @@ class LeapmotorCard extends HTMLElement {
       maintenance: `<section class="panel maintenance" id="maintenance"></section>`,
       tires: `<section class="panel tires" id="tires"></section>`,
       insights: `<section class="panel insights" id="insights"></section>`,
+      settings: `<section class="panel settings" id="settings"></section>`,
     };
     const body = pages.map((p) =>
       `<div class="page pg-${p.id}" id="page-${p.id}" role="${tabbed ? "tabpanel" : "region"}"${tabbed && p.id !== this._page ? " hidden" : ""}>${p.sections.map((s) => markup[s]).join("")}</div>`).join("");
@@ -1727,10 +1938,13 @@ class LeapmotorCard extends HTMLElement {
     const sig = `${this._lang}|${this._page}|${JSON.stringify(badges)}`;
     if (this._sigs.__tabs === sig) return;
     this._sigs.__tabs = sig;
-    nav.innerHTML = this._pages().map((p) => {
+    const pages = this._pages();
+    nav.classList.toggle("has-set", this._hasSettings);
+    nav.style.setProperty("--n", String(pages.length - (this._hasSettings ? 1 : 0)));
+    nav.innerHTML = pages.map((p) => {
       const b = badges[p.id];
       const on = p.id === this._page;
-      return `<button class="tab${on ? " on" : ""}" role="tab" aria-selected="${on}" data-act="page" data-page="${p.id}">` +
+      return `<button class="tab${on ? " on" : ""}${p.id === "settings" ? " set" : ""}" role="tab" aria-selected="${on}" aria-label="${esc(this._tr(p.label))}" data-act="page" data-page="${p.id}">` +
         `<span class="ti">${icon(p.icon)}${b ? `<i class="tb${b.pulse ? " pulse" : ""}" style="--c:${b.c}"></i>` : ""}</span>` +
         `<span class="tlb">${esc(this._tr(p.label))}</span></button>`;
     }).join("");
@@ -1757,7 +1971,7 @@ class LeapmotorCard extends HTMLElement {
       if (el) el.hidden = p.id !== id;
     }
     this._renderTabs();
-    for (const name of this._config.sections) this._renderSection(name);
+    for (const name of this._sections) this._renderSection(name);
     requestAnimationFrame(() => {
       if (PAGE_OF.chart === id) this._measureChart();
       if (PAGE_OF.map === id) this.shadowRoot.getElementById("mapbox")?.__fit?.();
@@ -1785,6 +1999,7 @@ class LeapmotorCard extends HTMLElement {
       tires: () => this._sig(["tireFL", "tireFR", "tireRL", "tireRR", "tireWarning"]),
       insights: () => this._sig(["driveCost", "costPer100", "drain", "tripConsumption", "tireWarning", "lastTrip"]),
       controls: () => this._controlsSig(),
+      settings: () => `${JSON.stringify(this._prefs || {})}|${this._prefsWhere || ""}|${this._look}|${this._config.look}|${this._config.language}|${this._config.scene}`,
     };
     const html = {
       check: () => this._checkHtml(),
@@ -1797,6 +2012,7 @@ class LeapmotorCard extends HTMLElement {
       energy: () => this._energyHtml(),
       tires: () => this._tiresHtml(),
       controls: () => this._controlsHtml(),
+      settings: () => this._settingsHtml(),
     };
     const target = this.shadowRoot.getElementById(name === "hero" ? "heroui" : name);
     if (!target || !map[name]) return;
@@ -1847,7 +2063,7 @@ class LeapmotorCard extends HTMLElement {
 
   /* ----- hero ----- */
 
-  /** Day or night display, like the car's own screens (option `scene`). */
+  /** Option `scene`: the day or night sky (classic), or a day or night display like the car's own screens. */
   _renderScene() {
     const hero = this.shadowRoot.getElementById("hero");
     if (!hero) return;
@@ -1856,6 +2072,7 @@ class LeapmotorCard extends HTMLElement {
     this._sigs.__scene = mode;
     hero.classList.toggle("day", mode === "day");
     hero.classList.toggle("night", mode !== "day");
+    if (this._look === "classic") this.shadowRoot.getElementById("scene").innerHTML = sceneSvg(mode);
   }
 
   _heroSig() {
@@ -1894,6 +2111,7 @@ class LeapmotorCard extends HTMLElement {
   }
 
   _heroHtml() {
+    if (this._look === "classic") return this._heroClassic();
     const d = this._heroData();
     return this._look === "console" ? this._heroConsole(d) : this._heroCluster(d);
   }
@@ -2118,6 +2336,129 @@ class LeapmotorCard extends HTMLElement {
       hright: "",
       hquick: this._quickHtml(),
       hstrip: this._cellsHtml(cells),
+    };
+  }
+
+  /* Classic: the original night or day sky scene with the big battery figure. */
+  _heroClassic() {
+    const t = (k, v) => this._tr(k, v);
+    const now = new Date();
+    const precise = this._v("batteryPrecise");
+    const soc = precise ?? this._v("battery");
+    const socTxt = soc == null ? "—" : precise != null ? this._num(precise, 1) : this._num(soc, 0);
+    const lock = this._s("lock");
+    const locked = lock ? lock.state === "locked" : null;
+    const { charging, plugged } = this._chargeState();
+    const driving = this._on("isDriving") === true || this._s("vehicleState")?.state === "driving";
+    const rangeV = this._v("range");
+    const rangeU = this._unit("range", "km");
+    const issues = this._issues();
+
+    const dateStr = (() => {
+      try {
+        const s = new Intl.DateTimeFormat(this._lang, { weekday: "long", day: "numeric", month: "long" }).format(now);
+        return s.charAt(0).toUpperCase() + s.slice(1);
+      } catch (_e) { return now.toDateString(); }
+    })();
+    const loc = this._location();
+
+    const stateBits = [];
+    if (locked != null) stateBits.push(locked ? t("locked") : t("unlocked"));
+    stateBits.push(charging ? t("charging") : driving ? t("driving") : t("parked"));
+    const stateIcon = charging ? "bolt" : locked === false ? "unlock" : "lock";
+
+    const meta = [];
+    const limit = this._v("chargeLimit");
+    if (limit != null) {
+      const [pre, post = ""] = esc(t("limitWord", { x: "\u0001" })).split("\u0001");
+      meta.push(`<span>${icon("arrowUp")} ${pre}<b>${this._num(limit)} %</b>${post}</span>`);
+    }
+    if (rangeV != null) meta.push(`<span>${esc(t("rangeWord", { x: `${this._num(rangeV)} ${rangeU}` }))}</span>`);
+    const upd = this._ts("lastUpdate");
+    if (upd) meta.push(`<span>${esc(t("updated", { x: this._ago(upd) }))}</span>`);
+
+    // Floating chips
+    const chips = [];
+    if (rangeV != null) chips.push(`<div class="chip a"><span class="dot"></span>${esc(t("range"))} ${this._num(rangeV)} ${esc(rangeU)} ${icon("route")}</div>`);
+    const inside = this._v("interior") ?? this._v("outdoor");
+    if (inside != null) {
+      const label = this._v("interior") != null ? t("insideChip") : t("outside");
+      chips.push(`<div class="chip b clickable" data-more="${this._v("interior") != null ? "interior" : "outdoor"}"><span class="dot" style="--c:var(--lm-sky)"></span>${esc(label)} ${this._num(inside, 1)} °C</div>`);
+    }
+    let cText, cColor = "var(--lm-green)", cPulse = "";
+    if (charging) {
+      const rem = this._v("remaining");
+      cText = rem != null ? `${t("charging")} · ${this._dur(rem)}` : `${t("charging")} · ${this._num(this._v("power"), 1)} kW`;
+      cPulse = " pulse";
+    } else if (driving && this._on("speeding") === true && this._v("speed") != null) {
+      cText = t("tooFast", { x: `${this._num(this._v("speed"))} ${this._unit("speed", "km/h")}` });
+      cColor = "var(--lm-red)";
+      cPulse = " pulse";
+    } else if (driving) {
+      const spd = this._v("speed");
+      cText = spd != null ? `${t("driving")} · ${this._num(spd)} ${this._unit("speed", "km/h")}` : t("driving");
+      cColor = "var(--lm-sky)";
+    } else if (issues.length) {
+      cText = issues[0];
+      cColor = "var(--lm-red)";
+    } else {
+      cText = t("secureChip");
+    }
+    chips.push(`<div class="chip c"><span class="dot${cPulse}" style="--c:${cColor}"></span>${esc(cText)}</div>`);
+
+    // Metric strip
+    const cells = [];
+    const cell = (label, value, unit, key) => {
+      if (value == null) return;
+      cells.push(`<div class="cell${key ? " clickable" : ""}"${key ? ` data-more="${key}"` : ""}><div class="l">${esc(label)}</div><div class="v">${value}<small>${esc(unit)}</small></div></div>`);
+    };
+    const out = this._v("outdoor");
+    cell(t("outside"), out != null ? this._num(out, 1) : null, "°C", "outdoor");
+    const inn = this._v("interior");
+    cell(t("interior"), inn != null ? this._num(inn, 1) : null, "°C", "interior");
+    const odo = this._v("odometer");
+    cell(t("odometer"), odo != null ? this._num(odo) : null, this._unit("odometer", "km"), "odometer");
+    cell(t("chargeLimit"), limit != null ? this._num(limit) : null, "%", "chargeLimit");
+    const fuel = this._v("fuel");
+    if (fuel != null) cell(t("fuel"), this._num(fuel), "%", "fuel");
+    const spd = this._v("speed");
+    if (spd != null) cell(t("speed"), this._num(spd), this._unit("speed", "km/h"), "speed");
+    else if (this._s("gear")) cell(t("gear"), esc(this._s("gear").state), "", "gear");
+    const speedLimit = this._speedLimit();
+    if (speedLimit) cell(t("speedLimit"), this._num(speedLimit.kmh), "km/h", speedLimit.source === "vehicle" ? "speedLimit" : "speeding");
+    const avg = this._v("avg");
+    cell(t("consumption"), avg != null ? this._num(avg, 1) : null, "kWh/100", "avg");
+    if (upd) {
+      const mins = (Date.now() - upd) / MIN;
+      cell(t("lastUpdate"), mins < 60 ? this._num(Math.max(0, Math.round(mins))) : mins < 1440 ? this._num(mins / 60, 1) : this._num(mins / 1440, 1),
+        mins < 60 ? "min" : mins < 1440 ? "h" : "d", "lastUpdate");
+    }
+
+    // Car
+    const night = this._sceneMode() === "night";
+    const picUrl = this._carPicture();
+    const carArt = picUrl
+      ? `<img src="${esc(picUrl)}" alt="${esc(this._vehicleName())}"${this._config.image_flip ? ' class="flip"' : ""}>`
+      : carSvg(night);
+    const carInner = `<div class="carbox${picUrl ? "" : " svgcar"}">${carArt}${this._carFx({ charging, plugged, night, driving, locked })}</div>`;
+    const ledColor = charging ? "#34d399" : "#f6a823";
+    const plug = plugged
+      ? `<div class="wallbox" style="--c:${ledColor}"><i></i></div><svg class="cable${charging ? "" : " idle"}" style="--c:${ledColor}" viewBox="0 0 100 96" preserveAspectRatio="none"><path d="M8 50C14 98 70 102 96 30" vector-effect="non-scaling-stroke"/></svg>`
+      : "";
+
+    return {
+      hchips: chips.join("") + (this._ids.refreshBtn
+        ? `<button class="btn-amber refresh${this._busy.refresh ? " spin" : ""}" data-act="refresh">${icon("refresh")}${esc(t("refresh"))}</button>`
+        : ""),
+      hinfo: `
+        <div class="eyebrow"><span class="dot"></span>${esc(t("now"))} · ${esc(this._time(now))}</div>
+        <h2 class="name">${esc(this._vehicleName())}</h2>
+        <div class="sub">${esc(dateStr)}${loc ? ` · ${icon("pin")}${esc(loc)}` : ""}</div>
+        <div class="big clickable" data-more="battery">${socTxt}<span class="u">%</span></div>
+        <div class="state">${icon(stateIcon)}${esc(stateBits.join(" · "))}</div>
+        <div class="metaline">${meta.join("")}</div>${this._quickHtml()}`,
+      hcar: `<div class="car${charging ? " charging" : ""}">${plug}${carInner}</div>`,
+      hstrip: cells.length ? `<div class="strip">${cells.slice(0, 7).join("")}</div>` : "",
     };
   }
 
@@ -3292,7 +3633,7 @@ class LeapmotorCard extends HTMLElement {
     // Draw at the box's own size so the route fills phones and wide screens alike.
     const w = Math.round(clamp(box.clientWidth || 640, 240, 1600));
     const h = Math.round(clamp(box.clientHeight || 300, 180, 900));
-    box.insertAdjacentHTML("afterbegin", routeSvg(tr, this._tr("mapStart"), this._tr(tr.live ? "mapLive" : "mapEnd"), w, h));
+    box.insertAdjacentHTML("afterbegin", routeSvg(tr, this._tr("mapStart"), this._tr(tr.live ? "mapLive" : "mapEnd"), w, h, this._look === "classic"));
   }
 
   /** Draw the coloured route on Home Assistant's map (dark tiles), or report failure. */
@@ -3457,6 +3798,92 @@ class LeapmotorCard extends HTMLElement {
     return `${this._head(t("controls"), "spark")}${body || `<div class="empty">—</div>`}${foot}`;
   }
 
+  /* ----- settings: theme and language for each user ----- */
+
+  /**
+   * Personal theme, day or night and language, kept in Home Assistant's
+   * frontend user data (same user, every device). Falls back to this browser
+   * when that store is not available. The card configuration gives the defaults.
+   */
+  async _loadPrefs() {
+    if (this._prefsState) return;
+    this._prefsState = "loading";
+    let value = null;
+    try {
+      const res = await this._hass.callWS({ type: "frontend/get_user_data", key: PREFS_KEY });
+      value = res?.value ?? null;
+      this._prefsWhere = "user";
+    } catch (_e) {
+      this._prefsWhere = "local";
+      try { value = JSON.parse(window.localStorage.getItem(PREFS_KEY) || "null"); } catch (_e2) { value = null; }
+    }
+    this._prefsState = "ready";
+    this._applyPrefs(value);
+  }
+
+  _applyPrefs(value) {
+    const v = value && typeof value === "object" ? value : {};
+    const next = {};
+    if (LOOKS.includes(v.look)) next.look = v.look;
+    if (v.language === "auto" || LANGS.some(([c]) => c === v.language)) next.language = v.language;
+    if (SCENES.includes(v.scene)) next.scene = v.scene;
+    if (JSON.stringify(next) === JSON.stringify(this._prefs || {})) return;
+    const rebuild = (next.look ?? this._config.look) !== (this._prefs?.look ?? this._config.look);
+    this._prefs = next;
+    if (!this._hass || !this._config) return;
+    if (rebuild) this._built = false;
+    this._sigs = {};
+    this._render(true);
+  }
+
+  async _savePrefs(patch) {
+    const next = { ...(this._prefs || {}), ...patch };
+    for (const k of Object.keys(next)) if (next[k] == null) delete next[k];
+    this._applyPrefs(next);
+    // Other Leapmotor cards on this page follow at once.
+    window.dispatchEvent(new CustomEvent("leapmotor-card-prefs", { detail: { value: next, from: this } }));
+    if (this._prefsWhere !== "local") {
+      try {
+        await this._hass.callWS({ type: "frontend/set_user_data", key: PREFS_KEY, value: next });
+        return;
+      } catch (_e) {
+        this._prefsWhere = "local";
+        this._renderSection("settings");
+      }
+    }
+    try { window.localStorage.setItem(PREFS_KEY, JSON.stringify(next)); } catch (_e) { /* kept until reload */ }
+  }
+
+  _settingsHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const prefs = this._prefs || {};
+    const look = this._look;
+    const lang = prefs.language ?? this._config.language ?? "auto";
+    const scene = prefs.scene ?? this._config.scene ?? "auto";
+    const seg = (key, items, current) => `<div class="sseg" role="radiogroup">${items.map(([v, label, sub]) =>
+      `<button type="button" role="radio" aria-checked="${v === current}" class="${v === current ? "on" : ""}" data-act="pref" data-k="${key}" data-v="${v}">` +
+      `<b>${esc(label)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</button>`).join("")}</div>`;
+    const looks = LOOKS.map((l) =>
+      `<button type="button" role="radio" aria-checked="${l === look}" class="lk${l === look ? " on" : ""}" data-act="pref" data-k="look" data-v="${l}">` +
+      `${lookThumb(l)}<span class="lkt"><b>${esc(t(`look_${l}`))}</b><small>${esc(t(`look_${l}_d`))}</small></span></button>`).join("");
+    const custom = Object.keys(prefs).length > 0;
+    return `
+      ${this._head(t("pageSettings"), "gear")}
+      <div class="sgrp">
+        <div class="subh">${esc(t("lookL"))}</div>
+        <div class="looks" role="radiogroup" aria-label="${esc(t("lookL"))}">${looks}</div>
+        <div class="srow"><span class="slab">${esc(t("setScene"))}</span>
+          ${seg("scene", [["auto", t("sceneAuto")], ["day", t("sceneDay")], ["night", t("sceneNight")]], scene)}</div>
+        <div class="foot">${esc(t("sceneHint"))}</div>
+      </div>
+      <div class="sgrp">
+        <div class="subh">${esc(t("setLanguage"))}</div>
+        ${seg("language", [["auto", t("langAuto"), t("langAutoSub")], ...LANGS.map(([c, n]) => [c, n, c.toUpperCase()])], lang).replace('class="sseg"', 'class="sseg langs"')}
+      </div>
+      <div class="sfoot"><span>${esc(t(this._prefsWhere === "local" ? "setSavedLocal" : "setSavedUser"))}</span>
+        ${custom ? `<button type="button" class="mdone" data-act="prefreset">${esc(t("setReset"))}</button>` : ""}</div>`;
+  }
+
   /* ----- interaction ----- */
 
   _isArmed(key) {
@@ -3491,6 +3918,8 @@ class LeapmotorCard extends HTMLElement {
     }
     const act = el.dataset.act;
     if (act === "page") return this._setPage(el.dataset.page);
+    if (act === "pref") return this._savePrefs({ [el.dataset.k]: el.dataset.v });
+    if (act === "prefreset") return this._savePrefs({ look: null, language: null, scene: null });
     if (act === "limit") return this._bumpLimit(Number(el.dataset.delta) || 0);
     if (act === "limitset") return this._confirmLimit();
     if (act === "limitcancel") return this._cancelLimit();
@@ -3549,7 +3978,7 @@ class LeapmotorCard extends HTMLElement {
   }
 }
 
-// Artwork is exposed for the docs banner and previews (the banner still uses the old sky scene).
+// Artwork is exposed for the docs banner and previews.
 LeapmotorCard.art = { sceneSvg, carSvg };
 
 /* ------------------------------------------------------------------ */
@@ -3653,7 +4082,7 @@ if (!customElements.get("leapmotor-card")) {
   window.customCards.push({
     type: "leapmotor-card",
     name: "Leapmotor",
-    description: "Car-style dashboard for your Leapmotor: driver display or car-app look, remote controls, trips with maps, charging and vehicle care.",
+    description: "Dashboard for your Leapmotor in three looks (night sky, driver display, car app): remote controls, trips with maps, charging and vehicle care.",
     preview: true,
     documentationURL: "https://github.com/sabotin/leapmotor/blob/main/docs/card.md",
   });
