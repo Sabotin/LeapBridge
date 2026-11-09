@@ -18,6 +18,7 @@ CONF_PRECOOL_TEMPERATURE = "precool_temperature"
 CONF_PRECOOL_FAN = "precool_fan_speed"
 CONF_PRECOOL_RECIRCULATE = "precool_recirculate"
 CONF_PRECONDITION_THRESHOLD = "precondition_cool_above"
+CONF_SPEED_ALERT = "speed_alert_kmh"
 SUBENTRY_TYPE_VEHICLE = "vehicle"
 
 
@@ -111,6 +112,12 @@ def precondition_settings_for_vehicle(
     if outside_temp_c is not None and outside_temp_c >= threshold:
         return precool_settings_for_vehicle(config_entry, vin)
     return preheat_settings_for_vehicle(config_entry, vin)
+
+
+def speed_alert_for_vehicle(config_entry: Any, vin: str) -> int | None:
+    """User speed-alert threshold in km/h for one VIN; None when off (0)."""
+    value = _bounded(_vehicle_data(config_entry, vin), CONF_SPEED_ALERT, 0, 0, 250)
+    return value or None
 
 
 def abrp_config_for_vehicle(

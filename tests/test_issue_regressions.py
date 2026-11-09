@@ -1,6 +1,7 @@
 """Offline API regressions for reported charging and history faults."""
 import json
 import unittest
+import unittest.mock
 from unittest.mock import Mock
 
 from test_status_path_fallback import api
@@ -17,18 +18,58 @@ class ChargingTests(unittest.TestCase):
         self.client.get_charge_schedule = Mock(return_value={})
         self.client._remote_control_raw = Mock(return_value={"code": 0})
 
-    def test_t03_writes_rejected_before_status_or_command(self):
+    def test_t03_schedule_switch_rejected_before_status_or_command(self):
         for model in ("T03", " t03 "):
             self.client._find_vehicle_by_vin.return_value.car_type = model
-            for method, value in ((self.client.set_charge_limit, 80),
-                                  (self.client.set_charging_plan_enabled, True),
-                                  (self.client.set_charging_plan_enabled, False)):
-                with self.subTest(model=model, method=method.__name__, value=value):
+            for value in (True, False):
+                with self.subTest(model=model, value=value):
                     with self.assertRaisesRegex(api.LeapmotorApiError, "not supported.*T03"):
-                        method("SYNTHETIC", value)
+                        self.client.set_charging_plan_enabled("SYNTHETIC", value)
         self.client.get_vehicle_status.assert_not_called()
         self.client.get_charge_schedule.assert_not_called()
         self.client._remote_control_raw.assert_not_called()
+
+    def test_t03_charge_limit_uses_schedule_like_leapconnect(self):
+        """Byte-identical to leapmotor-api 0.6.0 (used by LeapConnect)."""
+        self.client._find_vehicle_by_vin.return_value.car_type = "T03"
+        cases = (
+            # Full schedule: every field kept, only the limit changes.
+            ({"chargeEnable": 1, "chargesoc": 90, "circulation": 1, "cycles": "1,2,3,4,5",
+              "endtime": "06:30", "recharge": 1, "starttime": "23:00"},
+             '{"chargeEnable":1,"chargesoc":80,"circulation":1,"cycles":"1,2,3,4,5",'
+             '"endtime":"06:30","recharge":1,"starttime":"23:00"}'),
+            # Start-time-only plan: start and enable kept, the rest defaulted.
+            ({"chargeEnable": 1, "starttime": "01:15"},
+             '{"chargeEnable":1,"chargesoc":80,"circulation":0,"cycles":"1,2,3,4,5,6,7",'
+             '"endtime":"08:00","recharge":0,"starttime":"01:15"}'),
+            # No schedule: defaults with the plan switched off.
+            ({}, '{"chargeEnable":0,"chargesoc":80,"circulation":0,"cycles":"1,2,3,4,5,6,7",'
+                 '"endtime":"08:00","recharge":0,"starttime":"00:00"}'),
+        )
+        for schedule, expected in cases:
+            with self.subTest(schedule=schedule):
+                self.client.get_charge_schedule.return_value = schedule
+                self.client._remote_control_raw.reset_mock()
+                self.client.set_charge_limit("SYNTHETIC", 80)
+                kwargs = self.client._remote_control_raw.call_args.kwargs
+                self.assertEqual((kwargs["cmd_id"], kwargs["cmd_content"]), ("190", expected))
+        self.client.get_vehicle_status.assert_not_called()
+
+    def test_t03_charge_limit_range_and_unconfirmed_retry(self):
+        self.client._find_vehicle_by_vin.return_value.car_type = "T03"
+        for value in (49, 101):
+            with self.assertRaisesRegex(api.LeapmotorApiError, "50-100"):
+                self.client.set_charge_limit("SYNTHETIC", value)
+        self.client._remote_control_raw.assert_not_called()
+        unconfirmed = api.LeapmotorRemoteCommandUnconfirmedError("timed out")
+        self.client._remote_control_raw.side_effect = [unconfirmed, {"code": 0}]
+        with unittest.mock.patch.object(api.time, "sleep"):
+            self.assertEqual(self.client.set_charge_limit("SYNTHETIC", 85), {"code": 0})
+        self.assertEqual(self.client._remote_control_raw.call_count, 2)
+        self.client._remote_control_raw.side_effect = [unconfirmed, unconfirmed]
+        with unittest.mock.patch.object(api.time, "sleep"):
+            with self.assertRaises(api.LeapmotorRemoteCommandUnconfirmedError):
+                self.client.set_charge_limit("SYNTHETIC", 85)
 
     def test_complete_plan_preserved_for_supported_models(self):
         plan = {"isEnable": "0", "percent": 95, "beginTime": "00:00",

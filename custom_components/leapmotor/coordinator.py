@@ -43,6 +43,7 @@ from .drive_analytics import (
     TIER_PUBLIC_AC,
     TIER_PUBLIC_DC,
     DriveAnalytics,
+    speed_alert,
 )
 from .location import CoordinateResolution, resolve_coordinate
 from .maintenance_catalog import items_for_vehicle, load_catalog
@@ -51,6 +52,7 @@ from .vehicle_config import (
     battery_reference_for_vehicle,
     maintenance_severe_use_for_vehicle,
     operation_password_for_vehicle,
+    speed_alert_for_vehicle,
     vehicle_subentries,
 )
 
@@ -86,6 +88,7 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
         update_interval: timedelta,
         eco_polling_enabled: bool = False,
         eco_update_interval: timedelta | None = None,
+        driving_update_interval: timedelta | None = None,
     ) -> None:
         super().__init__(
             hass,
@@ -98,6 +101,9 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
         self._normal_update_interval = update_interval
         self._eco_polling_enabled = eco_polling_enabled
         self._eco_update_interval = eco_update_interval or update_interval
+        self._driving_update_interval = min(
+            driving_update_interval or update_interval, update_interval
+        )
         self._polling_mode = "normal"
         self._lock_state_overrides: dict[str, tuple[bool, float]] = {}
         self._last_remote_results: dict[str, dict[str, Any]] = {}
@@ -132,6 +138,7 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
             "update_interval_seconds": int(update_interval.total_seconds()),
             "normal_update_interval_seconds": int(update_interval.total_seconds()),
             "eco_update_interval_seconds": int(self._eco_update_interval.total_seconds()),
+            "driving_update_interval_seconds": int(self._driving_update_interval.total_seconds()),
             "eco_polling_enabled": self._eco_polling_enabled,
             "polling_mode": self._polling_mode,
             "vehicle_count": 0,
@@ -275,6 +282,13 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
             self._analytics.as_storage, ANALYTICS_SAVE_DELAY_SECONDS
         )
 
+    def _apply_speed_alerts(self, data: dict) -> None:
+        """Compare each car's speed with its alert speed or own speed limit."""
+        for vin, vehicle_data in (data.get("vehicles") or {}).items():
+            vehicle_data["speed_alert"] = speed_alert(
+                vehicle_data, speed_alert_for_vehicle(self.config_entry, vin)
+            )
+
     async def async_flush_location_signs(self) -> None:
         """Wait for a pending GPS sign write before unloading."""
         task = self._location_sign_save_task
@@ -317,6 +331,7 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
                 else self._integration_status.get("update_interval_seconds"),
                 "normal_update_interval_seconds": int(self._normal_update_interval.total_seconds()),
                 "eco_update_interval_seconds": int(self._eco_update_interval.total_seconds()),
+                "driving_update_interval_seconds": int(self._driving_update_interval.total_seconds()),
                 "eco_polling_enabled": self._eco_polling_enabled,
                 "polling_mode": self._polling_mode,
                 "vehicle_count": self._integration_status.get("vehicle_count", 0),
@@ -330,6 +345,7 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
         self._apply_state_freshness(data)
         self._normalize_locations(data)
         self._apply_analytics(data)
+        self._apply_speed_alerts(data)
         self._update_polling_interval(data)
         self._integration_status = {
             "last_update_status": "ok",
@@ -346,6 +362,7 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
             else None,
             "normal_update_interval_seconds": int(self._normal_update_interval.total_seconds()),
             "eco_update_interval_seconds": int(self._eco_update_interval.total_seconds()),
+            "driving_update_interval_seconds": int(self._driving_update_interval.total_seconds()),
             "eco_polling_enabled": self._eco_polling_enabled,
             "polling_mode": self._polling_mode,
             "vehicle_count": len((data.get("vehicles") or {})),
@@ -495,20 +512,19 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
         data["_integration"] = dict(self._integration_status)
 
     def _update_polling_interval(self, data: dict[str, Any]) -> None:
-        """Switch to slower polling only when every vehicle is clearly idle."""
-        if not self._eco_polling_enabled:
-            self.update_interval = self._normal_update_interval
-            self._polling_mode = "normal"
-            return
-
-        target_interval = (
-            self._eco_update_interval
-            if _all_vehicles_quiet(data)
-            else self._normal_update_interval
-        )
+        """Poll faster while a car drives; slower only when every car is idle."""
         previous_mode = self._polling_mode
+        if (
+            self._driving_update_interval < self._normal_update_interval
+            and _any_vehicle_driving(data)
+        ):
+            target_interval, mode = self._driving_update_interval, "driving"
+        elif self._eco_polling_enabled and _all_vehicles_quiet(data):
+            target_interval, mode = self._eco_update_interval, "eco"
+        else:
+            target_interval, mode = self._normal_update_interval, "normal"
         self.update_interval = target_interval
-        self._polling_mode = "eco" if target_interval == self._eco_update_interval else "normal"
+        self._polling_mode = mode
         if self._polling_mode != previous_mode:
             _LOGGER.debug(
                 "Leapmotor polling mode changed from %s to %s (interval=%ss)",
@@ -794,6 +810,20 @@ def _state_age_seconds(raw_timestamp: Any) -> int | None:
             return None
     age = int(time.time() - event_ts)
     return max(age, 0)
+
+
+def _any_vehicle_driving(data: dict[str, Any]) -> bool:
+    """Return true when any vehicle reports driving or a speed above zero."""
+    for vehicle_data in (data.get("vehicles") or {}).values():
+        status = vehicle_data.get("status") or {}
+        if status.get("is_driving") is True:
+            return True
+        try:
+            if float(status.get("speed_kmh") or 0) > 0:
+                return True
+        except (TypeError, ValueError):
+            continue
+    return False
 
 
 def _all_vehicles_quiet(data: dict[str, Any]) -> bool:

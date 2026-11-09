@@ -61,6 +61,8 @@ class LeapmotorVehicleImage(
         self._cache_refresh_attempted = False
         self._download_retry_after = 0.0
         self._attr_image_last_updated: datetime | None = None
+        #: Image files in the official picture package, for future state renders.
+        self._package_images: list[str] = []
 
         vehicle = self.vehicle_data["vehicle"]
         self._attr_suggested_object_id = _suggested_object_id(
@@ -155,6 +157,7 @@ class LeapmotorVehicleImage(
             "key_present": media.get("car_picture_key_present"),
             "whole_present": media.get("car_picture_whole_present"),
             "render_mode": "package_tripsum",
+            "package_images": self._package_images,
         }
 
     def _update_image_metadata(self) -> None:
@@ -176,6 +179,10 @@ class LeapmotorVehicleImage(
         """Download, extract, and cache the static vehicle image from the package ZIP."""
         package_bytes = self.coordinator.client.download_car_picture_package(picture_key=picture_key)
         with zipfile.ZipFile(io.BytesIO(package_bytes)) as package_zip:
+            self._package_images = sorted(
+                name for name in package_zip.namelist()
+                if name.lower().endswith((".png", ".webp", ".jpg", ".jpeg"))
+            )[:200]
             with package_zip.open("android/xxhdpi/carpic_for_tripsum.png") as image_file:
                 image = image_file.read()
         cache_path.write_bytes(image)

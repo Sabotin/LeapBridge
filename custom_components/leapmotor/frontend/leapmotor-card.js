@@ -94,6 +94,7 @@ const STRINGS = {
     preheatCabin: "Preheat cabin", preheatSub: "{t} °C · fan {f}", recircShort: "recirc.",
     mntTitle: "Maintenance", mntOk: "OK", mntSoon: "SOON", mntOverdue: "OVERDUE", kmLeft: "{x} km", daysLeft: "{x} days", overdueBy: "{x} overdue", mntAssumed: "assumed on schedule", mntLogged: "logged", mntDone: "Done", mntHint: "Tap Done twice after a service", mntNone: "No maintenance schedule yet.", insightsTitle: "Insights", driveCost: "Driving cost this month", per100: "{x} per 100 km", drain: "Parked drain", drainSub: "{p} % of battery per day", vsUsual: "{x} vs usual", usualSub: "last trip vs {n} similar trips", tempTitle: "Consumption by outside temperature", tiresOk: "Tires look fine", tiresWarn: "Check tires", tLow: "low", tUneven: "uneven", tDropping: "slowly dropping", noInsights: "Insights appear after a few days of driving and charging.", toLimit: "To {l} %: {e} kWh", costNowLow: "{now} now · {low} in low tariff", lowFrom: "from {t}", sentry: "Sentry mode", healthy: "Healthy charging", startCharge: "Start charging", stopCharge: "Stop charging", openRoof: "Open sunroof", closeRoof: "Close sunroof", logged: "Logged: {x}",
     tripsTitle: "Trip log", tripsMeta: "today {d} · this month {m}", drivingNow: "Driving now", yesterday: "Yesterday", noTrips: "Trips appear here after your next drive. For exact start and end times, set the update interval to 1 minute.", colTrip: "Trip", colDistance: "Distance", colDuration: "Duration", colEnergy: "Energy", colConsumption: "kWh/100 km", colSoc: "Battery", colSpeed: "Avg speed", monthTrips: "This month {d} · {n}× · {e}", monthCharging: "This month", lastSession: "Last session", tierHome: "Home", tierAC: "Public AC", tierDC: "Public DC", health: "Battery health", healthSub: "{c} of {r} kWh usable", healthPending: "estimate after 3 days with a full charge", sessionsN: "{n}× charged",
+    mapTitle: "Trip map", mapLoading: "Loading route…", mapEmpty: "No route for this trip yet. It is drawn from the car's location history in Home Assistant.", mapHint: "Trips appear on the map after your next drive.", mapStart: "Start", mapEnd: "End", mapLive: "Live", topSpeed: "Top speed", avgSpeedL: "Average", aboveLimit: "Above limit", limitCar: "Car speed limit", limitAlert: "Speed alert", legendBelow: "below limit", legendNear: "close to it", legendAbove: "above limit", legendSlow: "up to 50", legendMid: "50–90", legendFast: "over 90", tooFast: "Too fast · {x}", speedLimit: "Speed limit", trunk: "Trunk", windows: "Windows", doors: "Doors", sunroof: "Sunroof", sentryOn: "Sentry", tireLowShort: "Tire", limitDown: "Lower charge limit", limitUp: "Raise charge limit", limitSet: "Charge limit {x}",
   },
   sl: {
     now: "Zdaj", justNow: "pravkar", updated: "posodobljeno {x}",
@@ -147,6 +148,7 @@ const STRINGS = {
     preheatCabin: "Predgrej kabino", preheatSub: "{t} °C · ventilator {f}", recircShort: "kroženje",
     mntTitle: "Vzdrževanje", mntOk: "OK", mntSoon: "KMALU", mntOverdue: "ZAMUJENO", kmLeft: "{x} km", daysLeft: "{x} dni", overdueBy: "{x} čez rok", mntAssumed: "predpostavka: redno servisirano", mntLogged: "zabeleženo", mntDone: "Opravljeno", mntHint: "Po servisu dvakrat tapni Opravljeno", mntNone: "Servisnega načrta še ni.", insightsTitle: "Vpogledi", driveCost: "Strošek vožnje ta mesec", per100: "{x} na 100 km", drain: "Praznjenje med parkiranjem", drainSub: "{p} % baterije na dan", vsUsual: "{x} glede na običajno", usualSub: "zadnja vožnja proti {n} podobnim", tempTitle: "Poraba glede na zunanjo temperaturo", tiresOk: "Pnevmatike so v redu", tiresWarn: "Preveri pnevmatike", tLow: "nizek tlak", tUneven: "neenakomerno", tDropping: "počasi pada", noInsights: "Vpogledi se pojavijo po nekaj dneh vožnje in polnjenja.", toLimit: "Do {l} %: {e} kWh", costNowLow: "{now} zdaj · {low} v nizki tarifi", lowFrom: "od {t}", sentry: "Stražarski način", healthy: "Zdravo polnjenje", startCharge: "Začni polnjenje", stopCharge: "Ustavi polnjenje", openRoof: "Odpri strešno okno", closeRoof: "Zapri strešno okno", logged: "Zabeleženo: {x}",
     tripsTitle: "Dnevnik voženj", tripsMeta: "danes {d} · ta mesec {m}", drivingNow: "Vožnja poteka", yesterday: "Včeraj", noTrips: "Vožnje se pojavijo tukaj po naslednji vožnji. Za natančne čase začetka in konca nastavi interval posodabljanja na 1 minuto.", colTrip: "Vožnja", colDistance: "Razdalja", colDuration: "Trajanje", colEnergy: "Energija", colConsumption: "kWh/100 km", colSoc: "Baterija", colSpeed: "Povp. hitrost", monthTrips: "Ta mesec {d} · {n}× · {e}", monthCharging: "Ta mesec", lastSession: "Zadnje polnjenje", tierHome: "Doma", tierAC: "Javno AC", tierDC: "Javno DC", health: "Zdravje baterije", healthSub: "{c} od {r} kWh uporabnih", healthPending: "ocena po 3 dneh s polnim polnjenjem", sessionsN: "{n}× polnjeno",
+    mapTitle: "Zemljevid vožnje", mapLoading: "Nalagam pot …", mapEmpty: "Za to vožnjo še ni poti. Nariše se iz zgodovine lokacije avta v Home Assistantu.", mapHint: "Vožnje se na zemljevidu pokažejo po naslednji vožnji.", mapStart: "Začetek", mapEnd: "Cilj", mapLive: "V živo", topSpeed: "Najvišja hitrost", avgSpeedL: "Povprečno", aboveLimit: "Nad omejitvijo", limitCar: "Omejitev v avtu", limitAlert: "Opozorilo na hitrost", legendBelow: "pod omejitvijo", legendNear: "blizu nje", legendAbove: "nad omejitvijo", legendSlow: "do 50", legendMid: "50–90", legendFast: "nad 90", tooFast: "Prehitro · {x}", speedLimit: "Omejitev hitrosti", trunk: "Prtljažnik", windows: "Okna", doors: "Vrata", sunroof: "Strešno okno", sentryOn: "Straža", tireLowShort: "Pnevmatika", limitDown: "Znižaj mejo polnjenja", limitUp: "Zvišaj mejo polnjenja", limitSet: "Meja polnjenja {x}",
   },
   de: {
     now: "Jetzt", justNow: "gerade eben", updated: "aktualisiert {x}",
@@ -200,6 +202,7 @@ const STRINGS = {
     preheatCabin: "Innenraum vorheizen", preheatSub: "{t} °C · Lüfter {f}", recircShort: "Umluft",
     mntTitle: "Wartung", mntOk: "OK", mntSoon: "BALD", mntOverdue: "FÄLLIG", kmLeft: "{x} km", daysLeft: "{x} Tage", overdueBy: "{x} überfällig", mntAssumed: "angenommen: planmäßig", mntLogged: "erfasst", mntDone: "Erledigt", mntHint: "Nach dem Service zweimal auf Erledigt tippen", mntNone: "Noch kein Wartungsplan.", insightsTitle: "Einblicke", driveCost: "Fahrkosten diesen Monat", per100: "{x} pro 100 km", drain: "Standverlust", drainSub: "{p} % Akku pro Tag", vsUsual: "{x} ggü. üblich", usualSub: "letzte Fahrt ggü. {n} ähnlichen", tempTitle: "Verbrauch nach Außentemperatur", tiresOk: "Reifen in Ordnung", tiresWarn: "Reifen prüfen", tLow: "niedrig", tUneven: "ungleich", tDropping: "fällt langsam", noInsights: "Einblicke erscheinen nach einigen Tagen Fahren und Laden.", toLimit: "Bis {l} %: {e} kWh", costNowLow: "{now} jetzt · {low} im Niedertarif", lowFrom: "ab {t}", sentry: "Wächtermodus", healthy: "Schonladen", startCharge: "Laden starten", stopCharge: "Laden stoppen", openRoof: "Schiebedach öffnen", closeRoof: "Schiebedach schließen", logged: "Erfasst: {x}",
     tripsTitle: "Fahrtenbuch", tripsMeta: "heute {d} · diesen Monat {m}", drivingNow: "Fahrt läuft", yesterday: "Gestern", noTrips: "Fahrten erscheinen hier nach der nächsten Fahrt. Für genaue Start- und Endzeiten das Aktualisierungsintervall auf 1 Minute stellen.", colTrip: "Fahrt", colDistance: "Strecke", colDuration: "Dauer", colEnergy: "Energie", colConsumption: "kWh/100 km", colSoc: "Akku", colSpeed: "Ø Tempo", monthTrips: "Diesen Monat {d} · {n}× · {e}", monthCharging: "Diesen Monat", lastSession: "Letzte Ladung", tierHome: "Zuhause", tierAC: "Öffentlich AC", tierDC: "Öffentlich DC", health: "Akkugesundheit", healthSub: "{c} von {r} kWh nutzbar", healthPending: "Schätzung nach 3 Tagen mit Vollladung", sessionsN: "{n}× geladen",
+    mapTitle: "Fahrtenkarte", mapLoading: "Route wird geladen …", mapEmpty: "Für diese Fahrt gibt es noch keine Route. Sie wird aus dem Standortverlauf des Autos in Home Assistant gezeichnet.", mapHint: "Fahrten erscheinen nach der nächsten Fahrt auf der Karte.", mapStart: "Start", mapEnd: "Ziel", mapLive: "Live", topSpeed: "Höchstgeschw.", avgSpeedL: "Durchschnitt", aboveLimit: "Über Limit", limitCar: "Tempolimit im Auto", limitAlert: "Tempowarnung", legendBelow: "unter Limit", legendNear: "knapp darunter", legendAbove: "über Limit", legendSlow: "bis 50", legendMid: "50–90", legendFast: "über 90", tooFast: "Zu schnell · {x}", speedLimit: "Tempolimit", trunk: "Kofferraum", windows: "Fenster", doors: "Türen", sunroof: "Schiebedach", sentryOn: "Wächter", tireLowShort: "Reifen", limitDown: "Ladelimit senken", limitUp: "Ladelimit erhöhen", limitSet: "Ladelimit {x}",
   },
 };
 
@@ -333,6 +336,11 @@ const SPEC = {
   quickCoolBtn: ["button", "quick_cool", "quick_cool"],
   quickHeatBtn: ["button", "quick_heat", "quick_heat"],
   defrostBtn: ["button", "windshield_defrost", "windshield_defrost"],
+  speedLimit: ["sensor", "speed_limit_kmh", "speed_limit"],
+  speedLimitOn: ["binary_sensor", "speed_limit_enabled", "speed_limit_active"],
+  speeding: ["binary_sensor", "speeding", "speeding"],
+  climateMode: ["sensor", "climate_mode", "climate_mode"],
+  chargeLimitSet: ["number", "charge_limit_setting", "charge_limit_setting"],
 };
 
 const DOORS = [
@@ -341,7 +349,7 @@ const DOORS = [
 ];
 const WINDOWS = ["winFL", "winFR", "winRL", "winRR", "skylight"];
 const TIRES = [["tireFL", "FL"], ["tireFR", "FR"], ["tireRL", "RL"], ["tireRR", "RR"]];
-const ALL_SECTIONS = ["hero", "check", "chart", "week", "charging", "energy", "trips", "maintenance", "insights", "controls"];
+const ALL_SECTIONS = ["hero", "check", "chart", "week", "charging", "energy", "trips", "map", "maintenance", "insights", "controls"];
 const TIRE_LOW_BAR = 1.9;
 const STALE_MINUTES = 120;
 
@@ -467,6 +475,75 @@ function valueAt(series, t) {
     v = val;
   }
   return v ?? (series.length ? series[0][1] : null);
+}
+
+/* ------------------------------------------------------------------ */
+/* Trip map                                                             */
+/* ------------------------------------------------------------------ */
+
+const SPEED_SLOW = "#38bdf8";
+const SPEED_MID = "#f6a823";
+const SPEED_FAST = "#fb7185";
+
+/** Route colour: against the speed alert / car limit when known, else fixed bands. */
+function speedColor(kmh, limit) {
+  if (kmh == null) return "#94a3b8";
+  if (limit) return kmh > limit ? SPEED_FAST : kmh > limit * 0.9 ? SPEED_MID : SPEED_SLOW;
+  return kmh > 90 ? SPEED_FAST : kmh > 50 ? SPEED_MID : SPEED_SLOW;
+}
+
+/**
+ * Split a track ([time, lat, lon] points) into runs of one colour, using the
+ * speed recorded at the end of each leg. Also returns the time spent above the
+ * limit and the top recorded speed.
+ */
+function trackRuns(points, speeds, limit) {
+  const runs = [];
+  let aboveMs = 0;
+  let maxKmh = null;
+  for (const [, v] of speeds) if (maxKmh == null || v > maxKmh) maxKmh = v;
+  for (let i = 1; i < points.length; i++) {
+    const [t0, a0, o0] = points[i - 1];
+    const [t1, a1, o1] = points[i];
+    const v = speeds.length ? valueAt(speeds, t1) : null;
+    if (limit && v != null && v > limit) aboveMs += Math.max(0, t1 - t0);
+    const color = speedColor(v, limit);
+    const last = runs[runs.length - 1];
+    if (last && last.color === color) last.pts.push([a1, o1]);
+    else runs.push({ color, pts: [[a0, o0], [a1, o1]] });
+  }
+  return { runs, aboveMs, maxKmh };
+}
+
+/** Map-less route drawing: used when Home Assistant's map is not available. */
+function routeSvg(track, startLabel, endLabel, W = 640, H = 300) {
+  const PAD = 34;
+  const pts = track.points;
+  const midLat = pts.reduce((a, p) => a + p[1], 0) / pts.length;
+  const kx = Math.cos((midLat * Math.PI) / 180);
+  const xs = pts.map((p) => p[2] * kx), ys = pts.map((p) => -p[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const span = Math.max(maxX - minX, maxY - minY, 1e-4);
+  const scale = Math.min((W - 2 * PAD) / Math.max(maxX - minX, span * 0.25), (H - 2 * PAD) / Math.max(maxY - minY, span * 0.25));
+  const ox = (W - (maxX - minX) * scale) / 2, oy = (H - (maxY - minY) * scale) / 2;
+  const xy = (lat, lon) => [f1(ox + (lon * kx - minX) * scale), f1(oy + (-lat - minY) * scale)];
+  const line = (run) => run.pts.map(([la, lo], i) => `${i ? "L" : "M"}${xy(la, lo).join(" ")}`).join("");
+  const r = rng(Math.round(Math.abs(pts[0][1] * 1e4)));
+  const stars = Array.from({ length: 34 }, () => `<circle cx="${f1(r() * W)}" cy="${f1(r() * H)}" r="${f1(0.4 + r())}" fill="#c7d2fe" opacity="${f1(0.15 + r() * 0.35)}"/>`).join("");
+  const [sx, sy] = xy(pts[0][1], pts[0][2]);
+  const [ex, ey] = xy(pts[pts.length - 1][1], pts[pts.length - 1][2]);
+  return `<svg class="routesvg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(startLabel)} → ${esc(endLabel)}">
+    <defs>
+      <pattern id="lm-grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="rgba(148,163,184,.07)"/></pattern>
+      <filter id="lm-routeglow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
+    <rect width="${W}" height="${H}" fill="url(#lm-grid)"/>${stars}
+    ${track.runs.map((run) => `<path d="${line(run)}" fill="none" stroke="${run.color}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#lm-routeglow)"/>`).join("")}
+    <circle cx="${sx}" cy="${sy}" r="7" fill="${SPEED_SLOW}" stroke="#e9eef8" stroke-width="2"/>
+    <circle cx="${ex}" cy="${ey}" r="8" fill="${SPEED_MID}" stroke="#e9eef8" stroke-width="2"/>
+    <text x="${sx}" y="${f1(sy - 14)}" text-anchor="middle">${esc(startLabel)}</text>
+    <text x="${ex}" y="${f1(ey - 15)}" text-anchor="middle">${esc(endLabel)}</text>
+  </svg>`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -660,7 +737,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .chip .ic{width:13px;height:13px;color:var(--lm-amber)}
 .chip.a{top:22px;left:36%}
 .chip.b{top:70px;right:22px}
-.chip.c{top:44%;left:41%}
+.chip.c{top:44%;left:52%}
 .btn-amber{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:8px 15px;border-radius:999px;font-size:12.5px;font-weight:600;
   color:var(--lm-amber-2);background:rgba(246,168,35,.13);border:1px solid rgba(246,168,35,.5);transition:background .2s,transform .2s}
 .btn-amber:hover{background:rgba(246,168,35,.22)}
@@ -848,7 +925,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 /* ---------- layout ---------- */
 @container lmcard (min-width:760px){
   .lm{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .hero,.controls,.trips,.maintenance,.insights{grid-column:1/-1}
+  .hero,.controls,.trips,.map,.maintenance,.insights{grid-column:1/-1}
 }
 @container lmcard (min-width:1180px){
   .lm{grid-template-columns:minmax(0,1.28fr) minmax(0,1.16fr) minmax(0,1fr)}
@@ -866,6 +943,9 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   .big{font-size:76px}
   .carzone{min-height:120px;padding:4px 0 10px 34px}
   .car img{max-height:170px}
+  .mapbox{height:250px}
+  .quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .fxpin b{font-size:9.5px;padding:2px 6px}
   .panel{padding:16px}
   .days{gap:3px;min-height:300px}
   .day{padding:10px 0 8px}
@@ -880,6 +960,55 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   .cell .l{letter-spacing:.08em}
   .day .en small{display:none}
 }
+.quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.qbtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 12px;border-radius:999px;font:600 12px var(--lm-font);color:var(--lm-text);
+  background:rgba(9,15,33,.55);border:1px solid rgba(148,163,184,.22);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);cursor:pointer;transition:background .2s,border-color .2s}
+.qbtn .ic{width:14px;height:14px;color:var(--c)}
+.qbtn:hover{background:rgba(255,255,255,.07);border-color:var(--c)}
+.qbtn.on{border-color:var(--c)}
+.qbtn.armed{border-color:var(--lm-amber);box-shadow:0 0 0 3px rgba(246,168,35,.18);animation:lm-armed 1s ease-in-out infinite}
+.qbtn.busy{opacity:.55;pointer-events:none}
+.carbox{position:relative;display:inline-block;max-width:100%;line-height:0}
+.carbox.svgcar{width:100%}
+.fxaura{position:absolute;left:24%;right:30%;top:6%;height:46%;border-radius:50%;filter:blur(14px);opacity:.8;pointer-events:none;mix-blend-mode:screen;animation:lm-pulse 3s ease-in-out infinite}
+.fxaura.warm{background:radial-gradient(closest-side,rgba(251,146,60,.9),rgba(251,146,60,0))}
+.fxaura.cool{background:radial-gradient(closest-side,rgba(56,189,248,.9),rgba(56,189,248,0))}
+.fxring{position:absolute;left:6%;right:6%;bottom:-6px;height:26px;border-radius:50%;border:2px dashed rgba(246,168,35,.75);box-shadow:0 0 18px rgba(246,168,35,.35);pointer-events:none;animation:lm-pulse 1.8s ease-in-out infinite}
+.fxmotion{position:absolute;left:-16%;top:32%;width:20%;height:40%;pointer-events:none}
+.fxmotion i{position:absolute;left:0;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,rgba(148,197,255,.75));animation:lm-streak 1s linear infinite}
+.fxmotion i:nth-child(1){top:8%;width:80%}
+.fxmotion i:nth-child(2){top:46%;width:100%;animation-delay:.33s}
+.fxmotion i:nth-child(3){top:84%;width:62%;animation-delay:.66s}
+.fxbeam{position:absolute;left:96%;top:46%;width:30%;height:28%;background:linear-gradient(90deg,rgba(255,243,214,.6),rgba(255,243,214,0));clip-path:polygon(0 38%,100% 0,100% 100%,0 62%);filter:blur(2px);pointer-events:none}
+.fxsentry{position:absolute;left:3%;top:-4%;display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#fecdd3;line-height:1}
+.fxsentry i{width:8px;height:8px;border-radius:50%;background:#f43f5e;box-shadow:0 0 10px #f43f5e;animation:lm-pulse 1.2s ease-in-out infinite}
+.fxpin{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none;line-height:1;z-index:2}
+.fxpin b{font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:999px;color:#fff3d6;background:rgba(9,15,33,.8);border:1px solid rgba(246,168,35,.55);white-space:nowrap}
+.fxpin i{width:10px;height:10px;border-radius:50%;background:var(--lm-amber);box-shadow:0 0 0 4px rgba(246,168,35,.25),0 0 14px var(--lm-amber);animation:lm-pulse 1.4s ease-in-out infinite}
+.fxpin.bad b{border-color:rgba(251,113,133,.6);color:#ffe4e6}
+.fxpin.bad i{background:var(--lm-red);box-shadow:0 0 0 4px rgba(251,113,133,.25),0 0 14px var(--lm-red)}
+.fxbatt{position:absolute;left:30%;right:30%;bottom:-8px;height:4px;border-radius:3px;background:rgba(148,163,184,.2);overflow:hidden}
+.fxbatt i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#10b981,#34d399)}
+.fxbatt.on i{background:linear-gradient(90deg,#10b981,#6ee7b7,#10b981);background-size:200% 100%;animation:lm-flowbg 1.6s linear infinite}
+.stepper{display:inline-flex;align-items:center;gap:8px}
+.stepper .stp{width:28px;height:28px;border-radius:50%;border:1px solid rgba(246,168,35,.5);background:rgba(246,168,35,.1);color:var(--lm-amber-2);font:600 16px/1 var(--lm-mono);cursor:pointer;display:grid;place-items:center;padding:0}
+.stepper .stp:hover{background:rgba(246,168,35,.22)}
+.stepper .pending{color:var(--lm-amber-2)}
+.stepper.busy{opacity:.55;pointer-events:none}
+.mapbox{position:relative;height:320px;border-radius:14px;overflow:hidden;background:radial-gradient(120% 90% at 30% 0%,#111b38,#070c1c 70%);border:1px solid rgba(148,163,184,.15)}
+.mapbox .hamap{display:block;width:100%;height:100%}
+.mapbox .routesvg{display:block;width:100%;height:100%}
+.mapbox .routesvg text{font:600 11px var(--lm-font,inherit);fill:#e9eef8;paint-order:stroke;stroke:#070c1c;stroke-width:3px}
+.mapbox .mapmsg{display:none;position:absolute;inset:0;place-items:center;text-align:center;padding:24px;color:var(--lm-muted);font-size:13px;line-height:1.5}
+.mapbox.msg .mapmsg{display:grid}
+.mapbox.msg .hamap,.mapbox.msg .routesvg{visibility:hidden}
+.map .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:#a9b3ca;margin-top:12px}
+.map .legend i{display:inline-block;width:18px;height:4px;border-radius:2px;background:var(--c);box-shadow:0 0 8px var(--c);vertical-align:middle;margin-right:7px}
+.map .mstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px 8px;margin-top:14px;padding:12px 14px;border-radius:13px;background:rgba(255,255,255,.025);border:1px solid var(--lm-line-2)}
+.trow[data-trip]{cursor:pointer}
+.trow.sel{border-color:rgba(246,168,35,.55);box-shadow:inset 3px 0 0 var(--lm-amber)}
+@keyframes lm-streak{0%{transform:translateX(40%);opacity:0}30%{opacity:1}100%{transform:translateX(-60%);opacity:0}}
+@keyframes lm-flowbg{to{background-position:-200% 0}}
 @keyframes lm-pulse{0%,100%{opacity:1}50%{opacity:.45}}
 @keyframes lm-spin{to{transform:rotate(360deg)}}
 @keyframes lm-flow{to{stroke-dashoffset:-24}}
@@ -916,7 +1045,7 @@ class LeapmotorCard extends HTMLElement {
   static getConfigForm() {
     const sectionOptions = [
       ["hero", "Hero scene"], ["check", "Vehicle check"], ["chart", "Last 24 hours"], ["week", "Last 7 days"],
-      ["charging", "Charging"], ["energy", "Energy & tires"], ["trips", "Trip log"], ["maintenance", "Maintenance"], ["insights", "Insights"], ["controls", "Remote control"],
+      ["charging", "Charging"], ["energy", "Energy & tires"], ["trips", "Trip log"], ["map", "Trip map"], ["maintenance", "Maintenance"], ["insights", "Insights"], ["controls", "Remote control"],
     ].map(([value, label]) => ({ value, label }));
     return {
       schema: [
@@ -938,6 +1067,7 @@ class LeapmotorCard extends HTMLElement {
             { name: "confirm_actions", selector: { boolean: {} } },
             { name: "backdrop", selector: { boolean: {} } },
             { name: "image_flip", selector: { boolean: {} } },
+            { name: "quick_actions", selector: { boolean: {} } },
           ],
         },
         { name: "entity_prefix", selector: { text: {} } },
@@ -945,7 +1075,7 @@ class LeapmotorCard extends HTMLElement {
       computeLabel: (s) => ({
         device_id: "Vehicle", name: "Title (optional)", sections: "Sections", scene: "Scene",
         language: "Language", confirm_actions: "Tap twice to confirm remote actions",
-        backdrop: "Dark backdrop", image_flip: "Mirror the car picture", entity_prefix: "Entity prefix (optional, e.g. c10)",
+        backdrop: "Dark backdrop", image_flip: "Mirror the car picture", quick_actions: "Quick buttons under the battery", entity_prefix: "Entity prefix (optional, e.g. c10)",
       })[s.name],
     };
   }
@@ -956,7 +1086,7 @@ class LeapmotorCard extends HTMLElement {
       ? ALL_SECTIONS.filter((s) => config.sections.includes(s))
       : ALL_SECTIONS;
     this._config = {
-      scene: "auto", language: "auto", confirm_actions: true, backdrop: true, show_image: true, image_flip: false,
+      scene: "auto", language: "auto", confirm_actions: true, backdrop: true, show_image: true, image_flip: false, quick_actions: true,
       ...config, sections,
     };
     this._built = false;
@@ -1232,6 +1362,7 @@ class LeapmotorCard extends HTMLElement {
       parts.push(`<div class="stack">${has("charging") ? `<section class="panel charge" id="charging"></section>` : ""}${has("energy") ? `<section class="panel energy" id="energy"></section>` : ""}</div>`);
     }
     if (has("trips")) parts.push(`<section class="panel trips" id="trips"></section>`);
+    if (has("map")) parts.push(`<section class="panel map" id="map"><div id="maphead"></div><div class="mapbox" id="mapbox"></div><div id="mapfoot"></div></section>`);
     if (has("maintenance")) parts.push(`<section class="panel maintenance" id="maintenance"></section>`);
     if (has("insights")) parts.push(`<section class="panel insights" id="insights"></section>`);
     if (has("controls")) parts.push(`<section class="panel controls" id="controls"></section>`);
@@ -1251,9 +1382,10 @@ class LeapmotorCard extends HTMLElement {
       check: () => this._checkSig(),
       chart: () => this._chartSig(),
       week: () => this._sig(["week"]),
-      charging: () => this._sig(["battery", "chargeLimit", "isCharging", "isPlugged", "connection", "finish", "remaining", "power", "current", "voltage", "lastCharge", "range", "lastSession", "lastSessionCost", "monthCost", "monthEnergy", "toLimit"]) + Math.floor(Date.now() / MIN),
+      charging: () => this._sig(["battery", "chargeLimit", "chargeLimitSet", "isCharging", "isPlugged", "connection", "finish", "remaining", "power", "current", "voltage", "lastCharge", "range", "lastSession", "lastSessionCost", "monthCost", "monthEnergy", "toLimit"]) + Math.floor(Date.now() / MIN) + `|${this._limitPending ?? ""}|${this._busy.limit ? 1 : 0}`,
       energy: () => this._sig(["avg", "tireFL", "tireFR", "tireRL", "tireRR", "lwDriving", "lwClimate", "lwOther", "health"]),
-      trips: () => this._sig(["lastTrip", "todayDistance", "monthDistance", "tripConsumption"]) + Math.floor(Date.now() / MIN),
+      trips: () => this._sig(["lastTrip", "todayDistance", "monthDistance", "tripConsumption"]) + Math.floor(Date.now() / MIN) + `|${this._tripKey(this._mapSelected())}`,
+      map: () => this._mapSig(),
       maintenance: () => this._sig(["nextMaintenance", "maintenanceDue"]) + JSON.stringify(this._armed) + JSON.stringify(this._busy),
       insights: () => this._sig(["driveCost", "costPer100", "drain", "tripConsumption", "tireWarning", "lastTrip"]),
       controls: () => this._controlsSig(),
@@ -1278,6 +1410,11 @@ class LeapmotorCard extends HTMLElement {
     this._sigs[name] = sig;
     if (name === "hero") {
       for (const [id, part] of Object.entries(this._heroHtml())) this._patch(id, part);
+      return;
+    }
+    if (name === "map") {
+      for (const [id, part] of Object.entries(this._mapHtml())) this._patch(id, part);
+      this._syncMap();
       return;
     }
     target.innerHTML = html[name]();
@@ -1319,7 +1456,9 @@ class LeapmotorCard extends HTMLElement {
       this._sig(["battery", "batteryPrecise", "range", "lock", "isCharging", "isPlugged", "connection", "isDriving", "speed", "gear",
         "interior", "outdoor", "odometer", "chargeLimit", "avg", "lastUpdate", "tracker", "picture", "remaining", "vehicleState", "fuel"]),
       this._sig(DOORS.map(([k]) => k)), this._sig(WINDOWS), this._sig(["trunk"]),
-      this._sceneMode(), Math.floor(Date.now() / MIN), this._busy.refresh ? 1 : 0,
+      this._sig(["speeding", "speedLimit", "speedLimitOn", "climateOn", "climateMode", "climateSwitch", "sentry"]), this._sig(TIRES.map(([k]) => k)),
+      this._sceneMode(), Math.floor(Date.now() / MIN), JSON.stringify(this._armed), JSON.stringify(this._busy),
+      this._sig(["quickHeatBtn", "quickCoolBtn", "windowsOpenBtn", "windowsCloseBtn"]),
     ].join("#");
   }
 
@@ -1373,6 +1512,10 @@ class LeapmotorCard extends HTMLElement {
       const rem = this._v("remaining");
       cText = rem != null ? `${t("charging")} · ${this._dur(rem)}` : `${t("charging")} · ${this._num(this._v("power"), 1)} kW`;
       cPulse = " pulse";
+    } else if (driving && this._on("speeding") === true && this._v("speed") != null) {
+      cText = t("tooFast", { x: `${this._num(this._v("speed"))} ${this._unit("speed", "km/h")}` });
+      cColor = "var(--lm-red)";
+      cPulse = " pulse";
     } else if (driving) {
       const spd = this._v("speed");
       cText = spd != null ? `${t("driving")} · ${this._num(spd)} ${this._unit("speed", "km/h")}` : t("driving");
@@ -1403,6 +1546,8 @@ class LeapmotorCard extends HTMLElement {
     const spd = this._v("speed");
     if (spd != null) cell(t("speed"), this._num(spd), this._unit("speed", "km/h"), "speed");
     else if (this._s("gear")) cell(t("gear"), esc(this._s("gear").state), "", "gear");
+    const speedLimit = this._speedLimit();
+    if (speedLimit) cell(t("speedLimit"), this._num(speedLimit.kmh), "km/h", speedLimit.source === "vehicle" ? "speedLimit" : "speeding");
     const avg = this._v("avg");
     cell(t("consumption"), avg != null ? this._num(avg, 1) : null, "kWh/100", "avg");
     if (upd) {
@@ -1414,9 +1559,10 @@ class LeapmotorCard extends HTMLElement {
     // Car
     const night = this._sceneMode() === "night";
     const picUrl = this._carPicture();
-    const carInner = picUrl
+    const carArt = picUrl
       ? `<img src="${esc(picUrl)}" alt="${esc(this._vehicleName())}"${this._config.image_flip ? ' class="flip"' : ""}>`
       : carSvg(night);
+    const carInner = `<div class="carbox${picUrl ? "" : " svgcar"}">${carArt}${this._carFx({ charging, plugged, night, driving, locked })}</div>`;
     const ledColor = charging ? "#34d399" : "#f6a823";
     const plug = plugged
       ? `<div class="wallbox" style="--c:${ledColor}"><i></i></div><svg class="cable${charging ? "" : " idle"}" style="--c:${ledColor}" viewBox="0 0 100 96" preserveAspectRatio="none"><path d="M8 50C14 98 70 102 96 30" vector-effect="non-scaling-stroke"/></svg>`
@@ -1432,7 +1578,7 @@ class LeapmotorCard extends HTMLElement {
         <div class="sub">${esc(dateStr)}${loc ? ` · ${icon("pin")}${esc(loc)}` : ""}</div>
         <div class="big clickable" data-more="battery">${socTxt}<span class="u">%</span></div>
         <div class="state">${icon(stateIcon)}${esc(stateBits.join(" · "))}</div>
-        <div class="metaline">${meta.join("")}</div>`,
+        <div class="metaline">${meta.join("")}</div>${this._quickHtml()}`,
       hcar: `<div class="car${charging ? " charging" : ""}">${plug}${carInner}</div>`,
       hstrip: cells.length ? `<div class="strip">${cells.slice(0, 7).join("")}</div>` : "",
     };
@@ -1862,7 +2008,7 @@ class LeapmotorCard extends HTMLElement {
       <div class="arcbox clickable" data-more="battery">${svg}</div>
       <div class="arclabels">
         <div><small>${esc(t("battery"))}</small><span class="mono">${soc != null ? this._num(soc) : "—"} %</span></div>
-        <div class="mid">${esc(t("limit"))} ${limit != null ? `${this._num(limit)} %` : "—"}</div>
+        <div class="mid">${this._limitStepper(limit)}</div>
         <div><small>${esc(right.label)}</small><span class="mono">${esc(right.value)}</span></div>
       </div>
       <div class="cbottom">
@@ -2079,8 +2225,10 @@ class LeapmotorCard extends HTMLElement {
     } catch (_e) { return date.toDateString(); }
   }
 
-  _tripRow(trip, live = false) {
+  _tripRow(trip, live = false, index = 0) {
     const t = (k, v) => this._tr(k, v);
+    const pick = this._config.sections.includes("map");
+    const selected = pick && this._tripKey(this._mapSelected()) === this._tripKey(live ? { ...trip, live: true } : trip);
     const start = trip.start ? new Date(trip.start) : null;
     const end = trip.end ? new Date(trip.end) : null;
     const when = start ? `${this._time(start)}${end && !live ? `–${this._time(end)}` : ""}` : "";
@@ -2089,7 +2237,7 @@ class LeapmotorCard extends HTMLElement {
     const s0 = trip.start_soc, s1 = trip.end_soc;
     const socBar = s0 != null && s1 != null
       ? `<div class="socbar"><i style="left:${Math.min(s0, s1)}%;width:${Math.max(2, Math.abs(s0 - s1))}%"></i></div>` : "";
-    return `<div class="trow item${live ? " live" : ""}">
+    return `<div class="trow item${live ? " live" : ""}${selected ? " sel" : ""}"${pick ? ` data-trip="${live ? "live" : index}"` : ""}>
       <div class="tday"><b>${live ? `<span class="dot pulse" style="--c:var(--lm-sky);margin-right:6px"></span>${esc(t("drivingNow"))}` : esc(start ? this._tripDay(start) : "")}</b><small>${esc(when)}</small></div>
       <div class="tc dist">${this._num(trip.distance_km ?? 0, 1)}<small>km</small>${trip.vs_usual_pct != null
         ? `<span class="vs ${trip.vs_usual_pct <= 0 ? "good" : "bad"}">${trip.vs_usual_pct > 0 ? "+" : ""}${this._num(trip.vs_usual_pct, 0)} %</span>` : ""}</div>
@@ -2115,12 +2263,371 @@ class LeapmotorCard extends HTMLElement {
     const cols = `<div class="trow head"><span>${esc(t("colTrip"))}</span><span>${esc(t("colDistance"))}</span><span class="tdur">${esc(t("colDuration"))}</span><span class="ten">${esc(t("colEnergy"))}</span><span>${esc(t("colConsumption"))}</span><span class="tsoc">${esc(t("colSoc"))}</span><span class="tspd">${esc(t("colSpeed"))}</span></div>`;
     const latest = { ...(recent[0] || {}), vs_usual_pct: a.vs_usual_pct ?? this._s("tripConsumption")?.attributes?.vs_usual_pct };
     const rows = (current ? this._tripRow(current, true) : "")
-      + recent.slice(0, 6).map((trip, i) => this._tripRow(i === 0 ? latest : trip)).join("");
+      + recent.slice(0, 6).map((trip, i) => this._tripRow(i === 0 ? latest : trip, false, i)).join("");
     const ma = this._s("monthDistance")?.attributes || {};
     const foot = month != null
       ? `<div class="tfoot">${esc(t("monthTrips", { d: `${this._num(month)} km`, n: ma.trips ?? 0, e: ma.energy_kwh != null ? `${this._num(ma.energy_kwh, 1)} kWh` : "— kWh" }))}</div>`
       : "";
     return `${head}${cols}<div class="clickable" data-more="lastTrip">${rows}</div>${foot}`;
+  }
+
+  /* ----- quick actions on the first page ----- */
+
+  /** Lock/unlock, quick heat, quick cool and windows as one row under the battery. */
+  _quickHtml() {
+    if (this._config.quick_actions === false) return "";
+    const t = (k) => this._tr(k);
+    const defs = this._controlDefs();
+    const keys = [
+      defs.unlockCar ? "unlockCar" : "lockCar",
+      defs.quickHeat ? "quickHeat" : "cabinPreheat",
+      defs.quickCool ? "quickCool" : "cabinPrecool",
+      "windows",
+    ].filter((k) => defs[k]);
+    if (!keys.length) return "";
+    const buttons = keys.map((key) => {
+      const d = defs[key];
+      const armed = this._isArmed(key);
+      return `<button class="qbtn${d.on ? " on" : ""}${armed ? " armed" : ""}${this._busy[key] ? " busy" : ""}" style="--c:${d.color}" data-act="ctl" data-key="${key}">${icon(d.icon)}${esc(armed ? t("tapConfirm") : d.label)}</button>`;
+    });
+    return `<div class="quick">${buttons.join("")}</div>`;
+  }
+
+  /* ----- speed limit ----- */
+
+  /** The speed to compare with: the user's alert speed, else the car's own limit when on. */
+  _speedLimit() {
+    const a = this._s("speeding")?.attributes || {};
+    const alert = Number(a.threshold_kmh);
+    if (isFinite(alert) && alert > 0) return { kmh: alert, source: a.threshold_source || "setting" };
+    const car = this._v("speedLimit");
+    if (this._on("speedLimitOn") === true && car != null && car > 0) return { kmh: car, source: "vehicle" };
+    return null;
+  }
+
+  /* ----- dynamic car picture ----- */
+
+  /**
+   * State overlays on the car (official render or built-in drawing): climate
+   * glow, unlocked ring, motion and headlight while driving, sentry, open
+   * doors/trunk/windows, low tires and the battery bar while plugged in.
+   * Positions assume the car faces right, as in the scene (mirror the picture
+   * in the card options if it does not).
+   */
+  _carFx({ charging, plugged, night, driving, locked }) {
+    const t = (k, v) => this._tr(k, v);
+    const fx = [];
+    const pin = (x, y, label, cls = "") =>
+      fx.push(`<span class="fxpin${cls ? ` ${cls}` : ""}" style="left:${x}%;top:${y}%"><b>${esc(label)}</b><i></i></span>`);
+    if (this._on("climateOn") === true || this._s("climateSwitch")?.state === "on") {
+      const mode = String(this._s("climateMode")?.state || "");
+      const out = this._v("outdoor");
+      const warm = mode.includes("heat") || (!mode.includes("cool") && out != null && out < 16);
+      fx.push(`<span class="fxaura ${warm ? "warm" : "cool"}"></span>`);
+    }
+    if (locked === false) fx.push(`<span class="fxring"></span>`);
+    if (driving) {
+      fx.push(`<span class="fxmotion"><i></i><i></i><i></i></span>`);
+      if (night) fx.push(`<span class="fxbeam"></span>`);
+    }
+    if (this._s("sentry")?.state === "on") fx.push(`<span class="fxsentry"><i></i>${esc(t("sentryOn"))}</span>`);
+    const front = this._on("doorDriver") || this._on("doorPassenger");
+    const rear = this._on("doorRearLeft") || this._on("doorRearRight");
+    if (front || rear) pin(front ? 58 : 42, 48, t("doors"));
+    if (this._on("trunk")) pin(8, 40, t("trunk"));
+    if (["winFL", "winFR", "winRL", "winRR"].some((k) => this._on(k))) pin(50, 24, t("windows"));
+    if (this._on("skylight")) pin(47, 6, t("sunroof"));
+    const low = (k) => { const v = this._v(k); return v != null && v < TIRE_LOW_BAR; };
+    if (low("tireFL") || low("tireFR")) pin(76, 82, t("tireLowShort"), "bad");
+    if (low("tireRL") || low("tireRR")) pin(25, 82, t("tireLowShort"), "bad");
+    const soc = this._v("battery");
+    if (plugged && soc != null) fx.push(`<span class="fxbatt${charging ? " on" : ""}"><i style="width:${clamp(soc, 0, 100)}%"></i></span>`);
+    return fx.join("");
+  }
+
+  /* ----- charge limit stepper ----- */
+
+  _limitStepper(limit) {
+    const t = (k, v) => this._tr(k, v);
+    const n = this._s("chargeLimitSet");
+    const shown = this._limitPending ?? limit;
+    const text = `${esc(t("limit"))} ${shown != null ? `${this._num(shown)} %` : "—"}`;
+    if (!n || n.state === "unavailable") return text;
+    const busy = this._busy.limit ? " busy" : "";
+    return `<span class="stepper${busy}"><button class="stp" data-act="limit" data-delta="-1" aria-label="${esc(t("limitDown"))}">−</button>`
+      + `<span class="${this._limitPending != null ? "pending" : ""}">${text}</span>`
+      + `<button class="stp" data-act="limit" data-delta="1" aria-label="${esc(t("limitUp"))}">+</button></span>`;
+  }
+
+  /** Collect taps for a moment, then send one charge-limit command. */
+  _bumpLimit(delta) {
+    const n = this._s("chargeLimitSet");
+    if (!n || !delta || this._busy.limit) return;
+    const a = n.attributes || {};
+    const step = Number(a.step) || 1;
+    const min = isFinite(Number(a.min)) ? Number(a.min) : 1;
+    const max = isFinite(Number(a.max)) ? Number(a.max) : 100;
+    const base = this._limitPending ?? (parseFloat(n.state) || this._v("chargeLimit") || 80);
+    this._limitPending = clamp(Math.round((base + delta * step) / step) * step, min, max);
+    this._renderSection("charging");
+    clearTimeout(this._limitTimer);
+    this._limitTimer = setTimeout(() => this._sendLimit(), 1300);
+  }
+
+  async _sendLimit() {
+    const value = this._limitPending;
+    const id = this._ids.chargeLimitSet;
+    if (value == null || !id) return;
+    this._busy.limit = true;
+    this._renderSection("charging");
+    try {
+      await this._hass.callService("number", "set_value", { entity_id: id, value });
+      this._toast(this._tr("sent", { x: this._tr("limitSet", { x: `${value} %` }) }));
+    } catch (err) {
+      this._toast(this._tr("failed", { x: err?.message || String(err) }));
+    }
+    this._limitPending = null;
+    delete this._busy.limit;
+    this._renderSection("charging");
+  }
+
+  /* ----- trip map ----- */
+
+  _mapTrips() {
+    const a = this._s("lastTrip")?.attributes || {};
+    const recent = Array.isArray(a.recent_trips) ? a.recent_trips : [];
+    const current = a.current_trip && a.current_trip.start ? { ...a.current_trip, live: true } : null;
+    return { recent, current };
+  }
+
+  /** The trip shown on the map: the one tapped in the trip log, else the live or latest trip. */
+  _mapSelected() {
+    const { recent, current } = this._mapTrips();
+    if (this._mapSel === "live" && current) return current;
+    if (typeof this._mapSel === "number" && recent[this._mapSel]) return recent[this._mapSel];
+    return current || recent[0] || null;
+  }
+
+  _tripKey(trip) {
+    return trip ? `${trip.start}|${trip.live ? "live" : trip.end}` : "";
+  }
+
+  _mapSig() {
+    const trip = this._mapSelected();
+    const key = this._tripKey(trip);
+    const tr = this._track;
+    return [key, tr && tr.key === key ? `${tr.state}|${tr.fetchedAt}` : "-", this._trackLoading ? 1 : 0,
+      this._sig(["speeding", "speedLimit", "speedLimitOn", "tracker"]), trip?.live ? Math.floor(Date.now() / MIN) : 0].join("#");
+  }
+
+  _mapHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const trip = this._mapSelected();
+    const tr = this._track && this._track.key === this._tripKey(trip) ? this._track : null;
+    let meta = "";
+    if (trip) {
+      const start = new Date(trip.start);
+      const end = trip.end ? new Date(trip.end) : null;
+      const when = `${this._tripDay(start)} ${this._time(start)}${end && !trip.live ? `–${this._time(end)}` : ""}`;
+      meta = `${trip.live ? `${t("mapLive")} · ` : ""}${when} · ${this._num(trip.distance_km ?? 0, 1)} km`;
+    }
+    const head = `<div class="ptitle"><h3>${esc(t("mapTitle"))}</h3><span class="meta">${esc(meta)}</span></div>`;
+    if (!trip) return { maphead: head, mapfoot: "" };
+    const limit = tr?.limit ?? this._speedLimit()?.kmh ?? null;
+    const source = this._speedLimit()?.source;
+    const legend = (limit
+      ? [[SPEED_SLOW, t("legendBelow")], [SPEED_MID, t("legendNear")], [SPEED_FAST, t("legendAbove")]]
+      : [[SPEED_SLOW, `${t("legendSlow")} km/h`], [SPEED_MID, `${t("legendMid")} km/h`], [SPEED_FAST, `${t("legendFast")} km/h`]])
+      .map(([c, l]) => `<span><i style="--c:${c}"></i>${esc(l)}</span>`).join("");
+    const top = trip.max_speed_kmh ?? tr?.maxKmh ?? null;
+    const cells = [];
+    const cell = (label, value, unit) => cells.push(`<div class="cell"><div class="l">${esc(label)}</div><div class="v">${value}<small>${esc(unit)}</small></div></div>`);
+    if (top != null) cell(t("topSpeed"), this._num(top), "km/h");
+    if (trip.avg_speed_kmh != null) cell(t("avgSpeedL"), this._num(trip.avg_speed_kmh), "km/h");
+    if (limit) cell(source === "vehicle" ? t("limitCar") : t("limitAlert"), this._num(limit), "km/h");
+    if (limit && tr) cell(t("aboveLimit"), this._num(Math.round(tr.aboveMs / MIN)), "min");
+    return {
+      maphead: head,
+      mapfoot: `<div class="legend">${legend}</div>${cells.length ? `<div class="mstats">${cells.join("")}</div>` : ""}`,
+    };
+  }
+
+  _syncMap() {
+    const box = this.shadowRoot.getElementById("mapbox");
+    if (!box) return;
+    const trip = this._mapSelected();
+    if (!trip) {
+      this._showMapMsg(box, this._tr("mapHint"));
+      return;
+    }
+    const key = this._tripKey(trip);
+    const tr = this._track;
+    const current = tr && tr.key === key;
+    if (!current || (trip.live && Date.now() - tr.fetchedAt > MIN)) {
+      if (!this._trackLoading) this._fetchTrack(trip, key);
+      if (!current) {
+        this._showMapMsg(box, this._tr("mapLoading"));
+        return;
+      }
+    }
+    if (tr.state !== "ok") {
+      this._showMapMsg(box, this._tr("mapEmpty"));
+      return;
+    }
+    this._drawRoute(box, tr);
+  }
+
+  _showMapMsg(box, message) {
+    box.__drawn = null;
+    let msg = box.querySelector(".mapmsg");
+    if (!msg) {
+      msg = document.createElement("div");
+      msg.className = "mapmsg";
+      box.appendChild(msg);
+    }
+    msg.textContent = message;
+    box.classList.add("msg");
+  }
+
+  /** Route from the recorder: device tracker positions plus recorded speed. */
+  async _fetchTrack(trip, key) {
+    this._trackLoading = true;
+    const tracker = this._ids.tracker;
+    const speedId = this._ids.speed;
+    const startMs = Date.parse(trip.start);
+    const endMs = trip.live || !trip.end ? Date.now() : Date.parse(trip.end);
+    const limit = this._speedLimit()?.kmh || null;
+    const points = [];
+    let speeds = [];
+    try {
+      if (!tracker || typeof this._hass.callWS !== "function" || !isFinite(startMs) || !isFinite(endMs)) throw new Error("no history");
+      const from = startMs - 2 * MIN;
+      const base = {
+        type: "history/history_during_period",
+        start_time: new Date(from).toISOString(),
+        end_time: new Date(endMs + 2 * MIN).toISOString(),
+        significant_changes_only: false,
+      };
+      const [loc, spd] = await Promise.all([
+        this._hass.callWS({ ...base, entity_ids: [tracker], minimal_response: false, no_attributes: false }),
+        speedId ? this._hass.callWS({ ...base, entity_ids: [speedId], minimal_response: true, no_attributes: true }).catch(() => ({})) : {},
+      ]);
+      const tsOf = (st) => (st.lu != null ? st.lu * 1000 : st.lc != null ? st.lc * 1000 : Date.parse(st.last_updated || st.last_changed));
+      for (const st of loc?.[tracker] || []) {
+        const a = st.a || st.attributes || {};
+        const lat = Number(a.latitude), lon = Number(a.longitude), ts = tsOf(st);
+        if (!isFinite(lat) || !isFinite(lon) || (lat === 0 && lon === 0) || !isFinite(ts)) continue;
+        const prev = points[points.length - 1];
+        if (prev && Math.abs(prev[1] - lat) < 1e-6 && Math.abs(prev[2] - lon) < 1e-6) continue;
+        points.push([Math.max(ts, from), lat, lon]);
+      }
+      speeds = (spd?.[speedId] || []).map((st) => [tsOf(st), parseFloat(st.s ?? st.state)]).filter(([ts, v]) => isFinite(ts) && isFinite(v));
+    } catch (_e) {
+      points.length = 0;
+    }
+    this._track = {
+      key, fetchedAt: Date.now(), state: points.length ? "ok" : "empty", live: !!trip.live,
+      points, limit, ...trackRuns(points, speeds, limit),
+    };
+    this._trackLoading = false;
+    this._renderSection("map");
+  }
+
+  /** Load Home Assistant's own map element (it is only defined once a map card loads). */
+  async _ensureHaMap() {
+    if (customElements.get("ha-map")) return true;
+    if (typeof window.loadCardHelpers !== "function") return false;
+    if (!this._haMapLoad) {
+      this._haMapLoad = (async () => {
+        try {
+          const helpers = await window.loadCardHelpers?.();
+          if (helpers) await helpers.createCardElement({ type: "map", entities: this._ids.tracker ? [this._ids.tracker] : [] });
+          await Promise.race([customElements.whenDefined("ha-map"), new Promise((r) => setTimeout(r, 5000))]);
+        } catch (_e) {
+          // No card helpers (outside Home Assistant): use the drawn route.
+        }
+        return !!customElements.get("ha-map");
+      })();
+    }
+    return this._haMapLoad;
+  }
+
+  async _drawRoute(box, tr) {
+    const key = `${tr.key}|${tr.fetchedAt}`;
+    if (box.__drawn === key) return;
+    box.__drawn = key;
+    box.classList.remove("msg");
+    const useMap = this._config.map !== "drawn" && (await this._ensureHaMap());
+    if (box.__drawn !== key) return;
+    if (!useMap || !this._drawLeaflet(box, tr, key)) this._drawSvg(box, tr);
+  }
+
+  _drawSvg(box, tr) {
+    box.querySelector("ha-map")?.remove();
+    box.querySelector(".routesvg")?.remove();
+    // Draw at the box's own size so the route fills phones and wide screens alike.
+    const w = Math.round(clamp(box.clientWidth || 640, 240, 1600));
+    const h = Math.round(clamp(box.clientHeight || 300, 180, 900));
+    box.insertAdjacentHTML("afterbegin", routeSvg(tr, this._tr("mapStart"), this._tr(tr.live ? "mapLive" : "mapEnd"), w, h));
+  }
+
+  /** Draw the coloured route on Home Assistant's map (dark tiles), or report failure. */
+  _drawLeaflet(box, tr, key) {
+    let map = box.querySelector("ha-map");
+    try {
+      if (!map) {
+        box.querySelector(".routesvg")?.remove();
+        map = document.createElement("ha-map");
+        map.className = "hamap";
+        map.hass = this._hass;
+        map.autoFit = false;
+        map.themeMode = "dark";
+        map.darkMode = true;
+        map.zoom = 14;
+        map.entities = [];
+        box.prepend(map);
+      } else {
+        map.hass = this._hass;
+      }
+    } catch (_e) {
+      map?.remove();
+      return false;
+    }
+    let tries = 0;
+    const draw = () => {
+      if (box.__drawn !== key) return;
+      const L = map.Leaflet, lm = map.leafletMap;
+      if (!L || !lm) {
+        if (++tries > 60) {
+          map.remove();
+          this._drawSvg(box, tr);
+        } else setTimeout(draw, 100);
+        return;
+      }
+      map.__lmLayer?.remove();
+      const group = L.featureGroup();
+      for (const run of tr.runs) {
+        L.polyline(run.pts, { color: "#060a16", weight: 9, opacity: 0.6, lineCap: "round", lineJoin: "round" }).addTo(group);
+        L.polyline(run.pts, { color: run.color, weight: 5, opacity: 0.95, lineCap: "round", lineJoin: "round" }).addTo(group);
+      }
+      const first = tr.points[0], last = tr.points[tr.points.length - 1];
+      L.circleMarker([first[1], first[2]], { radius: 7, color: "#e9eef8", weight: 2, fillColor: SPEED_SLOW, fillOpacity: 1 })
+        .bindTooltip(this._tr("mapStart")).addTo(group);
+      L.circleMarker([last[1], last[2]], { radius: 8, color: "#e9eef8", weight: 2, fillColor: SPEED_MID, fillOpacity: 1 })
+        .bindTooltip(this._tr(tr.live ? "mapLive" : "mapEnd")).addTo(group);
+      group.addTo(lm);
+      map.__lmLayer = group;
+      const fit = () => {
+        try {
+          lm.invalidateSize();
+          lm.fitBounds(group.getBounds(), { padding: [30, 30], maxZoom: 16 });
+        } catch (_e) { /* map not sized yet */ }
+      };
+      fit();
+      setTimeout(fit, 500);
+    };
+    draw();
+    return true;
   }
 
   /* ----- remote control ----- */
@@ -2216,8 +2723,19 @@ class LeapmotorCard extends HTMLElement {
   }
 
   _onClick(ev) {
-    const el = ev.composedPath().find((n) => n instanceof HTMLElement && (n.dataset?.act || n.dataset?.more));
+    const el = ev.composedPath().find((n) => n instanceof HTMLElement && (n.dataset?.act || n.dataset?.more || n.dataset?.trip));
     if (!el) return;
+    if (el.dataset.trip) {
+      this._mapSel = el.dataset.trip === "live" ? "live" : Number(el.dataset.trip);
+      this._renderSection("trips");
+      this._renderSection("map");
+      this.shadowRoot.getElementById("map")?.scrollIntoView?.({ behavior: "smooth", block: "nearest" });
+      return;
+    }
+    if (el.dataset.act === "limit") {
+      this._bumpLimit(Number(el.dataset.delta) || 0);
+      return;
+    }
     if (el.dataset.act === "tab") {
       this._tab = el.dataset.tab;
       this._renderSection("chart", true);

@@ -35,6 +35,7 @@ from .const import (
     CONF_APP_KEY_PEM,
     CONF_BATTERY_REFERENCE_KWH,
     CONF_DEVICE_ID,
+    CONF_DRIVING_SCAN_INTERVAL,
     CONF_ECO_POLLING_ENABLED,
     CONF_ECO_SCAN_INTERVAL,
     CONF_OPERATION_PASSWORD,
@@ -47,6 +48,7 @@ from .const import (
     CONF_PREHEAT_TEMPERATURE,
     CONF_PRECONDITION_THRESHOLD,
     CONF_PRECOOL_FAN,
+    CONF_SPEED_ALERT,
     CONF_PRECOOL_RECIRCULATE,
     CONF_PRECOOL_TEMPERATURE,
     DEFAULT_OPERATION_PASSWORD,
@@ -62,6 +64,7 @@ from .const import (
     CONF_PRICE_PUBLIC_DC,
     CONF_SCAN_INTERVAL,
     CONF_VIN,
+    DEFAULT_DRIVING_SCAN_INTERVAL_MINUTES,
     DEFAULT_ECO_SCAN_INTERVAL_MINUTES,
     DEFAULT_SCAN_INTERVAL_MINUTES,
     DOMAIN,
@@ -491,6 +494,9 @@ class LeapmotorOptionsFlow(config_entries.OptionsFlow):
                     CONF_SCAN_INTERVAL: user_input[CONF_SCAN_INTERVAL],
                     CONF_ECO_POLLING_ENABLED: bool(user_input.get(CONF_ECO_POLLING_ENABLED)),
                     CONF_ECO_SCAN_INTERVAL: user_input[CONF_ECO_SCAN_INTERVAL],
+                    CONF_DRIVING_SCAN_INTERVAL: user_input.get(
+                        CONF_DRIVING_SCAN_INTERVAL, DEFAULT_DRIVING_SCAN_INTERVAL_MINUTES
+                    ),
                     CONF_PRICE_HOME: float(user_input.get(CONF_PRICE_HOME) or 0),
                     CONF_PRICE_PUBLIC_AC: float(user_input.get(CONF_PRICE_PUBLIC_AC) or 0),
                     CONF_PRICE_PUBLIC_DC: float(user_input.get(CONF_PRICE_PUBLIC_DC) or 0),
@@ -548,6 +554,14 @@ class LeapmotorOptionsFlow(config_entries.OptionsFlow):
                     vol.Coerce(int),
                     vol.Range(min=5, max=240),
                 ),
+                vol.Optional(
+                    CONF_DRIVING_SCAN_INTERVAL,
+                    default=int(
+                        self._config_entry.options.get(
+                            CONF_DRIVING_SCAN_INTERVAL, DEFAULT_DRIVING_SCAN_INTERVAL_MINUTES
+                        )
+                    ),
+                ): vol.All(vol.Coerce(int), vol.Range(min=1, max=120)),
                 **{
                     vol.Optional(
                         key, default=float(self._config_entry.options.get(key) or 0)
@@ -750,6 +764,15 @@ def _vehicle_settings_schema(data: dict[str, Any] | None = None) -> vol.Schema:
                     unit_of_measurement="°C",
                 )
             ),
+            vol.Optional(
+                CONF_SPEED_ALERT,
+                default=int(current.get(CONF_SPEED_ALERT) or 0),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0, max=250, step=5, mode=selector.NumberSelectorMode.BOX,
+                    unit_of_measurement="km/h",
+                )
+            ),
         }
     )
 
@@ -770,6 +793,7 @@ def _vehicle_settings_data(vin: str, data: dict[str, Any]) -> dict[str, Any]:
         CONF_PRECOOL_FAN: int(float(data.get(CONF_PRECOOL_FAN) or DEFAULT_PRECOOL_FAN)),
         CONF_PRECOOL_RECIRCULATE: bool(data.get(CONF_PRECOOL_RECIRCULATE, True)),
         CONF_PRECONDITION_THRESHOLD: int(float(data.get(CONF_PRECONDITION_THRESHOLD) or DEFAULT_PRECONDITION_THRESHOLD)),
+        CONF_SPEED_ALERT: int(float(data.get(CONF_SPEED_ALERT) or 0)),
     }
 
 

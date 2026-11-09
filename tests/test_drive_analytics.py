@@ -457,3 +457,23 @@ class CatalogTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SpeedAlertTests(unittest.TestCase):
+    def vehicle(self, speed, limit=None, limit_on=None):
+        return {"status": {"speed_kmh": speed},
+                "diagnostics": {"speed_limit_kmh": limit, "speed_limit_enabled": limit_on}}
+
+    def test_user_threshold_wins(self) -> None:
+        result = da.speed_alert(self.vehicle(128, limit=130, limit_on=True), 120)
+        self.assertEqual((result["speeding"], result["threshold_kmh"], result["threshold_source"]), (True, 120, "setting"))
+        self.assertFalse(da.speed_alert(self.vehicle(120), 120)["speeding"])
+
+    def test_car_limit_only_when_switched_on(self) -> None:
+        on = da.speed_alert(self.vehicle(128, limit=120, limit_on=True), None)
+        self.assertEqual((on["speeding"], on["threshold_kmh"], on["threshold_source"]), (True, 120, "vehicle"))
+        off = da.speed_alert(self.vehicle(128, limit=120, limit_on=False), 0)
+        self.assertEqual((off["speeding"], off["threshold_kmh"], off["threshold_source"]), (False, None, None))
+
+    def test_unknown_speed_is_not_speeding(self) -> None:
+        self.assertFalse(da.speed_alert(self.vehicle(None), 100)["speeding"])

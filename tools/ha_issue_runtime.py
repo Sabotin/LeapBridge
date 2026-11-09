@@ -118,18 +118,32 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assert_private_values_absent(exported)
         self.assertEqual(coordinator.data, before)
 
-    async def test_t03_controls_absent_and_service_rejected(self):
+    async def test_t03_charge_limit_like_leapconnect_and_no_schedule_switch(self):
         entry = await self.load_entry()
+        coordinator = self.hass.data["leapmotor"][entry.entry_id]
         registry = entity_registry.async_get(self.hass)
-        self.assertIsNone(registry.async_get_entity_id("number", "leapmotor", f"{VIN}_charge_limit_setting"))
         self.assertIsNone(registry.async_get_entity_id("switch", "leapmotor", f"{VIN}_charging_schedule"))
         limit_id = registry.async_get_entity_id("sensor", "leapmotor", f"{VIN}_charge_limit_percent")
         self.assertEqual(self.hass.states.get(limit_id).state, "95")
-        with self.assertRaisesRegex(HomeAssistantError, "not supported.*T03"):
-            await self.hass.services.async_call("leapmotor", "set_charge_limit",
-                {"vin": VIN, "charge_limit_percent": 80}, blocking=True)
+        number_id = registry.async_get_entity_id("number", "leapmotor", f"{VIN}_charge_limit_setting")
+        number = self.hass.states.get(number_id)
+        self.assertEqual((number.attributes["min"], number.attributes["max"], number.attributes["step"]), (50, 100, 5))
+        self.client.get_charge_schedule = Mock(return_value={"chargeEnable": 1, "starttime": "23:00"})
+        expected = ('{"chargeEnable":1,"chargesoc":80,"circulation":0,"cycles":"1,2,3,4,5,6,7",'
+                    '"endtime":"08:00","recharge":0,"starttime":"23:00"}')
+        await self.hass.services.async_call("leapmotor", "set_charge_limit",
+            {"vin": VIN, "charge_limit_percent": 80}, blocking=True)
+        kwargs = self.client._remote_control_raw.call_args.kwargs
+        self.assertEqual((kwargs["cmd_id"], kwargs["cmd_content"]), ("190", expected))
+        coordinator._last_remote_results.clear()
+        await self.hass.services.async_call("number", "set_value",
+            {"entity_id": number_id, "value": 80}, blocking=True)
+        self.assertEqual(self.client._remote_control_raw.call_args.kwargs["cmd_content"], expected)
         self.client.get_vehicle_status.assert_not_called()
-        self.client._remote_control_raw.assert_not_called()
+        with self.assertRaisesRegex(HomeAssistantError, "50-100"):
+            await self.hass.services.async_call("leapmotor", "set_charge_limit",
+                {"vin": VIN, "charge_limit_percent": 40}, blocking=True)
+        coordinator.cancel_scheduled_followup_refreshes()
 
     async def test_other_models_keep_controls(self):
         await self.load_entry("B10")
@@ -542,6 +556,56 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
         strings = await translation.async_get_translations(self.hass, "sl", "exceptions", ["leapmotor"])
         for key in ("remote_unconfirmed", "remote_cooldown", "session_rejected"):
             self.assertIn(f"component.leapmotor.exceptions.{key}.message", strings)
+        coordinator.cancel_scheduled_followup_refreshes()
+
+    async def test_speeding_sensor_and_faster_polling_while_driving(self):
+        from datetime import timedelta
+
+        entry = await self.load_entry()
+        registry = entity_registry.async_get(self.hass)
+        speeding = registry.async_get_entity_id("binary_sensor", "leapmotor", f"{VIN}_speeding")
+        self.assertEqual(self.hass.states.get(speeding).state, "off")
+
+        def driving(speed, *, limit_on=True):
+            data = deepcopy(self.client.fetch_data.return_value)
+            vehicle = data["vehicles"][VIN]
+            vehicle["status"].update(speed_kmh=speed, is_driving=speed > 0, is_parked=speed == 0,
+                                     vehicle_state="driving" if speed else "parked")
+            vehicle["diagnostics"].update(speed_limit_kmh=120, speed_limit_enabled=limit_on)
+            self.client.fetch_data.return_value = data
+
+        async def poll():
+            coordinator = self.hass.data["leapmotor"][entry.entry_id]
+            await coordinator.async_refresh()
+            await self.hass.async_block_till_done()
+            return coordinator
+
+        # The car's own limit applies when it is switched on; polling speeds up.
+        driving(128)
+        coordinator = await poll()
+        state = self.hass.states.get(speeding)
+        self.assertEqual(state.state, "on")
+        self.assertEqual((state.attributes["threshold_kmh"], state.attributes["threshold_source"]), (120, "vehicle"))
+        self.assertEqual((coordinator.update_interval, coordinator._polling_mode), (timedelta(minutes=1), "driving"))
+
+        # A speed alert in the vehicle settings wins over the car's limit.
+        subentry = next(iter(entry.subentries.values()))
+        self.hass.config_entries.async_update_subentry(entry, subentry, data={**subentry.data, "speed_alert_kmh": 130})
+        await self.hass.async_block_till_done()
+        coordinator = await poll()
+        state = self.hass.states.get(speeding)
+        self.assertEqual((state.state, state.attributes["threshold_kmh"], state.attributes["threshold_source"]), ("off", 130, "setting"))
+
+        # Parked again: back to the normal interval.
+        driving(0)
+        coordinator = await poll()
+        self.assertEqual((coordinator.update_interval, coordinator._polling_mode), (timedelta(minutes=5), "normal"))
+
+        # The options and vehicle settings offer the new fields.
+        result = await self.hass.config_entries.options.async_init(entry.entry_id)
+        self.assertIn("driving_scan_interval", [str(key) for key in result["data_schema"].schema])
+        from custom_components.leapmotor import config_flow
+        self.assertIn("speed_alert_kmh", [str(key) for key in config_flow._vehicle_settings_schema({}).schema])
         coordinator.cancel_scheduled_followup_refreshes()
 
     async def test_sidebar_panel_follows_option(self):

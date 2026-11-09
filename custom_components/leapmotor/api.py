@@ -656,9 +656,11 @@ class LeapmotorApiClient:
         """Update the charging plan command payload while preserving existing values."""
         vehicle = self._find_vehicle_by_vin(vin)
         if not charging_plan_control_supported(vehicle.car_type):
+            if charge_limit_percent is not None and charge_plan_enabled is None:
+                return self._set_charge_limit_from_schedule(vehicle, int(charge_limit_percent))
             raise LeapmotorApiError(
-                "Charging-plan control (charge limit and schedule) is not supported "
-                "by this integration for T03. Set it in the vehicle; readback remains available."
+                "Switching the charging schedule on or off is not supported by this "
+                "integration for T03. Set it in the vehicle; the charge limit can be set."
             )
         try:
             status_json = self.get_vehicle_status(vehicle)
@@ -717,6 +719,46 @@ class LeapmotorApiClient:
             ),
             vehicle=vehicle,
         )
+
+    def _set_charge_limit_from_schedule(
+        self,
+        vehicle: Vehicle,
+        charge_limit_percent: int,
+    ) -> dict[str, Any]:
+        """Set the T03 charge limit the way LeapConnect does (leapmotor-api 0.6.0).
+
+        The T03 status has no complete charging plan, so command 190 is built
+        from the cloud's charging schedule (getAppointment) in its own format,
+        keeping every field it returns. A charge limit is not a toggle, so an
+        unconfirmed command is sent once more; repeating the same value is
+        harmless.
+        """
+        if not T03_CHARGE_LIMIT_MIN <= charge_limit_percent <= T03_CHARGE_LIMIT_MAX:
+            raise LeapmotorApiError(
+                f"T03 charge limit must be {T03_CHARGE_LIMIT_MIN}-{T03_CHARGE_LIMIT_MAX} %, "
+                f"got {charge_limit_percent} %."
+            )
+        cmd_content = charge_limit_payload_from_schedule(
+            self.get_charge_schedule(vehicle.vin), charge_limit_percent
+        )
+        for attempt in (1, 2):
+            try:
+                return self._remote_control_raw(
+                    vin=vehicle.vin,
+                    cmd_id="190",
+                    cmd_content=cmd_content,
+                    action_label="set_charge_limit",
+                    vehicle=vehicle,
+                )
+            except LeapmotorRemoteCommandUnconfirmedError as exc:
+                if attempt == 2:
+                    raise
+                _LOGGER.info(
+                    "Leapmotor charge limit was not confirmed (%s); sending it once more",
+                    exc,
+                )
+                time.sleep(CHARGE_LIMIT_RETRY_DELAY_SECONDS)
+        raise AssertionError("unreachable")
 
     def get_charge_schedule(self, vin: str) -> dict[str, Any]:
         """Return the current charging schedule from the appointment endpoint."""
@@ -2594,6 +2636,35 @@ def _support_raw_signals(signal: dict[str, Any]) -> dict[str, Any]:
 def _vehicle_status_car_type_path(car_type: str | None) -> str:
     """Return the backend status path segment for a vehicle model."""
     return vehicle_status_path(car_type)
+
+
+#: Same range as LeapConnect's Home Assistant charge-limit slider.
+T03_CHARGE_LIMIT_MIN = 50
+T03_CHARGE_LIMIT_MAX = 100
+CHARGE_LIMIT_RETRY_DELAY_SECONDS = 3
+
+
+def charge_limit_payload_from_schedule(schedule: dict[str, Any] | None, percent: int) -> str:
+    """Command 190 content for a new charge limit, as leapmotor-api 0.6.0 builds it.
+
+    The cloud leaves out fields a plan does not use (an enabled start-time-only
+    plan has no cycles, end time or recharge), so every returned field is kept
+    and only missing ones get a default. Without any schedule the plan stays
+    switched off.
+    """
+    schedule = schedule or {}
+    return json.dumps(
+        {
+            "chargeEnable": schedule.get("chargeEnable", 0),
+            "chargesoc": int(percent),
+            "circulation": schedule.get("circulation", 0),
+            "cycles": schedule.get("cycles") or "1,2,3,4,5,6,7",
+            "endtime": schedule.get("endtime") or "08:00",
+            "recharge": schedule.get("recharge", 0),
+            "starttime": schedule.get("starttime") or "00:00",
+        },
+        separators=(",", ":"),
+    )
 
 
 def _normalize_charge_plan(plan: Any) -> dict[str, Any]:

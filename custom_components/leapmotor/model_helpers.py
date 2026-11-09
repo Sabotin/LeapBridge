@@ -82,9 +82,10 @@ def native_window_open_position(
 
 
 def charging_plan_control_supported(car_type: object) -> bool:
-    """Allow the existing command 190 path except the unverified T03 path.
+    """Allow the status-based command 190 path except on the T03.
 
-    T03 reports confirm charge-limit writes have no effect even while awake.
-    This is a restriction of our command path, not a hardware capability claim.
+    T03 reports confirmed that writes built from the status plan had no
+    effect. The T03 sets its charge limit through the schedule-based path
+    instead (as LeapConnect does); switching its schedule stays unsupported.
     """
     return str(car_type or "").strip().upper() != "T03"

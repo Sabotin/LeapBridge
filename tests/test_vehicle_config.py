@@ -99,6 +99,12 @@ class VehicleConfigTests(unittest.TestCase):
             (True, "token-b"),
         )
 
+    def test_speed_alert_per_vehicle_and_off_by_default(self) -> None:
+        entry = _entry(_subentry("VIN-A", speed_alert_kmh=120), _subentry("VIN-B"))
+        self.assertEqual(vehicle_config.speed_alert_for_vehicle(entry, "VIN-A"), 120)
+        self.assertIsNone(vehicle_config.speed_alert_for_vehicle(entry, "VIN-B"))
+        self.assertIsNone(vehicle_config.speed_alert_for_vehicle(entry, "VIN-UNKNOWN"))
+
 
 if __name__ == "__main__":
     unittest.main()

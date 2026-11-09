@@ -173,6 +173,7 @@ _ENGLISH_ENTITY_SLUGS: dict[tuple[str, str], str] = {
     ("sensor", "parked_drain_kwh_day"): "parked_battery_drain",
     ("sensor", "energy_to_charge_limit_kwh"): "energy_to_charge_limit",
     ("binary_sensor", "attention_needed"): "attention_needed",
+    ("binary_sensor", "speeding"): "speeding",
     ("binary_sensor", "tire_pressure_warning"): "tire_pressure_warning",
     ("binary_sensor", "maintenance_due"): "maintenance_due",
 }

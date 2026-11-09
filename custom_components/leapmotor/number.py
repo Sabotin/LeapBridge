@@ -18,8 +18,9 @@ from .const import DOMAIN
 from .coordinator import LeapmotorDataUpdateCoordinator
 from .entity_helpers import build_vehicle_display_name, vehicle_feature_supported
 from .entity_migration import english_entity_slug
+from .api import T03_CHARGE_LIMIT_MAX, T03_CHARGE_LIMIT_MIN
 from .model_helpers import charging_plan_control_supported
-from .remote_helpers import format_remote_error
+from .remote_helpers import failure_starts_cooldown, format_remote_error, remote_action_error
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,8 +80,7 @@ async def async_setup_entry(
     coordinator: LeapmotorDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     for vin, vehicle_data in coordinator.data.get("vehicles", {}).items():
         entities: list[NumberEntity] = []
-        if charging_plan_control_supported(vehicle_data["vehicle"].get("car_type")):
-            entities.append(LeapmotorChargeLimitNumber(coordinator, vin))
+        entities.append(LeapmotorChargeLimitNumber(coordinator, vin))
         diagnostics = vehicle_data.get("diagnostics", {})
         vehicle = vehicle_data["vehicle"]
         for description in SEAT_COMFORT_NUMBERS:
@@ -118,6 +118,11 @@ class LeapmotorChargeLimitNumber(
         self.vin = vin
         self._attr_unique_id = f"{vin}_charge_limit_setting"
         vehicle = self.vehicle_data["vehicle"]
+        if not charging_plan_control_supported(vehicle.get("car_type")):
+            # T03: the range and step of LeapConnect's charge-limit slider.
+            self._attr_native_min_value = T03_CHARGE_LIMIT_MIN
+            self._attr_native_max_value = T03_CHARGE_LIMIT_MAX
+            self._attr_native_step = 5
         self._attr_suggested_object_id = _suggested_object_id(
             vehicle,
             english_entity_slug("number", "charge_limit_setting") or "charge_limit_setting",
@@ -187,8 +192,9 @@ class LeapmotorChargeLimitNumber(
                 "set_charge_limit",
                 success=False,
                 error=message,
+                cooldown=failure_starts_cooldown(exc),
             )
-            raise HomeAssistantError(message) from exc
+            raise remote_action_error(exc) from exc
 
         self.coordinator.record_remote_action(
             self.vin,
