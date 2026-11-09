@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased — stages 2 and 3 of the LeapConnect port, plus extras
+
+- **Cabin preheat, pre-cool and auto pre-condition:** one-tap buttons and
+  services using the app's climate command (170) with per-vehicle presets —
+  preheat 22 °C, pre-cool 18 °C with A/C, fan 7 and recirculation by default;
+  auto picks heat or cool from the outside temperature. Works on the T03.
+- **Vehicle PIN** is prefilled with the factory PIN 0000 in setup and for new
+  vehicles; it stays editable and can be cleared for read-only use.
+- **Time-of-use home tariff** (LeapConnect costing): low-tariff price, window
+  and weekends; home sessions are split by time.
+- **Trip comparison** (LeapConnect similarity): last trip vs. similar trips.
+- **Maintenance** (LeapConnect engine and MIT packs): factory schedules per
+  model, severe-use option, due by km/time, `log_maintenance` /
+  `reset_maintenance` services, a Next maintenance sensor and a Maintenance due
+  binary sensor. Unlogged items assume on-schedule service.
+- **More commands** (leapmotor-api payloads): sentry mode and healthy charging
+  switches, start/stop charging and sunroof buttons and services.
+- **Extras not in LeapConnect:** cost per trip / per 100 km, parked drain,
+  slow-leak tire detection, charge-to-limit cost now vs. low tariff,
+  consumption by temperature, Attention needed sensor, five blueprints.
+- Card: Maintenance and Insights panels, climate preset and new control tiles,
+  "vs usual" on trips, charge-to-limit estimate.
+
 ## Unreleased — stage 1 of the LeapConnect port
 
 - **Licence:** the project is now GNU AGPL-3.0, because it includes code

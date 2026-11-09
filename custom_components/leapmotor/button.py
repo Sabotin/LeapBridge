@@ -13,9 +13,13 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
     DOMAIN,
+    REMOTE_CTL_CHARGE_START,
+    REMOTE_CTL_CHARGE_STOP,
     REMOTE_CTL_FIND_CAR,
     REMOTE_CTL_QUICK_COOL,
     REMOTE_CTL_QUICK_HEAT,
+    REMOTE_CTL_SUNROOF_CLOSE,
+    REMOTE_CTL_SUNROOF_OPEN,
     REMOTE_CTL_SUNSHADE_CLOSE,
     REMOTE_CTL_SUNSHADE_OPEN,
     REMOTE_CTL_TRUNK_CLOSE,
@@ -30,9 +34,82 @@ from .coordinator import LeapmotorDataUpdateCoordinator
 from .entity_helpers import build_vehicle_display_name, vehicle_ability_supported
 from .entity_migration import english_entity_slug
 from .remote_helpers import RemoteActionSpec, async_execute_remote_action
+from .vehicle_config import (
+    precondition_settings_for_vehicle,
+    precool_settings_for_vehicle,
+    preheat_settings_for_vehicle,
+)
 
+#: Cabin preheat with the vehicle's preset (temperature, fan, recirculation).
+#: Uses the app's parameterised climate command (cmd 170) via set_climate.
+PREHEAT_CABIN_SPEC = RemoteActionSpec(
+    action="preheat_cabin",
+    translation_key="preheat_cabin",
+    icon="mdi:car-seat-heater",
+    method_name="set_climate",
+    service_name="preheat_cabin",
+)
+
+#: Cabin pre-cool: A/C at the lowest temperature and full fan by default.
+PRECOOL_CABIN_SPEC = RemoteActionSpec(
+    action="precool_cabin",
+    translation_key="precool_cabin",
+    icon="mdi:snowflake-thermometer",
+    method_name="set_climate",
+    service_name="precool_cabin",
+)
+
+#: Picks pre-cool when it is warm outside, otherwise preheat.
+PRECONDITION_CABIN_SPEC = RemoteActionSpec(
+    action="precondition_cabin",
+    translation_key="precondition_cabin",
+    icon="mdi:thermostat-auto",
+    method_name="set_climate",
+    service_name="precondition_cabin",
+)
+
+
+def outside_temperature(vehicle_data: dict[str, Any]) -> float | None:
+    """Outdoor temperature, falling back to the cabin temperature."""
+    for section, key in (("diagnostics", "outdoor_temp_c"), ("status", "interior_temp_c")):
+        try:
+            return float((vehicle_data.get(section) or {})[key])
+        except (KeyError, TypeError, ValueError):
+            continue
+    return None
+
+
+SUNROOF_ACTIONS = {REMOTE_CTL_SUNROOF_OPEN, REMOTE_CTL_SUNROOF_CLOSE}
 
 BUTTON_SPECS: tuple[RemoteActionSpec, ...] = (
+    RemoteActionSpec(
+        action=REMOTE_CTL_CHARGE_START,
+        translation_key="start_charging",
+        icon="mdi:ev-plug-type2",
+        method_name="start_charging",
+        service_name=REMOTE_CTL_CHARGE_START,
+    ),
+    RemoteActionSpec(
+        action=REMOTE_CTL_CHARGE_STOP,
+        translation_key="stop_charging",
+        icon="mdi:power-plug-off",
+        method_name="stop_charging",
+        service_name=REMOTE_CTL_CHARGE_STOP,
+    ),
+    RemoteActionSpec(
+        action=REMOTE_CTL_SUNROOF_OPEN,
+        translation_key="open_sunroof",
+        icon="mdi:car-select",
+        method_name="open_sunroof",
+        service_name=REMOTE_CTL_SUNROOF_OPEN,
+    ),
+    RemoteActionSpec(
+        action=REMOTE_CTL_SUNROOF_CLOSE,
+        translation_key="close_sunroof",
+        icon="mdi:car-select",
+        method_name="close_sunroof",
+        service_name=REMOTE_CTL_SUNROOF_CLOSE,
+    ),
     RemoteActionSpec(
         action=REMOTE_CTL_UNLOCK_CHARGER,
         translation_key="unlock_charger",
@@ -123,6 +200,9 @@ async def async_setup_entry(
     for vin, vehicle_data in coordinator.data.get("vehicles", {}).items():
         entities: list[ButtonEntity] = []
         entities.append(LeapmotorRefreshButton(coordinator, vin))
+        entities.append(LeapmotorPreheatButton(coordinator, vin, PREHEAT_CABIN_SPEC))
+        entities.append(LeapmotorPrecoolButton(coordinator, vin, PRECOOL_CABIN_SPEC))
+        entities.append(LeapmotorPreconditionButton(coordinator, vin, PRECONDITION_CABIN_SPEC))
         for spec in BUTTON_SPECS:
             vehicle = vehicle_data["vehicle"]
             if (
@@ -132,6 +212,11 @@ async def async_setup_entry(
                     VEHICLE_ABILITY_UNLOCK_CHARGE_GUN,
                 )
                 is False
+            ):
+                continue
+            # Only cars that report an opening roof get sunroof buttons.
+            if spec.action in SUNROOF_ACTIONS and (
+                (vehicle_data.get("diagnostics") or {}).get("skylight_open") is None
             ):
                 continue
             entities.append(LeapmotorActionButton(coordinator, vin, spec))
@@ -205,6 +290,36 @@ class LeapmotorActionButton(CoordinatorEntity[LeapmotorDataUpdateCoordinator], B
     async def async_press(self) -> None:
         """Execute the configured remote-control action."""
         await async_execute_remote_action(self.coordinator, self.vin, self.spec)
+
+
+class LeapmotorPreheatButton(LeapmotorActionButton):
+    """Heat the cabin with the vehicle's preheat preset."""
+
+    def _settings(self) -> dict[str, Any]:
+        return preheat_settings_for_vehicle(self.coordinator.config_entry, self.vin)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {**super().extra_state_attributes, **self._settings()}
+
+    async def async_press(self) -> None:
+        await async_execute_remote_action(self.coordinator, self.vin, self.spec, self._settings())
+
+
+class LeapmotorPrecoolButton(LeapmotorPreheatButton):
+    """Cool the cabin with the vehicle's pre-cool preset."""
+
+    def _settings(self) -> dict[str, Any]:
+        return precool_settings_for_vehicle(self.coordinator.config_entry, self.vin)
+
+
+class LeapmotorPreconditionButton(LeapmotorPreheatButton):
+    """Heat or cool depending on the outside temperature."""
+
+    def _settings(self) -> dict[str, Any]:
+        return precondition_settings_for_vehicle(
+            self.coordinator.config_entry, self.vin, outside_temperature(self.vehicle_data)
+        )
 
 
 class LeapmotorRefreshButton(CoordinatorEntity[LeapmotorDataUpdateCoordinator], ButtonEntity):

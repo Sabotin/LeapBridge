@@ -291,6 +291,38 @@ class LeapmotorApiClient:
         """Close the sunshade via remote control."""
         return self._remote_control(vin=vin, action=REMOTE_CTL_SUNSHADE_CLOSE, value=value)
 
+    def sentry_mode_on(self, vin: str) -> dict[str, Any]:
+        """Enable sentry (sentinel) mode."""
+        return self._remote_control(vin=vin, action="sentry_mode_on")
+
+    def sentry_mode_off(self, vin: str) -> dict[str, Any]:
+        """Disable sentry (sentinel) mode."""
+        return self._remote_control(vin=vin, action="sentry_mode_off")
+
+    def start_charging(self, vin: str) -> dict[str, Any]:
+        """Start charging while plugged in."""
+        return self._remote_control(vin=vin, action="charging_start")
+
+    def stop_charging(self, vin: str) -> dict[str, Any]:
+        """Stop charging while plugged in."""
+        return self._remote_control(vin=vin, action="charging_stop")
+
+    def healthy_charging_on(self, vin: str) -> dict[str, Any]:
+        """Enable healthy (battery-friendly) charging."""
+        return self._remote_control(vin=vin, action="healthy_charging_on")
+
+    def healthy_charging_off(self, vin: str) -> dict[str, Any]:
+        """Disable healthy charging."""
+        return self._remote_control(vin=vin, action="healthy_charging_off")
+
+    def open_sunroof(self, vin: str) -> dict[str, Any]:
+        """Open the sunroof."""
+        return self._remote_control(vin=vin, action="sunroof_open")
+
+    def close_sunroof(self, vin: str) -> dict[str, Any]:
+        """Close the sunroof."""
+        return self._remote_control(vin=vin, action="sunroof_close")
+
     def battery_preheat(self, vin: str) -> dict[str, Any]:
         """Trigger the verified battery-preheat action."""
         return self._remote_control(vin=vin, action=REMOTE_CTL_BATTERY_PREHEAT)

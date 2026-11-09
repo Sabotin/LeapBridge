@@ -11,7 +11,7 @@
           "app_key_file": "Naloži app_key.pem (zasebni ključ)",
           "app_cert_pem": "Prilepi PEM iz app_cert.pem (certifikat)",
           "app_key_pem": "Prilepi PEM iz app_key.pem (zasebni ključ)",
-          "operation_password": "PIN vozila (neobvezno, za upravljanje)",
+          "operation_password": "PIN vozila (privzeto 0000, potreben za daljinsko upravljanje)",
           "scan_interval": "Interval posodabljanja v minutah",
           "eco_polling_enabled": "Varčno poizvedovanje med parkiranjem",
           "eco_scan_interval": "Varčni interval posodabljanja v minutah",
@@ -31,7 +31,7 @@
           "app_key_file": "Naloži app_key.pem (zasebni ključ)",
           "app_cert_pem": "Prilepi PEM iz app_cert.pem (certifikat)",
           "app_key_pem": "Prilepi PEM iz app_key.pem (zasebni ključ)",
-          "operation_password": "PIN vozila (neobvezno, za upravljanje)",
+          "operation_password": "PIN vozila (privzeto 0000, potreben za daljinsko upravljanje)",
           "scan_interval": "Interval posodabljanja v minutah",
           "eco_polling_enabled": "Varčno poizvedovanje med parkiranjem",
           "eco_scan_interval": "Varčni interval posodabljanja v minutah",
@@ -39,12 +39,20 @@
           "abrp_token": "ABRP Generic žeton",
           "price_home_kwh": "Cena polnjenja doma na kWh",
           "price_public_ac_kwh": "Cena javnega polnjenja AC na kWh",
-          "price_public_dc_kwh": "Cena javnega hitrega polnjenja DC na kWh"
+          "price_public_dc_kwh": "Cena javnega hitrega polnjenja DC na kWh",
+          "price_home_low_kwh": "Cena polnjenja doma v nizki tarifi (MT) na kWh",
+          "low_tariff_start": "Nizka tarifa se začne",
+          "low_tariff_end": "Nizka tarifa se konča",
+          "low_tariff_weekends": "Nizka tarifa ves dan ob vikendih"
         },
         "data_description": {
           "price_home_kwh": "Uporabi se za polnjenja, ki se začnejo v coni Doma. Pusti 0, če stroškov ne želiš spremljati.",
           "price_public_ac_kwh": "Uporabi se za polnjenja zunaj doma z izmeničnim tokom (AC).",
-          "price_public_dc_kwh": "Uporabi se za polnjenja zunaj doma na hitri polnilnici DC."
+          "price_public_dc_kwh": "Uporabi se za polnjenja zunaj doma na hitri polnilnici DC.",
+          "price_home_low_kwh": "Neobvezno. Z nizko tarifo se polnjenje doma po času razdeli med nizko (MT) in običajno ceno (VT). Pusti 0 za eno ceno.",
+          "low_tariff_start": "Na primer 22:00.",
+          "low_tariff_end": "Na primer 06:00. Okno čez polnoč je podprto.",
+          "low_tariff_weekends": "Običajno pri dvotarifnem merjenju (MT/VT)."
         }
       },
       "certificates": {
@@ -63,7 +71,7 @@
         "data": {
           "username": "Uporabniško ime / e-pošta",
           "password": "Geslo",
-          "operation_password": "PIN vozila (neobvezno, za upravljanje)",
+          "operation_password": "PIN vozila (privzeto 0000, potreben za daljinsko upravljanje)",
           "scan_interval": "Interval posodabljanja v minutah",
           "eco_polling_enabled": "Varčno poizvedovanje med parkiranjem",
           "eco_scan_interval": "Varčni interval posodabljanja v minutah",
@@ -126,26 +134,58 @@
           "title": "Nastavi vozilo",
           "description": "PIN in žeton ABRP veljata samo za to vozilo.",
           "data": {
-            "operation_password": "PIN vozila (neobvezno, za upravljanje)",
+            "operation_password": "PIN vozila (privzeto 0000, potreben za daljinsko upravljanje)",
             "abrp_enabled": "Omogoči podatke v živo za ABRP",
             "abrp_token": "ABRP Generic žeton",
-            "battery_reference_kwh": "Uporabna kapaciteta baterije (neobvezno)"
+            "battery_reference_kwh": "Uporabna kapaciteta baterije (neobvezno)",
+            "maintenance_severe_use": "Servisni načrt za zahtevno ali mestno vožnjo",
+            "preheat_temperature": "Temperatura predgretja",
+            "preheat_fan_speed": "Moč ventilatorja pri predgretju",
+            "preheat_recirculate": "Predgretje samo s kroženjem zraka",
+            "precool_temperature": "Temperatura hlajenja",
+            "precool_fan_speed": "Moč ventilatorja pri hlajenju",
+            "precool_recirculate": "Hlajenje samo s kroženjem zraka",
+            "precondition_cool_above": "Samodejno: hladi, ko je topleje od"
           },
           "data_description": {
-            "battery_reference_kwh": "Uporabna kapaciteta nove baterije v kWh, ki se šteje kot 100 % pri zdravju baterije. Pusti 0 za primerjavo z najboljšo doslej izmerjeno kapaciteto."
+            "battery_reference_kwh": "Uporabna kapaciteta nove baterije v kWh, ki se šteje kot 100 % pri zdravju baterije. Pusti 0 za primerjavo z najboljšo doslej izmerjeno kapaciteto.",
+            "maintenance_severe_use": "Krajši intervali za pogoste kratke vožnje, prašne ali gorske ceste, vleko ali mestni promet (C10 in T03).",
+            "preheat_temperature": "Temperatura za gumb in storitev Predgrej kabino.",
+            "preheat_fan_speed": "1–7; 7 je največ.",
+            "preheat_recirculate": "Greje le zrak v kabini (brez zunanjega) za hitrejše ogrevanje.",
+            "precool_temperature": "Ciljna temperatura klime; 18 °C je najnižja.",
+            "precool_fan_speed": "1–7; 7 je največ.",
+            "precool_recirculate": "Hladi le zrak v kabini za hitrejše hlajenje.",
+            "precondition_cool_above": "Samodejni gumb hladi pri tej zunanji temperaturi ali višji, pod njo greje."
           }
         },
         "reconfigure": {
           "title": "Nastavi {vehicle}",
           "description": "Spremeni PIN in žeton ABRP samo za to vozilo.",
           "data": {
-            "operation_password": "PIN vozila (neobvezno, za upravljanje)",
+            "operation_password": "PIN vozila (privzeto 0000, potreben za daljinsko upravljanje)",
             "abrp_enabled": "Omogoči podatke v živo za ABRP",
             "abrp_token": "ABRP Generic žeton",
-            "battery_reference_kwh": "Uporabna kapaciteta baterije (neobvezno)"
+            "battery_reference_kwh": "Uporabna kapaciteta baterije (neobvezno)",
+            "maintenance_severe_use": "Servisni načrt za zahtevno ali mestno vožnjo",
+            "preheat_temperature": "Temperatura predgretja",
+            "preheat_fan_speed": "Moč ventilatorja pri predgretju",
+            "preheat_recirculate": "Predgretje samo s kroženjem zraka",
+            "precool_temperature": "Temperatura hlajenja",
+            "precool_fan_speed": "Moč ventilatorja pri hlajenju",
+            "precool_recirculate": "Hlajenje samo s kroženjem zraka",
+            "precondition_cool_above": "Samodejno: hladi, ko je topleje od"
           },
           "data_description": {
-            "battery_reference_kwh": "Uporabna kapaciteta nove baterije v kWh, ki se šteje kot 100 % pri zdravju baterije. Pusti 0 za primerjavo z najboljšo doslej izmerjeno kapaciteto."
+            "battery_reference_kwh": "Uporabna kapaciteta nove baterije v kWh, ki se šteje kot 100 % pri zdravju baterije. Pusti 0 za primerjavo z najboljšo doslej izmerjeno kapaciteto.",
+            "maintenance_severe_use": "Krajši intervali za pogoste kratke vožnje, prašne ali gorske ceste, vleko ali mestni promet (C10 in T03).",
+            "preheat_temperature": "Temperatura za gumb in storitev Predgrej kabino.",
+            "preheat_fan_speed": "1–7; 7 je največ.",
+            "preheat_recirculate": "Greje le zrak v kabini (brez zunanjega) za hitrejše ogrevanje.",
+            "precool_temperature": "Ciljna temperatura klime; 18 °C je najnižja.",
+            "precool_fan_speed": "1–7; 7 je največ.",
+            "precool_recirculate": "Hladi le zrak v kabini za hitrejše hlajenje.",
+            "precondition_cool_above": "Samodejni gumb hladi pri tej zunanji temperaturi ali višji, pod njo greje."
           }
         }
       },
@@ -437,6 +477,21 @@
       },
       "battery_health_percent": {
         "name": "Zdravje baterije"
+      },
+      "next_maintenance": {
+        "name": "Naslednji servis"
+      },
+      "driving_cost_month": {
+        "name": "Strošek vožnje ta mesec"
+      },
+      "driving_cost_per_100km": {
+        "name": "Strošek vožnje na 100 km"
+      },
+      "parked_drain_kwh_day": {
+        "name": "Praznjenje baterije med parkiranjem"
+      },
+      "energy_to_charge_limit_kwh": {
+        "name": "Energija do meje polnjenja"
       }
     },
     "binary_sensor": {
@@ -568,6 +623,15 @@
       },
       "is_driving": {
         "name": "Vožnja"
+      },
+      "attention_needed": {
+        "name": "Potrebna pozornost"
+      },
+      "tire_pressure_warning": {
+        "name": "Opozorilo tlaka v pnevmatikah"
+      },
+      "maintenance_due": {
+        "name": "Servis kmalu"
       }
     },
     "image": {
@@ -620,6 +684,27 @@
       },
       "ac_off": {
         "name": "Izklopi klimo"
+      },
+      "start_charging": {
+        "name": "Začni polnjenje"
+      },
+      "stop_charging": {
+        "name": "Ustavi polnjenje"
+      },
+      "open_sunroof": {
+        "name": "Odpri strešno okno"
+      },
+      "close_sunroof": {
+        "name": "Zapri strešno okno"
+      },
+      "preheat_cabin": {
+        "name": "Predgrej kabino"
+      },
+      "precool_cabin": {
+        "name": "Ohladi kabino"
+      },
+      "precondition_cabin": {
+        "name": "Pripravi kabino (samodejno)"
       }
     },
     "lock": {
@@ -664,6 +749,12 @@
       },
       "rearview_mirror_heat": {
         "name": "Gretje ogledal"
+      },
+      "sentry_mode": {
+        "name": "Stražarski način"
+      },
+      "healthy_charging": {
+        "name": "Zdravo polnjenje"
       }
     }
   },
@@ -677,7 +768,7 @@
           "app_key_file": "Naloži app_key.pem (zasebni ključ)",
           "app_cert_pem": "Prilepi PEM iz app_cert.pem (certifikat)",
           "app_key_pem": "Prilepi PEM iz app_key.pem (zasebni ključ)",
-          "operation_password": "PIN vozila (neobvezno, za upravljanje)",
+          "operation_password": "PIN vozila (privzeto 0000, potreben za daljinsko upravljanje)",
           "scan_interval": "Interval posodabljanja v minutah",
           "eco_polling_enabled": "Varčno poizvedovanje med parkiranjem",
           "eco_scan_interval": "Varčni interval posodabljanja v minutah",
@@ -685,14 +776,22 @@
           "abrp_token": "ABRP Generic žeton",
           "price_home_kwh": "Cena polnjenja doma na kWh",
           "price_public_ac_kwh": "Cena javnega polnjenja AC na kWh",
-          "price_public_dc_kwh": "Cena javnega hitrega polnjenja DC na kWh"
+          "price_public_dc_kwh": "Cena javnega hitrega polnjenja DC na kWh",
+          "price_home_low_kwh": "Cena polnjenja doma v nizki tarifi (MT) na kWh",
+          "low_tariff_start": "Nizka tarifa se začne",
+          "low_tariff_end": "Nizka tarifa se konča",
+          "low_tariff_weekends": "Nizka tarifa ves dan ob vikendih"
         },
         "data_description": {
           "eco_polling_enabled": "Počasnejši varčni interval uporabi le, ko so vsa vozila zanesljivo zaklenjena, parkirana in odklopljena.",
           "eco_scan_interval": "Interval poizvedovanja v varčnem načinu. Samodejno je omejen na najmanj običajni interval posodabljanja.",
           "price_home_kwh": "Uporabi se za polnjenja, ki se začnejo v coni Doma. Pusti 0, če stroškov ne želiš spremljati.",
           "price_public_ac_kwh": "Uporabi se za polnjenja zunaj doma z izmeničnim tokom (AC).",
-          "price_public_dc_kwh": "Uporabi se za polnjenja zunaj doma na hitri polnilnici DC."
+          "price_public_dc_kwh": "Uporabi se za polnjenja zunaj doma na hitri polnilnici DC.",
+          "price_home_low_kwh": "Neobvezno. Z nizko tarifo se polnjenje doma po času razdeli med nizko (MT) in običajno ceno (VT). Pusti 0 za eno ceno.",
+          "low_tariff_start": "Na primer 22:00.",
+          "low_tariff_end": "Na primer 06:00. Okno čez polnoč je podprto.",
+          "low_tariff_weekends": "Običajno pri dvotarifnem merjenju (MT/VT)."
         }
       }
     },
@@ -736,6 +835,144 @@
         "entity_id": {
           "name": "ID entitete",
           "description": "Neobvezna entiteta Leapmotor, iz katere se določi ciljno vozilo."
+        }
+      }
+    },
+    "log_maintenance": {
+      "name": "Zabeleži servis",
+      "description": "Zabeleži opravljen servis. Postane novo izhodišče za naslednji rok in razdaljo te postavke.",
+      "fields": {
+        "service_type": {
+          "name": "Servis",
+          "description": "Oznaka servisa iz postavk senzorja Naslednji servis, npr. tire_rotation."
+        },
+        "odometer_km": {
+          "name": "Števec kilometrov",
+          "description": "Stanje števca ob servisu. Privzeto trenutno stanje."
+        },
+        "date": {
+          "name": "Datum",
+          "description": "Datum servisa. Privzeto danes."
+        },
+        "vin": {
+          "name": "VIN",
+          "description": "VIN vozila. Obvezen, kadar je nastavljenih več vozil."
+        },
+        "entity_id": {
+          "name": "ID entitete",
+          "description": "Neobvezna entiteta Leapmotor, iz katere se določi vozilo."
+        }
+      }
+    },
+    "reset_maintenance": {
+      "name": "Ponastavi servisno postavko",
+      "description": "Pozabi zabeležen servis, da postavka spet sledi predpostavki rednega servisiranja.",
+      "fields": {
+        "service_type": {
+          "name": "Servis",
+          "description": "Oznaka servisa za ponastavitev."
+        },
+        "vin": {
+          "name": "VIN",
+          "description": "VIN vozila. Obvezen, kadar je nastavljenih več vozil."
+        },
+        "entity_id": {
+          "name": "ID entitete",
+          "description": "Neobvezna entiteta Leapmotor, iz katere se določi vozilo."
+        }
+      }
+    },
+    "charging_start": {
+      "name": "Začni polnjenje",
+      "description": "Začni polnjenje, ko je kabel priključen. Potreben je PIN vozila."
+    },
+    "charging_stop": {
+      "name": "Ustavi polnjenje",
+      "description": "Ustavi polnjenje, ko je kabel priključen. Potreben je PIN vozila."
+    },
+    "sunroof_open": {
+      "name": "Odpri strešno okno",
+      "description": "Odpri strešno okno. Potreben je PIN vozila."
+    },
+    "sunroof_close": {
+      "name": "Zapri strešno okno",
+      "description": "Zapri strešno okno. Potreben je PIN vozila."
+    },
+    "preheat_cabin": {
+      "name": "Predgrej kabino",
+      "description": "Ogrej kabino z nastavitvami predgretja vozila (Nastavitve → vozilo). Polja za ta klic povozijo nastavitve. Potreben je PIN vozila.",
+      "fields": {
+        "temperature": {
+          "name": "Temperatura",
+          "description": "18–32 °C."
+        },
+        "fan_speed": {
+          "name": "Moč ventilatorja",
+          "description": "1–7."
+        },
+        "recirculate": {
+          "name": "Kroženje zraka",
+          "description": "Samo zrak v kabini."
+        },
+        "vin": {
+          "name": "VIN",
+          "description": "VIN vozila. Obvezen, kadar je nastavljenih več vozil."
+        },
+        "entity_id": {
+          "name": "ID entitete",
+          "description": "Neobvezna entiteta Leapmotor, iz katere se določi vozilo."
+        }
+      }
+    },
+    "precool_cabin": {
+      "name": "Ohladi kabino",
+      "description": "Ohladi kabino s klimo z nastavitvami hlajenja vozila. Polja za ta klic povozijo nastavitve. Potreben je PIN vozila.",
+      "fields": {
+        "temperature": {
+          "name": "Temperatura",
+          "description": "18–32 °C."
+        },
+        "fan_speed": {
+          "name": "Moč ventilatorja",
+          "description": "1–7."
+        },
+        "recirculate": {
+          "name": "Kroženje zraka",
+          "description": "Samo zrak v kabini."
+        },
+        "vin": {
+          "name": "VIN",
+          "description": "VIN vozila. Obvezen, kadar je nastavljenih več vozil."
+        },
+        "entity_id": {
+          "name": "ID entitete",
+          "description": "Neobvezna entiteta Leapmotor, iz katere se določi vozilo."
+        }
+      }
+    },
+    "precondition_cabin": {
+      "name": "Pripravi kabino (samodejno)",
+      "description": "Hladi, ko je zunaj toplo, sicer greje. Polja povozijo izbrane nastavitve. Potreben je PIN vozila.",
+      "fields": {
+        "temperature": {
+          "name": "Temperatura",
+          "description": "18–32 °C."
+        },
+        "fan_speed": {
+          "name": "Moč ventilatorja",
+          "description": "1–7."
+        },
+        "recirculate": {
+          "name": "Kroženje zraka",
+          "description": "Samo zrak v kabini."
+        },
+        "vin": {
+          "name": "VIN",
+          "description": "VIN vozila. Obvezen, kadar je nastavljenih več vozil."
+        },
+        "entity_id": {
+          "name": "ID entitete",
+          "description": "Neobvezna entiteta Leapmotor, iz katere se določi vozilo."
         }
       }
     }

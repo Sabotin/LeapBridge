@@ -1,0 +1,81 @@
+blueprint:
+  name: Leapmotor — pre-condition cabin before departure
+  description: >-
+    Heat or cool the cabin at a set time on chosen weekdays. Pick the
+    "Preheat cabin", "Pre-cool cabin" or "Pre-condition cabin (auto)" button;
+    the auto button cools when it is warm outside and heats otherwise. The
+    temperature, fan and recirculation come from the vehicle settings.
+    Optionally only when the battery is above a minimum and the car is home.
+  domain: automation
+  source_url: https://github.com/sabotin/leapmotor/blob/main/blueprints/automation/leapmotor/precondition_before_departure.yaml
+  input:
+    climate_button:
+      name: Climate button
+      selector:
+        entity:
+          filter:
+            - integration: leapmotor
+              domain: button
+    start_time:
+      name: Start at
+      default: "07:15:00"
+      selector:
+        time:
+    weekdays:
+      name: Days
+      default: [mon, tue, wed, thu, fri]
+      selector:
+        select:
+          multiple: true
+          options:
+            - { label: Monday, value: mon }
+            - { label: Tuesday, value: tue }
+            - { label: Wednesday, value: wed }
+            - { label: Thursday, value: thu }
+            - { label: Friday, value: fri }
+            - { label: Saturday, value: sat }
+            - { label: Sunday, value: sun }
+    battery_sensor:
+      name: Battery sensor
+      selector:
+        entity:
+          filter:
+            - integration: leapmotor
+              domain: sensor
+              device_class: battery
+    min_battery:
+      name: Minimum battery
+      default: 25
+      selector:
+        number:
+          min: 0
+          max: 100
+          unit_of_measurement: "%"
+    location_tracker:
+      name: Only when this tracker is home (optional)
+      default: []
+      selector:
+        entity:
+          filter:
+            - integration: leapmotor
+              domain: device_tracker
+mode: single
+trigger:
+  - platform: time
+    at: !input start_time
+condition:
+  - condition: time
+    weekday: !input weekdays
+  - condition: numeric_state
+    entity_id: !input battery_sensor
+    above: !input min_battery
+  - condition: template
+    value_template: >-
+      {% set tracker = location_tracker %}
+      {{ not tracker or is_state(tracker, 'home') }}
+variables:
+  location_tracker: !input location_tracker
+action:
+  - service: button.press
+    target:
+      entity_id: !input climate_button

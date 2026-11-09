@@ -152,6 +152,32 @@ Vse možnosti kartice so v [docs/card.md](card.md).
 
 ---
 
+## PIN vozila
+
+PIN je že vnaprej izpolnjen s tovarniškim **0000**. Če si ga v vozilu
+spremenil, ga popravi pri namestitvi ali pozneje v nastavitvah vozila (pod
+računom). Če polje izbrišeš, ostane vozilo samo za branje.
+
+## Predgretje in hlajenje kabine
+
+V nadzorni plošči in kot gumbi v Home Assistantu:
+
+- **Predgrej kabino** — privzeto 22 °C, ventilator 7, samo kroženje zraka.
+- **Ohladi kabino** — klima, najnižja temperatura 18 °C, ventilator 7.
+- **Pripravi kabino (samodejno)** — hladi, ko je zunaj topleje od nastavljene
+  meje (privzeto 20 °C), sicer greje.
+
+Temperature, moč ventilatorja, kroženje in mejo za samodejni način nastaviš pri
+vozilu (*Nastavitve → Naprave in storitve → Leapmotor →* vozilo pod računom →
+*Nastavi*). Za vsakodnevno uporabo uvozi načrt **Pre-condition before
+departure** (glej README) in izberi uro in dneve.
+
+## Vzdrževanje
+
+Servisni načrt za tvoj model (T03, B10, C10, C10 REEV) se naloži samodejno.
+Dokler servisa ne zabeležiš, se predpostavi, da je bil opravljen redno. Po
+servisu v nadzorni plošči pri postavki dvakrat tapni **Opravljeno**.
+
 ## Stroški polnjenja in zdravje baterije
 
 - **Cene polnjenja:** *Nastavitve → Naprave in storitve → Leapmotor → Nastavi*
@@ -159,6 +185,9 @@ Vse možnosti kartice so v [docs/card.md](card.md).
   **javno DC**. Polnjenje šteje kot domače, če se začne v coni *Doma*; kot DC,
   če vozilo javi kabel DC ali polni z več kot 22 kW. Pusti 0, če stroškov ne
   želiš spremljati.
+- **Nizka tarifa (MT):** v istih nastavitvah vpiši ceno nizke tarife, uro
+  začetka in konca (npr. 22:00–06:00) in po želji *ves dan ob vikendih*.
+  Polnjenje doma se po času razdeli med nizko in visoko tarifo.
 - **Kapaciteta baterije:** pri posameznem vozilu (pod računom) lahko vpišeš
   uporabno kapaciteto nove baterije v kWh. Pusti 0 za primerjavo z najboljšo
   doslej izmerjeno vrednostjo. Ocena zdravja se pokaže po treh dneh s polnim

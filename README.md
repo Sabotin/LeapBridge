@@ -108,7 +108,12 @@ Full options: **[docs/card.md](docs/card.md)**.
 | 🛞 **Tires** | Pressure for every wheel |
 | 📍 **Location** | GPS device tracker with sign-correction for known backend issues |
 | 🛣️ **Trip log** | Every drive detected automatically: distance, duration, energy, kWh/100 km, average and top speed, battery used. Sensors for the last trip, today and this month |
-| 💶 **Charging costs** | Charging sessions detected automatically and priced with your tariffs for home, public AC and public DC. Sensors for the last session and this month |
+| 💶 **Charging costs** | Charging sessions detected automatically and priced with your tariffs for home, public AC and public DC — including a **low (night) tariff** for home. Sensors for the last session and this month |
+| 🔥 **Cabin preheat & pre-cool** | One tap to heat (your temperature, fan 7, recirculation) or cool (18 °C, fan 7, A/C) the cabin — or **auto**, which picks heat or cool from the outside temperature. Presets per vehicle, works on the T03 |
+| 🔧 **Maintenance** | Factory schedules for T03, B10, C10 and C10 REEV (plus common items), due dates by km and time, *Done* button to log a service. Works from day one — assumes services were on schedule until you log one |
+| 🛡️ **More controls** | Sentry mode, healthy charging, start/stop charging and sunroof |
+| 💡 **Insights** | Cost per trip and per 100 km, parked battery drain, temperature-compensated **slow-leak tire detection**, consumption vs. your usual for similar trips and by outside temperature, an *attention needed* sensor, charge-to-limit cost now vs. low tariff |
+| 🤖 **Blueprints** | Ready-made automations: pre-condition before departure, charging complete, car left unlocked (with auto-lock), plug-in reminder, attention/tire/maintenance alerts |
 | ❤️ **Battery health** | State-of-health estimate from full-charge readings, against your car's capacity or the best value measured |
 | 📊 **History** | Last-7-days mileage & energy with daily detail, six-week average consumption, weekly and daily energy split |
 | 🌡️ **Comfort** | Climate on/off, quick heat/cool, defrost, steering-wheel & mirror heating, seat heating/ventilation 0–3, one-touch *prepare car* |
@@ -230,7 +235,8 @@ Then continue with [Set up the integration](#set-up-the-integration).
 1. **Settings → Devices & services → + Add integration → Leapmotor**.
 2. **Certificates** — upload or paste `app_cert.pem` and `app_key.pem`
    (skipped automatically when they are already in `/config/leapmotor/`).
-3. **Account** — e-mail, password, optional vehicle PIN and update interval.
+3. **Account** — e-mail, password, vehicle PIN (prefilled with the factory
+   PIN 0000) and update interval.
 4. Done — your car appears as a device with all its entities. Each vehicle is
    listed below the account entry; open it to set its PIN or ABRP token.
 
@@ -254,10 +260,13 @@ If the card is not found, refresh the browser once with **Ctrl + F5**
 | --- | --- | --- |
 | E-mail & password | Setup | Required. Invalid credentials start re-authentication; **Reconfigure** lets you replace the password proactively. |
 | Certificates | Setup / options | Required for the EU backend. Stored in `/config/leapmotor/`. |
-| Vehicle PIN | Per vehicle | Optional. Without it the car stays read-only. |
+| Vehicle PIN | Per vehicle | Prefilled with the factory PIN **0000** — change it if you set your own. Clear it to keep the car read-only. |
+| Cabin presets | Per vehicle | Preheat (default 22 °C, fan 7, recirculation), pre-cool (default 18 °C, fan 7, recirculation) and the outside temperature above which *auto* cools (default 20 °C). |
+| Severe-use schedule | Per vehicle | Shorter maintenance intervals for C10 (severe use) and T03 (city use). |
 | Update interval | Options | In **minutes**. Diagnostics show it in seconds (`60` → `3600`). Use `1` for one-minute polling. |
 | Eco polling | Options | Slows polling while every car is clearly locked, parked and unplugged. Minimum `5` minutes. Never wakes the car. |
 | ABRP live data | Per vehicle | Optional. Needs only that car's ABRP *Generic* token — no API key. |
+| Low tariff | Options | Optional home low-tariff price, start/end time (e.g. 22:00–06:00) and "all day on weekends" (two-rate tariffs such as MT/VT). Home sessions are split by time between the two prices. |
 | Charging tariffs | Options | Price per kWh for **home**, **public AC** and **public DC**. A session counts as home when it starts inside your Home zone; DC when the car reports a DC cable or charges above 22 kW. Leave 0 to skip costs. Prices apply to sessions from then on. |
 | Battery capacity | Per vehicle | Optional usable capacity in kWh (e.g. 69.9). Used as 100 % for battery health; leave 0 to compare with the best capacity measured. |
 
@@ -282,9 +291,15 @@ copied to every car — set it on the intended vehicle.
 - **Trip log and charging sessions** are worked out from the polled data, so
   their precision follows the update interval: set it to **1 minute** for
   exact start and end times and to catch short trips. Trips and sessions are
-  stored locally in Home Assistant (no coordinates) and survive restarts.
+  stored locally in Home Assistant and survive restarts.
   Regenerated energy is not estimated — polling is too coarse for regen bursts.
 - **Battery health** needs at least three days with a full (100 %) charge.
+- **Trip comparison** keeps approximate trip start and end points (rounded to
+  about 100 m) in Home Assistant's local storage, only to find similar trips.
+  They are never exposed in attributes or diagnostics.
+- **Tire warnings** flag a tire below 1.9 bar, 0.3 bar below the others, or
+  falling 0.2 bar faster than the others against its 7-day median — so a cold
+  morning does not trigger it, a slow leak does.
 - **Last 7 days** covers today and the six previous calendar days in your
   Home Assistant time zone. `energy_complete` validates field and mileage
   coverage only, not physical accuracy. The original cloud day label stays in
@@ -332,8 +347,20 @@ permissions.
 | `leapmotor.quick_cool` / `leapmotor.quick_heat` | 🔒 | Climate quick profiles |
 | `leapmotor.windshield_defrost` | 🔒 | Windshield defrost |
 | `leapmotor.set_charge_limit` | 🔒 | `charge_limit_percent` |
+| `leapmotor.preheat_cabin` | 🔒 | Heat with the vehicle preset; optional `temperature`, `fan_speed`, `recirculate` |
+| `leapmotor.precool_cabin` | 🔒 | Cool with A/C using the vehicle preset; same optional fields |
+| `leapmotor.precondition_cabin` | 🔒 | Cool when warm outside, otherwise heat |
+| `leapmotor.charging_start` / `leapmotor.charging_stop` | 🔒 | Start or stop charging while plugged in |
+| `leapmotor.sunroof_open` / `leapmotor.sunroof_close` | 🔒 | Sunroof, on cars that report one |
+| `leapmotor.log_maintenance` | — | `service_type`, optional `odometer_km`, `date` |
+| `leapmotor.reset_maintenance` | — | Forget a logged service |
 | `leapmotor.send_destination` | — | `name`, `latitude`, `longitude`, optional `address` |
 | `leapmotor.export_diagnostics` | — | Write a redacted support JSON |
+
+Sentry mode and healthy charging are switches. The commands for sentry mode,
+start/stop charging, healthy charging and the sunroof come from LeapConnect and
+use the same verified remote-control flow; they have not yet been confirmed on
+every model.
 
 `set_climate_schedule` and `set_prepare_car_schedule` replace all existing
 schedules with one entry. `start_time` must be in the future in the car's local
@@ -412,6 +439,20 @@ data:
 ```
 
 </details>
+
+<br>
+
+## ✦ Blueprints
+
+Import a ready-made automation with one click, then pick your car's entities:
+
+| Blueprint | Import |
+| --- | --- |
+| **Pre-condition before departure** — preheat, pre-cool or auto at a set time on chosen days | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fsabotin%2Fleapmotor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fprecondition_before_departure.yaml) |
+| **Charging complete** — phone notification with battery and range | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fsabotin%2Fleapmotor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fcharging_complete.yaml) |
+| **Car left unlocked** — notify, optionally lock automatically | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fsabotin%2Fleapmotor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fleft_unlocked.yaml) |
+| **Plug-in reminder** — evening reminder when home, low and unplugged | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fsabotin%2Fleapmotor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fplug_in_reminder.yaml) |
+| **Attention, tires & maintenance** — alerts with the reason | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fsabotin%2Fleapmotor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fattention_alert.yaml) |
 
 <br>
 
@@ -507,9 +548,13 @@ Full history in [CHANGELOG.md](CHANGELOG.md).
   by [kerniger](https://github.com/kerniger) (MIT). All the hard reverse-engineering
   work is theirs; this repository adds the redesign, the dashboard card and the
   Slovenian translation.
-- The trip log, charging-session detection and battery-health estimate are
-  ported from **[LeapConnect](https://github.com/markoceri/leapconnect)** by
-  [Marco Mancino](https://github.com/markoceri) (AGPL-3.0).
+- The trip log, charging sessions, time-of-use pricing, trip comparison,
+  battery-health estimate and maintenance engine are ported from
+  **[LeapConnect](https://github.com/markoceri/leapconnect)** by
+  [Marco Mancino](https://github.com/markoceri) (AGPL-3.0); the extra remote
+  commands come from his [leapmotor-api](https://pypi.org/project/leapmotor-api/)
+  and the maintenance schedules from his
+  [maintenance packs](https://github.com/markoceri/leapconnect-maintenance-packs) (MIT).
 - [sbstn-0x2a](https://github.com/sbstn-0x2a) — raw-signal mappings for charging,
   doors, climate, heating, seating, range and diagnostics.
 - [markoceri](https://github.com/markoceri) — public Leapmotor API and

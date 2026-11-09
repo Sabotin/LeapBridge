@@ -21,6 +21,25 @@ CONF_PRICE_HOME = "price_home_kwh"
 CONF_PRICE_PUBLIC_AC = "price_public_ac_kwh"
 CONF_PRICE_PUBLIC_DC = "price_public_dc_kwh"
 CONF_BATTERY_REFERENCE_KWH = "battery_reference_kwh"
+CONF_PRICE_HOME_LOW = "price_home_low_kwh"
+CONF_LOW_TARIFF_START = "low_tariff_start"
+CONF_LOW_TARIFF_END = "low_tariff_end"
+CONF_LOW_TARIFF_WEEKENDS = "low_tariff_weekends"
+CONF_MAINTENANCE_SEVERE = "maintenance_severe_use"
+CONF_PREHEAT_TEMPERATURE = "preheat_temperature"
+CONF_PREHEAT_FAN = "preheat_fan_speed"
+CONF_PREHEAT_RECIRCULATE = "preheat_recirculate"
+DEFAULT_PREHEAT_TEMPERATURE = 22
+DEFAULT_PREHEAT_FAN = 7
+CONF_PRECOOL_TEMPERATURE = "precool_temperature"
+CONF_PRECOOL_FAN = "precool_fan_speed"
+CONF_PRECOOL_RECIRCULATE = "precool_recirculate"
+CONF_PRECONDITION_THRESHOLD = "precondition_cool_above"
+DEFAULT_PRECOOL_TEMPERATURE = 18
+DEFAULT_PRECOOL_FAN = 7
+DEFAULT_PRECONDITION_THRESHOLD = 20
+#: Factory vehicle PIN; prefilled in setup and vehicle settings, changeable.
+DEFAULT_OPERATION_PASSWORD = "0000"
 
 SUBENTRY_TYPE_VEHICLE = "vehicle"
 
@@ -83,3 +102,12 @@ REMOTE_CTL_AC_OFF = "ac_off"
 REMOTE_CTL_QUICK_COOL = "quick_cool"
 REMOTE_CTL_QUICK_HEAT = "quick_heat"
 REMOTE_CTL_WINDSHIELD_DEFROST = "windshield_defrost"
+# Ported from LeapConnect / leapmotor-api (AGPL-3.0): same remote-control flow.
+REMOTE_CTL_SENTRY_MODE_ON = "sentry_mode_on"
+REMOTE_CTL_SENTRY_MODE_OFF = "sentry_mode_off"
+REMOTE_CTL_CHARGE_START = "charging_start"
+REMOTE_CTL_CHARGE_STOP = "charging_stop"
+REMOTE_CTL_HEALTHY_CHARGING_ON = "healthy_charging_on"
+REMOTE_CTL_HEALTHY_CHARGING_OFF = "healthy_charging_off"
+REMOTE_CTL_SUNROOF_OPEN = "sunroof_open"
+REMOTE_CTL_SUNROOF_CLOSE = "sunroof_close"

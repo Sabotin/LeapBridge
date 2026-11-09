@@ -21,6 +21,7 @@ from .api import LeapmotorApiClient
 from .button import BUTTON_SPECS
 from .card import async_register_card
 from .const import (
+    DEFAULT_OPERATION_PASSWORD,
     CONF_ACCOUNT_P12_PASSWORD,
     CONF_ABRP_ENABLED,
     CONF_ABRP_TOKEN,
@@ -256,6 +257,34 @@ SEND_DESTINATION_FIELDS = vol.Schema(
     }
 )
 
+LOG_MAINTENANCE_FIELDS = vol.Schema(
+    {
+        vol.Required("service_type"): vol.All(str, vol.Length(min=1, max=80)),
+        vol.Optional("odometer_km"): vol.All(vol.Coerce(float), vol.Range(min=0, max=2_000_000)),
+        vol.Optional("date"): str,
+        vol.Optional("vin"): str,
+        vol.Optional("entity_id"): str,
+    }
+)
+
+PREHEAT_CABIN_FIELDS = vol.Schema(
+    {
+        vol.Optional("temperature"): vol.All(vol.Coerce(int), vol.Range(min=18, max=32)),
+        vol.Optional("fan_speed"): vol.All(vol.Coerce(int), vol.Range(min=1, max=7)),
+        vol.Optional("recirculate"): bool,
+        vol.Optional("vin"): str,
+        vol.Optional("entity_id"): str,
+    }
+)
+
+RESET_MAINTENANCE_FIELDS = vol.Schema(
+    {
+        vol.Required("service_type"): vol.All(str, vol.Length(min=1, max=80)),
+        vol.Optional("vin"): str,
+        vol.Optional("entity_id"): str,
+    }
+)
+
 EXPORT_DIAGNOSTICS_FIELDS = vol.Schema(
     {
         vol.Optional("filename"): str,
@@ -364,7 +393,7 @@ def _async_ensure_vehicle_subentries(
                         CONF_VIN: vin,
                         CONF_OPERATION_PASSWORD: legacy_pin
                         if migrating_legacy_settings
-                        else "",
+                        else DEFAULT_OPERATION_PASSWORD,
                         CONF_ABRP_ENABLED: legacy_abrp_enabled
                         if migrating_legacy_settings and single_vehicle
                         else False,
@@ -829,6 +858,77 @@ async def _async_register_services(hass: HomeAssistant) -> None:
     )
     _LOGGER.debug("Registered Leapmotor service %s.%s", DOMAIN, "export_diagnostics")
 
+    async def handle_log_maintenance(call: ServiceCall) -> None:
+        """Record a completed service (ported maintenance tracking)."""
+        coordinator, vin = resolve_call_target(call)
+        km = call.data.get("odometer_km")
+        if km is None:
+            status = ((coordinator.data or {}).get("vehicles", {}).get(vin) or {}).get("status") or {}
+            try:
+                km = float(status.get("odometer_km"))
+            except (TypeError, ValueError):
+                km = None
+        when = datetime.now(UTC)
+        if call.data.get("date"):
+            try:
+                when = datetime.fromisoformat(str(call.data["date"])).replace(tzinfo=UTC)
+            except ValueError as exc:
+                raise HomeAssistantError("Use the date format YYYY-MM-DD.") from exc
+        await coordinator.async_log_maintenance(
+            vin, call.data["service_type"], km=km, ts=when.timestamp()
+        )
+
+    async def handle_reset_maintenance(call: ServiceCall) -> None:
+        """Forget a logged service so the on-schedule assumption applies again."""
+        coordinator, vin = resolve_call_target(call)
+        await coordinator.async_log_maintenance(
+            vin, call.data["service_type"], km=None, ts=0, reset=True
+        )
+
+    def make_climate_preset_handler(kind: str):
+        async def handler(call: ServiceCall) -> None:
+            """Heat/cool the cabin with the vehicle preset; fields override it."""
+            from .button import (
+                PRECONDITION_CABIN_SPEC,
+                PRECOOL_CABIN_SPEC,
+                PREHEAT_CABIN_SPEC,
+                outside_temperature,
+            )
+            from .vehicle_config import (
+                precondition_settings_for_vehicle,
+                precool_settings_for_vehicle,
+                preheat_settings_for_vehicle,
+            )
+
+            coordinator, vin = resolve_call_target(call)
+            if kind == "heat":
+                spec, settings = PREHEAT_CABIN_SPEC, preheat_settings_for_vehicle(coordinator.config_entry, vin)
+            elif kind == "cool":
+                spec, settings = PRECOOL_CABIN_SPEC, precool_settings_for_vehicle(coordinator.config_entry, vin)
+            else:
+                vehicle_data = (coordinator.data or {}).get("vehicles", {}).get(vin) or {}
+                spec = PRECONDITION_CABIN_SPEC
+                settings = precondition_settings_for_vehicle(
+                    coordinator.config_entry, vin, outside_temperature(vehicle_data)
+                )
+            for key in ("temperature", "fan_speed", "recirculate"):
+                if key in call.data:
+                    settings[key] = call.data[key]
+            await async_execute_remote_action(coordinator, vin, spec, settings)
+
+        return handler
+
+    for service_name, kind in (("preheat_cabin", "heat"), ("precool_cabin", "cool"), ("precondition_cabin", "auto")):
+        hass.services.async_register(
+            DOMAIN, service_name, make_climate_preset_handler(kind), schema=PREHEAT_CABIN_FIELDS
+        )
+    hass.services.async_register(
+        DOMAIN, "log_maintenance", handle_log_maintenance, schema=LOG_MAINTENANCE_FIELDS
+    )
+    hass.services.async_register(
+        DOMAIN, "reset_maintenance", handle_reset_maintenance, schema=RESET_MAINTENANCE_FIELDS
+    )
+
 
 def _async_unregister_services(hass: HomeAssistant) -> None:
     """Remove Leapmotor domain services when the last entry unloads."""
@@ -853,6 +953,9 @@ def _async_unregister_services(hass: HomeAssistant) -> None:
         hass.services.async_remove(DOMAIN, "send_destination")
     if hass.services.has_service(DOMAIN, "export_diagnostics"):
         hass.services.async_remove(DOMAIN, "export_diagnostics")
+    for service_name in ("log_maintenance", "reset_maintenance", "preheat_cabin", "precool_cabin", "precondition_cabin"):
+        if hass.services.has_service(DOMAIN, service_name):
+            hass.services.async_remove(DOMAIN, service_name)
 
 
 def _write_json_export(path: Path, payload: object) -> None:

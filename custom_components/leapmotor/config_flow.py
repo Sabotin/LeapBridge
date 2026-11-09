@@ -38,7 +38,25 @@ from .const import (
     CONF_ECO_POLLING_ENABLED,
     CONF_ECO_SCAN_INTERVAL,
     CONF_OPERATION_PASSWORD,
+    CONF_LOW_TARIFF_END,
+    CONF_LOW_TARIFF_START,
+    CONF_LOW_TARIFF_WEEKENDS,
+    CONF_MAINTENANCE_SEVERE,
+    CONF_PREHEAT_FAN,
+    CONF_PREHEAT_RECIRCULATE,
+    CONF_PREHEAT_TEMPERATURE,
+    CONF_PRECONDITION_THRESHOLD,
+    CONF_PRECOOL_FAN,
+    CONF_PRECOOL_RECIRCULATE,
+    CONF_PRECOOL_TEMPERATURE,
+    DEFAULT_OPERATION_PASSWORD,
+    DEFAULT_PRECONDITION_THRESHOLD,
+    DEFAULT_PRECOOL_FAN,
+    DEFAULT_PRECOOL_TEMPERATURE,
+    DEFAULT_PREHEAT_FAN,
+    DEFAULT_PREHEAT_TEMPERATURE,
     CONF_PRICE_HOME,
+    CONF_PRICE_HOME_LOW,
     CONF_PRICE_PUBLIC_AC,
     CONF_PRICE_PUBLIC_DC,
     CONF_SCAN_INTERVAL,
@@ -60,7 +78,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
-        vol.Optional(CONF_OPERATION_PASSWORD, default=""): str,
+        vol.Optional(CONF_OPERATION_PASSWORD, default=DEFAULT_OPERATION_PASSWORD): str,
         vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL_MINUTES): vol.All(
             vol.Coerce(int),
             vol.Range(min=1, max=120),
@@ -475,6 +493,10 @@ class LeapmotorOptionsFlow(config_entries.OptionsFlow):
                     CONF_PRICE_HOME: float(user_input.get(CONF_PRICE_HOME) or 0),
                     CONF_PRICE_PUBLIC_AC: float(user_input.get(CONF_PRICE_PUBLIC_AC) or 0),
                     CONF_PRICE_PUBLIC_DC: float(user_input.get(CONF_PRICE_PUBLIC_DC) or 0),
+                    CONF_PRICE_HOME_LOW: float(user_input.get(CONF_PRICE_HOME_LOW) or 0),
+                    CONF_LOW_TARIFF_START: user_input.get(CONF_LOW_TARIFF_START) or "22:00:00",
+                    CONF_LOW_TARIFF_END: user_input.get(CONF_LOW_TARIFF_END) or "06:00:00",
+                    CONF_LOW_TARIFF_WEEKENDS: bool(user_input.get(CONF_LOW_TARIFF_WEEKENDS)),
                 },
             )
 
@@ -528,8 +550,20 @@ class LeapmotorOptionsFlow(config_entries.OptionsFlow):
                     vol.Optional(
                         key, default=float(self._config_entry.options.get(key) or 0)
                     ): _price_selector(self.hass.config.currency)
-                    for key in (CONF_PRICE_HOME, CONF_PRICE_PUBLIC_AC, CONF_PRICE_PUBLIC_DC)
+                    for key in (CONF_PRICE_HOME, CONF_PRICE_PUBLIC_AC, CONF_PRICE_PUBLIC_DC, CONF_PRICE_HOME_LOW)
                 },
+                vol.Optional(
+                    CONF_LOW_TARIFF_START,
+                    default=self._config_entry.options.get(CONF_LOW_TARIFF_START, "22:00:00"),
+                ): selector.TimeSelector(),
+                vol.Optional(
+                    CONF_LOW_TARIFF_END,
+                    default=self._config_entry.options.get(CONF_LOW_TARIFF_END, "06:00:00"),
+                ): selector.TimeSelector(),
+                vol.Optional(
+                    CONF_LOW_TARIFF_WEEKENDS,
+                    default=bool(self._config_entry.options.get(CONF_LOW_TARIFF_WEEKENDS, False)),
+                ): bool,
             }
         )
 
@@ -639,7 +673,7 @@ def _vehicle_settings_schema(data: dict[str, Any] | None = None) -> vol.Schema:
         {
             vol.Optional(
                 CONF_OPERATION_PASSWORD,
-                default=str(current.get(CONF_OPERATION_PASSWORD) or ""),
+                default=str(current.get(CONF_OPERATION_PASSWORD, DEFAULT_OPERATION_PASSWORD) or ""),
             ): str,
             vol.Optional(
                 CONF_ABRP_ENABLED,
@@ -659,6 +693,57 @@ def _vehicle_settings_schema(data: dict[str, Any] | None = None) -> vol.Schema:
                     unit_of_measurement="kWh",
                 )
             ),
+            vol.Optional(
+                CONF_MAINTENANCE_SEVERE,
+                default=bool(current.get(CONF_MAINTENANCE_SEVERE, False)),
+            ): bool,
+            vol.Optional(
+                CONF_PREHEAT_TEMPERATURE,
+                default=int(current.get(CONF_PREHEAT_TEMPERATURE, DEFAULT_PREHEAT_TEMPERATURE)),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=18, max=32, step=1, mode=selector.NumberSelectorMode.SLIDER,
+                    unit_of_measurement="°C",
+                )
+            ),
+            vol.Optional(
+                CONF_PREHEAT_FAN,
+                default=int(current.get(CONF_PREHEAT_FAN, DEFAULT_PREHEAT_FAN)),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(min=1, max=7, step=1, mode=selector.NumberSelectorMode.SLIDER)
+            ),
+            vol.Optional(
+                CONF_PREHEAT_RECIRCULATE,
+                default=bool(current.get(CONF_PREHEAT_RECIRCULATE, True)),
+            ): bool,
+            vol.Optional(
+                CONF_PRECOOL_TEMPERATURE,
+                default=int(current.get(CONF_PRECOOL_TEMPERATURE, DEFAULT_PRECOOL_TEMPERATURE)),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=18, max=32, step=1, mode=selector.NumberSelectorMode.SLIDER,
+                    unit_of_measurement="°C",
+                )
+            ),
+            vol.Optional(
+                CONF_PRECOOL_FAN,
+                default=int(current.get(CONF_PRECOOL_FAN, DEFAULT_PRECOOL_FAN)),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(min=1, max=7, step=1, mode=selector.NumberSelectorMode.SLIDER)
+            ),
+            vol.Optional(
+                CONF_PRECOOL_RECIRCULATE,
+                default=bool(current.get(CONF_PRECOOL_RECIRCULATE, True)),
+            ): bool,
+            vol.Optional(
+                CONF_PRECONDITION_THRESHOLD,
+                default=int(current.get(CONF_PRECONDITION_THRESHOLD, DEFAULT_PRECONDITION_THRESHOLD)),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=5, max=40, step=1, mode=selector.NumberSelectorMode.SLIDER,
+                    unit_of_measurement="°C",
+                )
+            ),
         }
     )
 
@@ -671,6 +756,14 @@ def _vehicle_settings_data(vin: str, data: dict[str, Any]) -> dict[str, Any]:
         CONF_ABRP_ENABLED: bool(data.get(CONF_ABRP_ENABLED)),
         CONF_ABRP_TOKEN: str(data.get(CONF_ABRP_TOKEN) or "").strip(),
         CONF_BATTERY_REFERENCE_KWH: float(data.get(CONF_BATTERY_REFERENCE_KWH) or 0),
+        CONF_MAINTENANCE_SEVERE: bool(data.get(CONF_MAINTENANCE_SEVERE)),
+        CONF_PREHEAT_TEMPERATURE: int(float(data.get(CONF_PREHEAT_TEMPERATURE) or DEFAULT_PREHEAT_TEMPERATURE)),
+        CONF_PREHEAT_FAN: int(float(data.get(CONF_PREHEAT_FAN) or DEFAULT_PREHEAT_FAN)),
+        CONF_PREHEAT_RECIRCULATE: bool(data.get(CONF_PREHEAT_RECIRCULATE, True)),
+        CONF_PRECOOL_TEMPERATURE: int(float(data.get(CONF_PRECOOL_TEMPERATURE) or DEFAULT_PRECOOL_TEMPERATURE)),
+        CONF_PRECOOL_FAN: int(float(data.get(CONF_PRECOOL_FAN) or DEFAULT_PRECOOL_FAN)),
+        CONF_PRECOOL_RECIRCULATE: bool(data.get(CONF_PRECOOL_RECIRCULATE, True)),
+        CONF_PRECONDITION_THRESHOLD: int(float(data.get(CONF_PRECONDITION_THRESHOLD) or DEFAULT_PRECONDITION_THRESHOLD)),
     }
 
 

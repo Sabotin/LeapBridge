@@ -100,9 +100,10 @@ OPTIONAL_SENSOR_PATHS = {
 }
 
 
-MONETARY_KEYS = {"last_charge_session_cost", "charging_cost_month"}
+MONETARY_KEYS = {"last_charge_session_cost", "charging_cost_month", "driving_cost_month"}
+CURRENCY_PER_100KM_KEYS = {"driving_cost_per_100km"}
 DAY_TOTAL_KEYS = {"trips_today_distance_km"}
-MONTH_TOTAL_KEYS = {"trips_month_distance_km", "charging_cost_month", "charged_energy_month_kwh"}
+MONTH_TOTAL_KEYS = {"trips_month_distance_km", "charging_cost_month", "charged_energy_month_kwh", "driving_cost_month"}
 
 
 def _analytics(data: dict[str, Any], *path: str) -> Any:
@@ -904,6 +905,12 @@ SENSOR_DESCRIPTIONS: tuple[LeapmotorSensorEntityDescription, ...] = (
         suggested_display_precision=1,
         icon="mdi:car-electric-outline",
         value_fn=lambda data: _analytics(data, "last_trip", "consumption_kwh_100km"),
+        extra_attrs_fn=lambda data: {
+            "similar_trips": _analytics(data, "last_trip", "similar_trips"),
+            "usual_consumption_kwh_100km": _analytics(data, "last_trip", "usual_consumption_kwh_100km"),
+            "vs_usual_pct": _analytics(data, "last_trip", "vs_usual_pct"),
+            "efficiency_by_temperature": _analytics(data, "efficiency_by_temperature") or [],
+        },
     ),
     LeapmotorSensorEntityDescription(
         key="trips_today_distance_km",
@@ -979,6 +986,63 @@ SENSOR_DESCRIPTIONS: tuple[LeapmotorSensorEntityDescription, ...] = (
         value_fn=lambda data: _analytics(data, "battery_health", "soh_pct"),
         extra_attrs_fn=lambda data: _record_attrs(_analytics(data, "battery_health"), skip="soh_pct"),
     ),
+    # Stage 2 (LeapConnect) and additions.
+    LeapmotorSensorEntityDescription(
+        key="next_maintenance",
+        translation_key="next_maintenance",
+        icon="mdi:wrench-clock",
+        value_fn=lambda data: (_analytics(data, "maintenance", "next") or {}).get("label"),
+        extra_attrs_fn=lambda data: {
+            **_record_attrs(_analytics(data, "maintenance", "next"), skip="label"),
+            "overdue": _analytics(data, "maintenance", "overdue"),
+            "due_soon": _analytics(data, "maintenance", "due_soon"),
+            "schedule": _analytics(data, "maintenance", "schedule"),
+            "items": _analytics(data, "maintenance", "items") or [],
+        },
+    ),
+    LeapmotorSensorEntityDescription(
+        key="driving_cost_month",
+        translation_key="driving_cost_month",
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        suggested_display_precision=2,
+        icon="mdi:cash-fast",
+        value_fn=lambda data: _analytics(data, "month", "cost"),
+        extra_attrs_fn=lambda data: {
+            "today": _analytics(data, "today", "cost"),
+            "last_trip": _analytics(data, "last_trip", "cost"),
+            "avg_price_kwh": _analytics(data, "avg_price_kwh"),
+        },
+    ),
+    LeapmotorSensorEntityDescription(
+        key="driving_cost_per_100km",
+        translation_key="driving_cost_per_100km",
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
+        icon="mdi:cash-marker",
+        value_fn=lambda data: _analytics(data, "month", "cost_per_100km"),
+    ),
+    LeapmotorSensorEntityDescription(
+        key="parked_drain_kwh_day",
+        translation_key="parked_drain_kwh_day",
+        native_unit_of_measurement="kWh/d",
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
+        icon="mdi:battery-arrow-down-outline",
+        value_fn=lambda data: _analytics(data, "parked_drain", "kwh_per_day"),
+        extra_attrs_fn=lambda data: _record_attrs(_analytics(data, "parked_drain"), skip="kwh_per_day"),
+    ),
+    LeapmotorSensorEntityDescription(
+        key="energy_to_charge_limit_kwh",
+        translation_key="energy_to_charge_limit_kwh",
+        native_unit_of_measurement=ENERGY_KWH,
+        device_class=SensorDeviceClass.ENERGY_STORAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        icon="mdi:battery-charging-80",
+        value_fn=lambda data: _analytics(data, "charge_plan", "energy_kwh"),
+        extra_attrs_fn=lambda data: _record_attrs(_analytics(data, "charge_plan"), skip="energy_kwh"),
+    ),
 )
 
 
@@ -1004,7 +1068,10 @@ class LeapmotorSensor(CoordinatorEntity[LeapmotorDataUpdateCoordinator], SensorE
     """Leapmotor sensor."""
 
     entity_description: LeapmotorSensorEntityDescription
-    _unrecorded_attributes = frozenset({"recent_trips", "recent_sessions", "current_trip", "current_session"})
+    _unrecorded_attributes = frozenset({
+        "recent_trips", "recent_sessions", "current_trip", "current_session", "items",
+        "efficiency_by_temperature",
+    })
 
     def __init__(
         self,
@@ -1050,6 +1117,10 @@ class LeapmotorSensor(CoordinatorEntity[LeapmotorDataUpdateCoordinator], SensorE
         if self.entity_description.key in MONETARY_KEYS:
             hass = getattr(self, "hass", None)
             return hass.config.currency if hass is not None else None
+        if self.entity_description.key in CURRENCY_PER_100KM_KEYS:
+            hass = getattr(self, "hass", None)
+            currency = hass.config.currency if hass is not None else None
+            return f"{currency}/100 km" if currency else "/100 km"
         return super().native_unit_of_measurement
 
     @property

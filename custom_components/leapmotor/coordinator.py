@@ -19,7 +19,11 @@ from homeassistant.util import dt as dt_util
 from .abrp import build_abrp_telemetry, send_abrp_telemetry
 from .api import LeapmotorApiClient
 from .const import (
+    CONF_LOW_TARIFF_END,
+    CONF_LOW_TARIFF_START,
+    CONF_LOW_TARIFF_WEEKENDS,
     CONF_PRICE_HOME,
+    CONF_PRICE_HOME_LOW,
     CONF_PRICE_PUBLIC_AC,
     CONF_PRICE_PUBLIC_DC,
     DEFAULT_ABRP_API_KEY,
@@ -41,9 +45,11 @@ from .drive_analytics import (
     DriveAnalytics,
 )
 from .location import CoordinateResolution, resolve_coordinate
+from .maintenance_catalog import items_for_vehicle, load_catalog
 from .vehicle_config import (
     abrp_config_for_vehicle,
     battery_reference_for_vehicle,
+    maintenance_severe_use_for_vehicle,
     operation_password_for_vehicle,
     vehicle_subentries,
 )
@@ -51,6 +57,19 @@ from .vehicle_config import (
 _LOGGER = logging.getLogger(__name__)
 
 GPS_SIGN_STORAGE_VERSION = 1
+
+
+def _minutes(value: Any) -> int | None:
+    """Minutes after midnight from 'HH:MM' or 'HH:MM:SS'."""
+    try:
+        parts = str(value).split(":")
+        hours, minutes = int(parts[0]), int(parts[1])
+    except (TypeError, ValueError, IndexError):
+        return None
+    if 0 <= hours < 24 and 0 <= minutes < 60:
+        return hours * 60 + minutes
+    return None
+
 ANALYTICS_SAVE_DELAY_SECONDS = 60
 DEFAULT_HOME_RADIUS_M = 100.0
 
@@ -94,6 +113,7 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
         )
         self._location_sign_save_task: asyncio.Task[None] | None = None
         self._analytics = DriveAnalytics()
+        self._maintenance_catalog: dict[str, Any] = {"packs": {}}
         self._analytics_store = Store[dict[str, Any]](
             hass,
             ANALYTICS_STORAGE_VERSION,
@@ -158,6 +178,30 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
         """Load the trip log, charging sessions and full-charge history."""
         stored = await self._analytics_store.async_load()
         self._analytics = DriveAnalytics(stored if isinstance(stored, dict) else None)
+        self._maintenance_catalog = await self.hass.async_add_executor_job(load_catalog)
+
+    def _maintenance_plan(self, vin: str, vehicle_data: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
+        status = vehicle_data.get("status") or {}
+        is_reev = status.get("fuel_level_percent") is not None or status.get("fuel_range_km") is not None
+        return items_for_vehicle(
+            self._maintenance_catalog,
+            (vehicle_data.get("vehicle") or {}).get("car_type"),
+            is_reev=is_reev,
+            severe_use=maintenance_severe_use_for_vehicle(self.config_entry, vin),
+        )
+
+    async def async_log_maintenance(
+        self, vin: str, service_type: str, *, km: float | None, ts: float, reset: bool = False
+    ) -> None:
+        """Log (or forget) a completed service and refresh the summaries."""
+        if reset:
+            self._analytics.reset_maintenance(vin, service_type)
+        else:
+            self._analytics.log_maintenance(vin, service_type, km=km, ts=ts)
+        if self.data:
+            self._apply_analytics(self.data)
+            self.async_set_updated_data(self.data)
+        await self.async_flush_analytics()
 
     async def async_flush_analytics(self) -> None:
         """Write analytics immediately, e.g. before unloading."""
@@ -188,6 +232,20 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
                 continue
             if value > 0:
                 prices[tier] = value
+        low = options.get(CONF_PRICE_HOME_LOW)
+        start = _minutes(options.get(CONF_LOW_TARIFF_START))
+        end = _minutes(options.get(CONF_LOW_TARIFF_END))
+        try:
+            low_value = float(low or 0)
+        except (TypeError, ValueError):
+            low_value = 0.0
+        if low_value > 0 and start is not None and end is not None:
+            prices["home_low"] = low_value
+            prices["low_band"] = {
+                "start_min": start,
+                "end_min": end,
+                "weekends": bool(options.get(CONF_LOW_TARIFF_WEEKENDS)),
+            }
         return prices
 
     def _apply_analytics(self, data: dict) -> None:
@@ -198,6 +256,7 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
         now_ts = time.time()
         for vin, vehicle_data in (data.get("vehicles") or {}).items():
             try:
+                schedule, items = self._maintenance_plan(vin, vehicle_data)
                 vehicle_data["analytics"] = self._analytics.update(
                     vin,
                     vehicle_data,
@@ -206,6 +265,8 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
                     home=home,
                     prices=prices,
                     reference_kwh=battery_reference_for_vehicle(self.config_entry, vin),
+                    maintenance_items=items,
+                    maintenance_schedule=schedule,
                 )
             except Exception:  # noqa: BLE001 - analytics must never break polling
                 _LOGGER.warning("Leapmotor trip/charging analysis failed", exc_info=True)

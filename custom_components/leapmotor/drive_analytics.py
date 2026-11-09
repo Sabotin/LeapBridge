@@ -7,6 +7,15 @@ General Public License v3.0:
 - trip segmentation, merging and trip rows (``domain/trips/analysis.py``)
 - charge-session detection (``domain/trips/analysis.py``)
 - battery state-of-health estimate (``domain/telemetry/battery_health.py``)
+- time-of-use charging cost (``domain/charging/costing.py``)
+- trip similarity scoring (``domain/trips/analysis.py``)
+- maintenance due/overdue engine (``domain/maintenance/engine.py``)
+
+Additions that LeapConnect does not have: cost per trip and per 100 km, parked
+battery drain, temperature-compensated slow-leak tire detection, a
+charge-to-limit cost estimate, consumption by outside temperature, an
+"attention needed" summary, and maintenance that works before any service is
+logged (it assumes services were done on schedule).
 
 It is adapted to this integration's polled data: snapshots are built from the
 normalized vehicle dict on every poll, kept in a rolling buffer, and finished
@@ -239,9 +248,14 @@ def build_trip(segment: list[Snapshot]) -> dict[str, Any] | None:
     if start_kwh is not None and end_kwh is not None:
         # Net use; a downhill trip can recover more than it used.
         energy = round(max(0.0, start_kwh - end_kwh), 2)
+    def position(s: Snapshot):
+        return [round(s.lat, 3), round(s.lon, 3)] if s.lat is not None and s.lon is not None else None
+
     return {
         "start": start.ts,
         "end": end.ts,
+        "_sp": _first_valid(segment, position),
+        "_ep": _first_valid(segment, position, reverse=True),
         "distance_km": round(distance, 2),
         "duration_min": round(duration_h * 60, 1),
         "energy_kwh": energy,
@@ -370,6 +384,443 @@ def session_cost(energy_kwh: float | None, price_kwh: float | None) -> float | N
     return round(energy_kwh * price_kwh, 2)
 
 
+# --- Time-of-use pricing (LeapConnect costing.py) ----------------------------
+
+TOU_SLOT_S = 900
+
+
+def _local(ts: float, tz: tzinfo) -> datetime:
+    return datetime.fromtimestamp(ts, tz=UTC).astimezone(tz)
+
+
+def low_tariff_active(when: datetime, band: dict[str, Any] | None) -> bool:
+    """Is a local wall-clock time inside the low-tariff window?"""
+    if not band:
+        return False
+    if band.get("weekends") and when.weekday() >= 5:
+        return True
+    start, end = band.get("start_min"), band.get("end_min")
+    if start is None or end is None or start == end:
+        return False
+    minutes = when.hour * 60 + when.minute
+    if end <= start:  # overnight, e.g. 22:00-06:00
+        return minutes >= start or minutes < end
+    return start <= minutes < end
+
+
+def tou_cost(
+    energy_kwh: float | None,
+    start_ts: float,
+    end_ts: float,
+    *,
+    low_price: float,
+    high_price: float,
+    band: dict[str, Any],
+    tz: tzinfo,
+) -> float | None:
+    """Split session energy over low/high tariff time in 15-minute slots."""
+    if energy_kwh is None:
+        return None
+    total = end_ts - start_ts
+    if total <= 0:
+        price = low_price if low_tariff_active(_local(start_ts, tz), band) else high_price
+        return round(energy_kwh * price, 2)
+    low_seconds = 0.0
+    current = start_ts
+    while current < end_ts:
+        slot_end = min(current + TOU_SLOT_S, end_ts)
+        if low_tariff_active(_local(current, tz), band):
+            low_seconds += slot_end - current
+        current = slot_end
+    share = low_seconds / total
+    return round(energy_kwh * (share * low_price + (1 - share) * high_price), 2)
+
+
+def _tou_enabled(prices: dict[str, Any]) -> bool:
+    return bool(prices.get("home") and prices.get("home_low") and prices.get("low_band"))
+
+
+def price_session(
+    session: dict[str, Any], prices: dict[str, Any], tz: tzinfo
+) -> tuple[float | None, float | None]:
+    """Return (cost, effective price per kWh) for a finished session."""
+    tier, energy = session.get("tier"), session.get("energy_kwh")
+    price = prices.get(tier)
+    if tier == TIER_HOME and _tou_enabled(prices):
+        cost = tou_cost(
+            energy, session["start"], session.get("end") or session["start"],
+            low_price=prices["home_low"], high_price=prices["home"],
+            band=prices["low_band"], tz=tz,
+        )
+        effective = round(cost / energy, 4) if cost is not None and energy else None
+        return cost, effective
+    return session_cost(energy, price), (price if price and price > 0 else None)
+
+
+def next_low_tariff_start(now_ts: float, band: dict[str, Any] | None, tz: tzinfo) -> float | None:
+    """First 15-minute slot from now that falls in the low tariff."""
+    if not band:
+        return None
+    start = now_ts - now_ts % TOU_SLOT_S
+    for step in range(1, 7 * 96 + 1):
+        ts = start + step * TOU_SLOT_S
+        if low_tariff_active(_local(ts, tz), band):
+            return ts
+    return None
+
+
+# --- Trip comparison (LeapConnect similarity) ---------------------------------
+
+SIMILAR_SCORE = 0.75
+SIMILAR_MIN_MATCHES = 2
+SIMILAR_HISTORY = 300
+
+
+def _hour(ts: float, tz: tzinfo) -> float:
+    local = _local(ts, tz)
+    return local.hour + local.minute / 60
+
+
+def trip_similarity(reference: dict[str, Any], candidate: dict[str, Any], tz: tzinfo) -> float:
+    """Route 40 %, time of day 35 %, distance 25 % (LeapConnect weights)."""
+    ref_km = reference.get("distance_km") or 0
+    cand_km = candidate.get("distance_km") or 0
+    distance = 0.0 if ref_km <= 0 else 1.0 - min(1.0, abs(cand_km - ref_km) / ref_km)
+    hours = abs(_hour(reference["start"], tz) - _hour(candidate["start"], tz))
+    hours = min(hours, 24 - hours)
+    time_score = 1.0 - min(1.0, hours / 12.0)
+    route = 0.5
+    points = [reference.get("_sp"), reference.get("_ep"), candidate.get("_sp"), candidate.get("_ep")]
+    if all(points):
+        start_km = haversine_m(*points[0], *points[2]) / 1000
+        end_km = haversine_m(*points[1], *points[3]) / 1000
+        route = 1.0 - min(1.0, (start_km + end_km) / 2 / 30.0)
+    return round(0.40 * route + 0.35 * time_score + 0.25 * distance, 4)
+
+
+def compare_with_similar(
+    trip: dict[str, Any], history: list[dict[str, Any]], tz: tzinfo
+) -> dict[str, Any]:
+    """How the trip's consumption compares with similar earlier trips."""
+    own = trip.get("consumption_kwh_100km")
+    matches = [
+        t for t in history[-SIMILAR_HISTORY:]
+        if t is not trip and t.get("start") != trip.get("start")
+        and t.get("energy_kwh") is not None and (t.get("distance_km") or 0) > 0
+        and trip_similarity(trip, t, tz) >= SIMILAR_SCORE
+    ]
+    result: dict[str, Any] = {"similar_trips": len(matches)}
+    if own is None or len(matches) < SIMILAR_MIN_MATCHES:
+        return result
+    distance = sum(t["distance_km"] for t in matches)
+    usual = sum(t["energy_kwh"] for t in matches) / distance * 100
+    if usual > 0:
+        result["usual_consumption_kwh_100km"] = round(usual, 1)
+        result["vs_usual_pct"] = round((own - usual) / usual * 100, 1)
+    return result
+
+
+# --- Driving cost (not in LeapConnect) ----------------------------------------
+
+PRICE_WINDOW_DAYS = 30
+
+
+def average_price_per_kwh(
+    sessions: list[dict[str, Any]], now_ts: float, prices: dict[str, Any]
+) -> float | None:
+    """Average price paid per kWh over the last 30 days, else the home price."""
+    since = now_ts - PRICE_WINDOW_DAYS * 86400
+    priced = [
+        s for s in sessions
+        if s.get("cost") is not None and s.get("energy_kwh") and s["start"] >= since
+    ]
+    energy = sum(s["energy_kwh"] for s in priced)
+    if energy > 0:
+        return round(sum(s["cost"] for s in priced) / energy, 4)
+    home = prices.get("home")
+    return float(home) if home and home > 0 else None
+
+
+# --- Parked drain (not in LeapConnect as a value) -----------------------------
+
+MIN_DRAIN_HOURS = 6.0
+MIN_DRAIN_STRETCH_H = 1.0
+
+
+def parked_drain(snapshots: list[Snapshot]) -> dict[str, Any] | None:
+    """Energy lost per day while parked and not charging (incl. preheat/climate)."""
+    stretches: list[list[Snapshot]] = []
+    current: list[Snapshot] = []
+    for snapshot in snapshots:
+        idle = (
+            snapshot.is_charging is not True
+            and not is_moving(snapshot)
+            and _positive(snapshot.energy_kwh) is not None
+        )
+        if idle:
+            current.append(snapshot)
+        elif current:
+            stretches.append(current)
+            current = []
+    if current:
+        stretches.append(current)
+    hours = kwh = soc = 0.0
+    for stretch in stretches:
+        span = (stretch[-1].ts - stretch[0].ts) / 3600
+        if span < MIN_DRAIN_STRETCH_H:
+            continue
+        hours += span
+        kwh += max(0.0, stretch[0].energy_kwh - stretch[-1].energy_kwh)
+        if stretch[0].soc is not None and stretch[-1].soc is not None:
+            soc += max(0.0, stretch[0].soc - stretch[-1].soc)
+    if hours < MIN_DRAIN_HOURS:
+        return None
+    return {
+        "kwh_per_day": round(kwh / hours * 24, 2),
+        "pct_per_day": round(soc / hours * 24, 1),
+        "hours_observed": round(hours, 1),
+    }
+
+
+# --- Tire pressure (not in LeapConnect) ---------------------------------------
+
+TIRE_KEYS = (
+    "tire_pressure_front_left_bar", "tire_pressure_front_right_bar",
+    "tire_pressure_rear_left_bar", "tire_pressure_rear_right_bar",
+)
+TIRE_NAMES = ("front_left", "front_right", "rear_left", "rear_right")
+TIRE_LOW_BAR = 1.9
+TIRE_IMBALANCE_BAR = 0.3
+TIRE_DROP_BAR = 0.2
+TIRE_HISTORY_DAYS = 30
+
+
+def tire_values(vehicle: dict[str, Any]) -> list[float | None]:
+    diagnostics = vehicle.get("diagnostics") or {}
+    return [_positive(_num(diagnostics.get(key))) for key in TIRE_KEYS]
+
+
+def tire_status(
+    current: list[float | None], history: dict[str, list[float | None]], today: str
+) -> dict[str, Any] | None:
+    """Low, uneven or steadily dropping tires.
+
+    "Dropping" compares each tire's fall against the 7-day median with the
+    average fall of the other three, so a cold morning (all tires lower) does
+    not trigger it but one slowly leaking tire does.
+    """
+    if any(v is None for v in current):
+        return None
+    reasons: list[str] = []
+    for index, value in enumerate(current):
+        others = [v for i, v in enumerate(current) if i != index]
+        if value < TIRE_LOW_BAR:
+            reasons.append(f"{TIRE_NAMES[index]}_low")
+        elif sum(others) / 3 - value >= TIRE_IMBALANCE_BAR:
+            reasons.append(f"{TIRE_NAMES[index]}_uneven")
+    past = [row for day, row in sorted(history.items()) if day < today][-7:]
+    past = [row for row in past if isinstance(row, list) and len(row) == 4 and all(v for v in row)]
+    if len(past) >= 3:
+        baseline = [median(row[i] for row in past) for i in range(4)]
+        drops = [baseline[i] - current[i] for i in range(4)]
+        for index in range(4):
+            others = [d for i, d in enumerate(drops) if i != index]
+            if drops[index] - sum(others) / 3 >= TIRE_DROP_BAR:
+                reason = f"{TIRE_NAMES[index]}_dropping"
+                if not any(r.startswith(TIRE_NAMES[index]) for r in reasons):
+                    reasons.append(reason)
+    return {
+        "warning": bool(reasons),
+        "reasons": reasons,
+        **{name: current[i] for i, name in enumerate(TIRE_NAMES)},
+    }
+
+
+# --- Charge to limit (not in LeapConnect) -------------------------------------
+
+
+def charge_plan(
+    vehicle: dict[str, Any],
+    snapshot: Snapshot,
+    capacity_kwh: float | None,
+    prices: dict[str, Any],
+    now_ts: float,
+    tz: tzinfo,
+) -> dict[str, Any] | None:
+    """Energy and home cost to reach the charge limit, now vs. low tariff."""
+    soc = snapshot.soc
+    limit = _num((vehicle.get("charging") or {}).get("charge_limit_percent"))
+    if soc is None or limit is None:
+        return None
+    if not capacity_kwh and snapshot.energy_kwh and soc > 5:
+        capacity_kwh = snapshot.energy_kwh / soc * 100
+    if not capacity_kwh:
+        return None
+    energy = max(0.0, (limit - soc) / 100 * capacity_kwh)
+    plan: dict[str, Any] = {
+        "energy_kwh": round(energy, 1),
+        "capacity_kwh": round(capacity_kwh, 1),
+        "soc": round(soc, 1),
+        "limit": limit,
+    }
+    high = prices.get("home")
+    if _tou_enabled(prices):
+        band, low = prices["low_band"], prices["home_low"]
+        active = low_tariff_active(_local(now_ts, tz), band)
+        plan["low_tariff_now"] = active
+        plan["cost_now"] = round(energy * (low if active else high), 2)
+        plan["cost_low_tariff"] = round(energy * low, 2)
+        plan["saving"] = round(plan["cost_now"] - plan["cost_low_tariff"], 2)
+        if not active:
+            nxt = next_low_tariff_start(now_ts, band, tz)
+            plan["next_low_tariff"] = _iso(nxt)
+    elif high:
+        plan["cost_now"] = round(energy * high, 2)
+    return plan
+
+
+# --- Consumption by temperature (not in LeapConnect) --------------------------
+
+TEMP_BANDS = (
+    ("below_0", None, 0.0), ("0_10", 0.0, 10.0), ("10_20", 10.0, 20.0), ("above_20", 20.0, None),
+)
+MIN_TRIP_KM_FOR_STATS = 2.0
+
+
+def efficiency_by_temperature(trips: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    totals = {name: [0, 0.0, 0.0] for name, _, _ in TEMP_BANDS}
+    for trip in trips:
+        temp, energy, km = trip.get("outdoor_temp_c"), trip.get("energy_kwh"), trip.get("distance_km") or 0
+        if temp is None or energy is None or km < MIN_TRIP_KM_FOR_STATS:
+            continue
+        for name, low, high in TEMP_BANDS:
+            if (low is None or temp >= low) and (high is None or temp < high):
+                totals[name][0] += 1
+                totals[name][1] += energy
+                totals[name][2] += km
+                break
+    return [
+        {"band": name, "trips": n, "consumption_kwh_100km": round(e / km * 100, 1)}
+        for name, (n, e, km) in totals.items() if n >= 2 and km > 0
+    ]
+
+
+# --- Attention needed (not in LeapConnect) ------------------------------------
+
+DOOR_KEYS = ("driver_door_open", "passenger_door_open", "rear_left_door_open", "rear_right_door_open")
+WINDOW_KEYS = ("front_left_window_open", "front_right_window_open", "rear_left_window_open", "rear_right_window_open")
+
+
+def attention(vehicle: dict[str, Any], tires: dict[str, Any] | None) -> dict[str, Any]:
+    status = vehicle.get("status") or {}
+    diagnostics = vehicle.get("diagnostics") or {}
+    parked = status.get("is_parked") is True or status.get("vehicle_state") == "parked"
+    reasons: list[str] = []
+    if parked and status.get("is_locked") is False:
+        reasons.append("unlocked")
+    if any(diagnostics.get(key) is True for key in DOOR_KEYS):
+        reasons.append("door_open")
+    if any(diagnostics.get(key) is True for key in WINDOW_KEYS):
+        reasons.append("window_open")
+    if diagnostics.get("trunk_open") is True:
+        reasons.append("trunk_open")
+    if parked and diagnostics.get("skylight_open") is True:
+        reasons.append("sunroof_open")
+    if tires and tires.get("warning"):
+        reasons.append("tire_pressure")
+    return {"needed": bool(reasons), "reasons": reasons}
+
+
+# --- Maintenance (LeapConnect engine) -----------------------------------------
+
+DUE_SOON_KM = 2000
+DUE_SOON_DAYS = 60
+_PRIORITY_ORDER = {"urgent": 0, "important": 1, "routine": 2}
+_STATUS_ORDER = {"overdue": 0, "due_soon": 1, "ok": 2}
+
+
+def maintenance_status(
+    items: list[dict[str, Any]],
+    done: dict[str, dict[str, Any]],
+    current_km: float | None,
+    now_ts: float,
+    first_seen_ts: float,
+) -> dict[str, Any]:
+    """Due/overdue state for each service item, most urgent first.
+
+    LeapConnect needs a logged service before it can compute a due point.
+    Here an unlogged item assumes the service was done on schedule: the last
+    multiple of its km interval, and the date tracking started.
+    """
+    rows: list[dict[str, Any]] = []
+    for item in items:
+        service = item.get("service_type")
+        interval_km = item.get("interval_km")
+        interval_months = item.get("interval_months")
+        if not service or (not interval_km and not interval_months):
+            continue
+        log = done.get(service) or {}
+        if log:
+            last_km, last_ts, baseline = log.get("km"), log.get("ts"), "logged"
+        else:
+            last_km = (
+                (current_km // interval_km) * interval_km
+                if interval_km and current_km is not None else None
+            )
+            last_ts, baseline = first_seen_ts, "assumed"
+        due_km = last_km + interval_km if interval_km and last_km is not None else None
+        due_ts = last_ts + interval_months * 30 * 86400 if interval_months and last_ts else None
+        remaining_km = round(due_km - current_km) if due_km is not None and current_km is not None else None
+        remaining_days = int((due_ts - now_ts) // 86400) if due_ts is not None else None
+        km_over = remaining_km is not None and remaining_km <= 0
+        time_over = remaining_days is not None and remaining_days <= 0
+        km_soon = remaining_km is not None and 0 < remaining_km <= DUE_SOON_KM
+        time_soon = remaining_days is not None and 0 < remaining_days <= DUE_SOON_DAYS
+        mode = item.get("trigger_mode") or "or"
+        if mode == "km":
+            overdue, soon = km_over, km_soon
+        elif mode == "time":
+            overdue, soon = time_over, time_soon
+        elif mode == "and":
+            overdue = km_over and time_over
+            soon = (km_over or km_soon) and (time_over or time_soon) and not overdue
+        else:
+            overdue = km_over or time_over
+            soon = (km_soon or time_soon) and not overdue
+        rows.append({
+            "service_type": service,
+            "label": item.get("label") or service,
+            "category": item.get("category") or "other",
+            "priority": item.get("priority") or "routine",
+            "status": "overdue" if overdue else "due_soon" if soon else "ok",
+            "due_km": round(due_km) if due_km is not None else None,
+            "due_date": _local(due_ts, UTC).date().isoformat() if due_ts is not None else None,
+            "remaining_km": remaining_km,
+            "remaining_days": remaining_days,
+            "baseline": baseline,
+            "interval_km": interval_km,
+            "interval_months": interval_months,
+        })
+
+    def urgency(row: dict[str, Any]) -> tuple:
+        nearest = [
+            v for v in (
+                row["remaining_km"] / DUE_SOON_KM if row["remaining_km"] is not None else None,
+                row["remaining_days"] / DUE_SOON_DAYS if row["remaining_days"] is not None else None,
+            ) if v is not None
+        ]
+        return (_STATUS_ORDER[row["status"]], min(nearest) if nearest else 999,
+                _PRIORITY_ORDER.get(row["priority"], 9))
+
+    rows.sort(key=urgency)
+    return {
+        "next": rows[0] if rows else None,
+        "items": rows,
+        "overdue": sum(1 for r in rows if r["status"] == "overdue"),
+        "due_soon": sum(1 for r in rows if r["status"] == "due_soon"),
+    }
+
+
 # --- Battery health (LeapConnect) ---------------------------------------------
 
 
@@ -464,6 +915,17 @@ class DriveAnalytics:
             },
             "last_trip_end": _num(raw.get("last_trip_end")) or 0.0,
             "last_session_end": _num(raw.get("last_session_end")) or 0.0,
+            "tires": {
+                str(day): row for day, row in (raw.get("tires") or {}).items()
+                if isinstance(row, list) and len(row) == 4
+            },
+            "maintenance": {
+                "first_seen": _num((raw.get("maintenance") or {}).get("first_seen")),
+                "done": {
+                    str(k): v for k, v in ((raw.get("maintenance") or {}).get("done") or {}).items()
+                    if isinstance(v, dict)
+                },
+            },
         }
 
     def as_storage(self) -> dict[str, Any]:
@@ -476,6 +938,8 @@ class DriveAnalytics:
                     "full_charge": state["full_charge"],
                     "last_trip_end": state["last_trip_end"],
                     "last_session_end": state["last_session_end"],
+                    "tires": state["tires"],
+                    "maintenance": state["maintenance"],
                 }
                 for vin, state in self._vins.items()
             }
@@ -483,6 +947,20 @@ class DriveAnalytics:
 
     def _state(self, vin: str) -> dict[str, Any]:
         return self._vins.setdefault(vin, self._load_vin({}))
+
+    def log_maintenance(
+        self, vin: str, service_type: str, *, km: float | None, ts: float
+    ) -> None:
+        """Record a completed service; it becomes the new baseline."""
+        state = self._state(vin)
+        state["maintenance"]["done"][service_type] = {
+            "km": round(km) if km is not None else None,
+            "ts": ts,
+        }
+
+    def reset_maintenance(self, vin: str, service_type: str) -> bool:
+        """Forget a logged service so the schedule assumption applies again."""
+        return self._state(vin)["maintenance"]["done"].pop(service_type, None) is not None
 
     def update(
         self,
@@ -492,11 +970,15 @@ class DriveAnalytics:
         now_ts: float,
         tz: tzinfo,
         home: tuple[float, float, float] | None = None,
-        prices: dict[str, float] | None = None,
+        prices: dict[str, Any] | None = None,
         reference_kwh: float | None = None,
+        maintenance_items: list[dict[str, Any]] | None = None,
+        maintenance_schedule: str | None = None,
     ) -> dict[str, Any]:
         """Add one poll and return the summary for this vehicle."""
         state = self._state(vin)
+        if state["maintenance"].get("first_seen") is None:
+            state["maintenance"]["first_seen"] = now_ts
         snapshot = snapshot_from_vehicle(vehicle, now_ts)
         buffer: list[Snapshot] = state["buffer"]
         # Keep the buffer ordered by vehicle time. A repeated cloud snapshot has
@@ -535,21 +1017,65 @@ class DriveAnalytics:
         sessions, ongoing_session = detect_charge_sessions(buffer)
         for session in sessions:
             if session["start"] > state["last_session_end"]:
-                tier = session_tier(session, home)
-                price = prices.get(tier)
+                session["tier"] = session_tier(session, home)
                 session.pop("_position", None)
-                session.update(
-                    tier=tier,
-                    price_kwh=price if price and price > 0 else None,
-                    cost=session_cost(session["energy_kwh"], price),
-                )
+                cost, price = price_session(session, prices, tz)
+                session.update(price_kwh=price, cost=cost)
                 state["sessions"].append(session)
                 state["last_session_end"] = session["end"]
         state["sessions"] = state["sessions"][-MAX_SESSIONS:]
         if ongoing_session is not None:
             ongoing_session["tier"] = session_tier(ongoing_session, home)
 
-        return self._summary(state, now_ts, tz, ongoing_trip, ongoing_session, reference_kwh)
+        summary = self._summary(state, now_ts, tz, ongoing_trip, ongoing_session, reference_kwh)
+
+        # Tires: one reading per day for leak detection.
+        today = _local_day(now_ts, tz).isoformat()
+        tires_now = tire_values(vehicle)
+        if all(v is not None for v in tires_now):
+            state["tires"][today] = tires_now
+            for old in sorted(state["tires"])[:-TIRE_HISTORY_DAYS]:
+                del state["tires"][old]
+        tires = tire_status(tires_now, state["tires"], today)
+
+        # Costs per trip and per 100 km.
+        avg_price = average_price_per_kwh(state["sessions"], now_ts, prices)
+        summary["avg_price_kwh"] = avg_price
+        if avg_price is not None:
+            for key in ("today", "month"):
+                energy = summary[key].get("energy_kwh")
+                summary[key]["cost"] = round(energy * avg_price, 2) if energy is not None else None
+            month = summary["month"]
+            if month.get("energy_kwh") and month.get("distance_km"):
+                month["cost_per_100km"] = round(
+                    month["energy_kwh"] / month["distance_km"] * 100 * avg_price, 2
+                )
+        if state["trips"]:
+            last = state["trips"][-1]
+            extra = compare_with_similar(last, state["trips"][:-1], tz)
+            if avg_price is not None and last.get("energy_kwh") is not None:
+                extra["cost"] = round(last["energy_kwh"] * avg_price, 2)
+            summary["last_trip"].update(extra)
+
+        capacity = (summary.get("battery_health") or {}).get("capacity_kwh") or reference_kwh
+        summary.update(
+            parked_drain=parked_drain(buffer),
+            tires=tires,
+            charge_plan=charge_plan(vehicle, snapshot, capacity, prices, now_ts, tz),
+            efficiency_by_temperature=efficiency_by_temperature(state["trips"]),
+            attention=attention(vehicle, tires),
+        )
+        if maintenance_items:
+            maintenance = maintenance_status(
+                maintenance_items,
+                state["maintenance"]["done"],
+                _positive(snapshot.odometer_km),
+                now_ts,
+                state["maintenance"]["first_seen"],
+            )
+            maintenance["schedule"] = maintenance_schedule
+            summary["maintenance"] = maintenance
+        return summary
 
     @staticmethod
     def _summary(
