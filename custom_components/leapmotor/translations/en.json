@@ -980,5 +980,16 @@
         }
       }
     }
+  },
+  "exceptions": {
+    "remote_unconfirmed": {
+      "message": "Leapmotor accepted the command but did not confirm the result ({error}). Check the car before trying again."
+    },
+    "remote_cooldown": {
+      "message": "Wait {seconds} s before the next command; the previous one may still be running."
+    },
+    "session_rejected": {
+      "message": "Leapmotor rejected the session even after logging in again. If the official app is signed in with the same account, give Home Assistant its own (shared) account."
+    }
   }
 }

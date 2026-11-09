@@ -206,6 +206,8 @@ servisu v nadzorni plošči pri postavki dvakrat tapni **Opravljeno**.
 | Aplikacija te odjavlja | Uporabi drugi račun z deljenim vozilom. |
 | Zastarele ali napačne vrednosti | Pritisni **Osveži podatke**, preveri **Zadnja osvežitev**, nato zaženi `leapmotor.export_diagnostics`. |
 | Daljinsko upravljanje ne deluje | Nastavi PIN vozila; preveri dovoljenja računa in deljenega vozila. |
+| *Token is invalid* ali *Leapmotor je zavrnil prijavo* | Integracija se sama znova prijavi in ukaz ponovi. Če se napaka ponavlja, si najbrž v uradni aplikaciji prijavljen z istim računom — uporabi drugi račun z deljenim vozilom. |
+| *Leapmotor je ukaz sprejel, izida pa ni potrdil* | Ukaz je verjetno že prišel do avta. Počakaj nekaj sekund in preveri stanje, preden ga pošlješ znova. |
 | Kartice ni mogoče najti | Osveži brskalnik (Ctrl + F5) ali ponastavi predpomnilnik vmesnika v aplikaciji. |
 
 <details>

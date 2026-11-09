@@ -453,6 +453,97 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(default_of(config_flow._vehicle_settings_schema({"operation_password": ""}), "operation_password"), "")
         self.assertEqual(default_of(config_flow.STEP_USER_DATA_SCHEMA, "operation_password"), "0000")
 
+    async def test_preheat_recovers_expired_session_without_sending_twice(self):
+        """Reported on a T03: 'remote control result failed: Token is invalid'."""
+        import base64
+
+        from homeassistant.helpers import translation
+
+        entry = await self.load_entry()
+        coordinator = self.hass.data["leapmotor"][entry.entry_id]
+        preheat = entity_registry.async_get(self.hass).async_get_entity_id(
+            "button", "leapmotor", f"{VIN}_preheat_cabin"
+        )
+
+        def token(serial):
+            payload = base64.urlsafe_b64encode(
+                json.dumps({"user_name": f"synthetic,user,device-{serial},x"}).encode()
+            ).decode().rstrip("=")
+            return f"header.{payload}.{'s' * 64}{serial}"
+
+        cloud = {"token": token(1), "refreshes": 0, "reject": {}, "calls": []}
+
+        def post(*, path, headers, data, cert):
+            endpoint = path.rsplit("/", 1)[-1]
+            cloud["calls"].append(endpoint)
+            if endpoint == "refresh":
+                cloud["refreshes"] += 1
+                cloud["token"] = token(1 + cloud["refreshes"])
+                body = {"code": 0, "data": {"token": cloud["token"]}}
+            elif endpoint == "verify" and cloud["reject"].get("network"):
+                raise self.api.LeapmotorApiError("curl: (28) Connection timed out")
+            elif cloud["reject"].get(endpoint) or headers.get("token") != cloud["token"]:
+                cloud["reject"][endpoint] = max(0, cloud["reject"].get(endpoint, 0) - 1)
+                body = {"code": 401, "message": "Token is invalid"}
+            elif endpoint == "ctl":
+                body = {"code": 0, "data": {"remoteCtlId": "synthetic-ctl", "queryInterval": 250}}
+            else:
+                body = {"code": 0, "data": 1}
+            return {"status_code": 200, "body": json.dumps(body)}
+
+        cert = Path(self.directory.name) / "synthetic-account.pem"
+        cert.write_text("synthetic")
+        client = self.client
+        del client._remote_control_raw  # run the real command flow
+        client.transport = Mock(post=Mock(side_effect=post))
+        client._clear_account_cert_files = Mock()
+        client.user_id, client.token, client.refresh_token = "synthetic-user", cloud["token"], "synthetic-refresh"
+        client.sign_ikm = client.sign_salt = client.sign_info = "synthetic"
+        client.account_cert_file = client.account_key_file = str(cert)
+
+        async def press():
+            await self.hass.services.async_call("button", "press", {"entity_id": preheat}, blocking=True)
+
+        # The token expires between the accepted command and the result query.
+        coordinator._last_remote_results.clear()
+        cloud["reject"]["query"] = 1
+        await press()
+        self.assertEqual(cloud["calls"].count("ctl"), 1)
+        self.assertEqual(cloud["refreshes"], 1)
+        self.assertTrue(coordinator.data["vehicles"][VIN]["remote_control"]["success"])
+
+        # Rejected again after renewing: reported as sent but unconfirmed, no resend,
+        # and the cooldown holds back a second press.
+        coordinator._last_remote_results.clear()
+        cloud["reject"]["query"] = 2
+        with self.assertRaises(HomeAssistantError) as caught:
+            await press()
+        self.assertEqual(caught.exception.translation_key, "remote_unconfirmed")
+        self.assertEqual(caught.exception.translation_placeholders["error"],
+                         "Leapmotor remote control result failed: Token is invalid")
+        self.assertIn("did not confirm", coordinator.data["vehicles"][VIN]["remote_control"]["error"])
+        self.assertEqual(cloud["calls"].count("ctl"), 2)
+        with self.assertRaises(HomeAssistantError) as caught:
+            await press()
+        self.assertEqual(caught.exception.translation_key, "remote_cooldown")
+        self.assertEqual(cloud["calls"].count("ctl"), 2)
+
+        # A failure before anything was sent does not start the cooldown.
+        coordinator._last_remote_results.clear()
+        cloud["reject"]["network"] = True
+        with self.assertRaises(HomeAssistantError):
+            await press()
+        self.assertEqual(coordinator.remote_action_cooldown_remaining(VIN), 0)
+        cloud["reject"]["network"] = False
+        await press()
+        self.assertEqual(cloud["calls"].count("ctl"), 3)
+
+        # The new messages exist in Slovenian.
+        strings = await translation.async_get_translations(self.hass, "sl", "exceptions", ["leapmotor"])
+        for key in ("remote_unconfirmed", "remote_cooldown", "session_rejected"):
+            self.assertIn(f"component.leapmotor.exceptions.{key}.message", strings)
+        coordinator.cancel_scheduled_followup_refreshes()
+
     async def test_sidebar_panel_follows_option(self):
         from homeassistant.components import frontend, panel_custom
 

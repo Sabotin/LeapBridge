@@ -980,5 +980,16 @@
         }
       }
     }
+  },
+  "exceptions": {
+    "remote_unconfirmed": {
+      "message": "Leapmotor je ukaz sprejel, izida pa ni potrdil ({error}). Preden poskusiš znova, preveri avto."
+    },
+    "remote_cooldown": {
+      "message": "Do naslednjega ukaza počakaj še {seconds} s; prejšnji se morda še izvaja."
+    },
+    "session_rejected": {
+      "message": "Leapmotor je zavrnil prijavo tudi po ponovni prijavi. Če si v uradni aplikaciji prijavljen z istim računom, daj Home Assistantu svoj (deljeni) račun."
+    }
   }
 }

@@ -284,7 +284,7 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
     def remote_action_cooldown_remaining(self, vin: str) -> int:
         """Return remaining remote-action cooldown seconds for one vehicle."""
         last_result = self._last_remote_results.get(vin)
-        if not last_result:
+        if not last_result or last_result.get("cooldown") is False:
             return 0
         updated_at = last_result.get("updated_at")
         if not isinstance(updated_at, (int, float)):
@@ -440,8 +440,13 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
         success: bool,
         result: dict[str, Any] | None = None,
         error: str | None = None,
+        cooldown: bool = True,
     ) -> None:
-        """Store the last remote-control result for diagnostics and attributes."""
+        """Store the last remote-control result for diagnostics and attributes.
+
+        ``cooldown=False`` marks a failure that never reached the car, so the
+        next command is not held back by the remote-action cooldown.
+        """
         remote_data = (result or {}).get("data") if isinstance(result, dict) else None
         info = {
             "action": action,
@@ -452,6 +457,7 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
             "api_message": (result or {}).get("message") if isinstance(result, dict) else None,
             "remote_ctl_id": remote_data.get("remoteCtlId") if isinstance(remote_data, dict) else None,
             "error": error,
+            "cooldown": cooldown,
         }
         self._last_remote_results[vin] = info
         if self.data:

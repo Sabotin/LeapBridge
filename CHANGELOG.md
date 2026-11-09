@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased — remote commands survive an expired session
+
+- **Fix:** *Preheat cabin* (and every other remote command) failed with
+  *remote control result failed: Token is invalid*. An expired session is now
+  renewed once automatically. Before the cloud accepts a command the whole
+  command is sent again; after it is accepted only the result is polled again,
+  so toggles such as the trunk are never sent twice.
+- Status polls and remote commands no longer run at the same time, so a poll
+  that renews the session cannot break a command that is in flight.
+- A token refresh now also updates the signing device ID and registers the
+  session for remote control again, as a full login does.
+- The 10 s remote cooldown only follows a command that may have reached the
+  car (or a rejected PIN); after a session or network error you can retry
+  straight away.
+- Clearer, translated messages (English and Slovenian) for an unconfirmed
+  command, the cooldown and a session the cloud keeps rejecting.
+
 ## Unreleased — plug-and-play sidebar dashboard
 
 - After setup a **Leapmotor** sidebar entry shows the full dashboard, one per
