@@ -68,7 +68,7 @@ Ročna namestitev brez HACS in vse podrobnosti: **[navodila v slovenščini](doc
 
 **Plug & play:** po namestitvi se v stranski vrstici sama pojavi **Leapmotor** s celotno nadzorno ploščo. Ničesar ni treba nastavljati. Če imaš več vozil, ima vsako svojo. Skriješ jo v **Leapmotor → Nastavi** (stikalo *Prikaži nadzorno ploščo v stranski vrstici*).
 
-Kartica ima **štiri strani z zavihki**. Pika na zavihku pove, da je na tisti strani nekaj za pogledati.
+Kartica ima **štiri strani z zavihki** in zavihek **Nastavitve** (zobnik). Pika na zavihku pove, da je na tisti strani nekaj za pogledati. Slike kažejo temo **Aplikacija**.
 
 <table>
   <tr>
@@ -91,7 +91,7 @@ Kartico lahko dodaš tudi na svojo nadzorno ploščo: **Dodaj kartico → Leapmo
 type: custom:leapmotor-card
 ```
 
-Ponoči je nočno nebo, podnevi dnevno, med polnjenjem pa se ob avtu prižge polnilnica. Če kartice ne najde, enkrat osveži brskalnik (**Ctrl + F5**).
+Kartica ima tri teme: klasično (nočno ali dnevno nebo), voznikov zaslon (merilniki ob avtu) in aplikacijo. Temo, dan ali noč in jezik si vsak uporabnik izbere v zavihku **Nastavitve** (zobnik); izbira velja za tega uporabnika na vseh napravah. Med polnjenjem se ob avtu prižge polnilnica. Če kartice ne najde, enkrat osveži brskalnik (**Ctrl + F5**).
 
 <br>
 
