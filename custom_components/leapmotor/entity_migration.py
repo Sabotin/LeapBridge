@@ -149,6 +149,15 @@ _ENGLISH_ENTITY_SLUGS: dict[tuple[str, str], str] = {
     ("switch", "steering_wheel_heat"): "steering_wheel_heating",
     ("switch", "rearview_mirror_heat"): "mirror_heating",
     ("sensor", "last_charge_energy_kwh"): "last_charge_energy",
+    ("sensor", "last_trip_distance_km"): "last_trip_distance",
+    ("sensor", "last_trip_consumption_kwh_100km"): "last_trip_consumption",
+    ("sensor", "trips_today_distance_km"): "distance_today",
+    ("sensor", "trips_month_distance_km"): "distance_this_month",
+    ("sensor", "last_charge_session_energy_kwh"): "last_charging_session_energy",
+    ("sensor", "last_charge_session_cost"): "last_charging_session_cost",
+    ("sensor", "charging_cost_month"): "charging_cost_this_month",
+    ("sensor", "charged_energy_month_kwh"): "charged_energy_this_month",
+    ("sensor", "battery_health_percent"): "battery_health",
 }
 
 

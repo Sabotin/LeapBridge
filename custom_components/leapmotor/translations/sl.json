@@ -36,7 +36,15 @@
           "eco_polling_enabled": "Varčno poizvedovanje med parkiranjem",
           "eco_scan_interval": "Varčni interval posodabljanja v minutah",
           "abrp_enabled": "Omogoči podatke v živo za ABRP",
-          "abrp_token": "ABRP Generic žeton"
+          "abrp_token": "ABRP Generic žeton",
+          "price_home_kwh": "Cena polnjenja doma na kWh",
+          "price_public_ac_kwh": "Cena javnega polnjenja AC na kWh",
+          "price_public_dc_kwh": "Cena javnega hitrega polnjenja DC na kWh"
+        },
+        "data_description": {
+          "price_home_kwh": "Uporabi se za polnjenja, ki se začnejo v coni Doma. Pusti 0, če stroškov ne želiš spremljati.",
+          "price_public_ac_kwh": "Uporabi se za polnjenja zunaj doma z izmeničnim tokom (AC).",
+          "price_public_dc_kwh": "Uporabi se za polnjenja zunaj doma na hitri polnilnici DC."
         }
       },
       "certificates": {
@@ -120,7 +128,11 @@
           "data": {
             "operation_password": "PIN vozila (neobvezno, za upravljanje)",
             "abrp_enabled": "Omogoči podatke v živo za ABRP",
-            "abrp_token": "ABRP Generic žeton"
+            "abrp_token": "ABRP Generic žeton",
+            "battery_reference_kwh": "Uporabna kapaciteta baterije (neobvezno)"
+          },
+          "data_description": {
+            "battery_reference_kwh": "Uporabna kapaciteta nove baterije v kWh, ki se šteje kot 100 % pri zdravju baterije. Pusti 0 za primerjavo z najboljšo doslej izmerjeno kapaciteto."
           }
         },
         "reconfigure": {
@@ -129,7 +141,11 @@
           "data": {
             "operation_password": "PIN vozila (neobvezno, za upravljanje)",
             "abrp_enabled": "Omogoči podatke v živo za ABRP",
-            "abrp_token": "ABRP Generic žeton"
+            "abrp_token": "ABRP Generic žeton",
+            "battery_reference_kwh": "Uporabna kapaciteta baterije (neobvezno)"
+          },
+          "data_description": {
+            "battery_reference_kwh": "Uporabna kapaciteta nove baterije v kWh, ki se šteje kot 100 % pri zdravju baterije. Pusti 0 za primerjavo z najboljšo doslej izmerjeno kapaciteto."
           }
         }
       },
@@ -394,6 +410,33 @@
       },
       "fuel_average_consumption": {
         "name": "Povprečna poraba goriva"
+      },
+      "last_trip_distance_km": {
+        "name": "Razdalja zadnje vožnje"
+      },
+      "last_trip_consumption_kwh_100km": {
+        "name": "Poraba zadnje vožnje"
+      },
+      "trips_today_distance_km": {
+        "name": "Prevoženo danes"
+      },
+      "trips_month_distance_km": {
+        "name": "Prevoženo ta mesec"
+      },
+      "last_charge_session_energy_kwh": {
+        "name": "Energija zadnjega polnjenja (seja)"
+      },
+      "last_charge_session_cost": {
+        "name": "Strošek zadnjega polnjenja"
+      },
+      "charging_cost_month": {
+        "name": "Strošek polnjenja ta mesec"
+      },
+      "charged_energy_month_kwh": {
+        "name": "Napolnjena energija ta mesec"
+      },
+      "battery_health_percent": {
+        "name": "Zdravje baterije"
       }
     },
     "binary_sensor": {
@@ -639,13 +682,26 @@
           "eco_polling_enabled": "Varčno poizvedovanje med parkiranjem",
           "eco_scan_interval": "Varčni interval posodabljanja v minutah",
           "abrp_enabled": "Omogoči podatke v živo za ABRP",
-          "abrp_token": "ABRP Generic žeton"
+          "abrp_token": "ABRP Generic žeton",
+          "price_home_kwh": "Cena polnjenja doma na kWh",
+          "price_public_ac_kwh": "Cena javnega polnjenja AC na kWh",
+          "price_public_dc_kwh": "Cena javnega hitrega polnjenja DC na kWh"
         },
         "data_description": {
           "eco_polling_enabled": "Počasnejši varčni interval uporabi le, ko so vsa vozila zanesljivo zaklenjena, parkirana in odklopljena.",
-          "eco_scan_interval": "Interval poizvedovanja v varčnem načinu. Samodejno je omejen na najmanj običajni interval posodabljanja."
+          "eco_scan_interval": "Interval poizvedovanja v varčnem načinu. Samodejno je omejen na najmanj običajni interval posodabljanja.",
+          "price_home_kwh": "Uporabi se za polnjenja, ki se začnejo v coni Doma. Pusti 0, če stroškov ne želiš spremljati.",
+          "price_public_ac_kwh": "Uporabi se za polnjenja zunaj doma z izmeničnim tokom (AC).",
+          "price_public_dc_kwh": "Uporabi se za polnjenja zunaj doma na hitri polnilnici DC."
         }
       }
+    },
+    "error": {
+      "app_cert_invalid": "Datoteka certifikata ni veljaven certifikat PEM. Preveri, da app_cert.pem vsebuje celoten blok BEGIN/END CERTIFICATE.",
+      "app_key_invalid": "Datoteka zasebnega ključa ni veljaven zasebni ključ PEM. Preveri, da app_key.pem vsebuje celoten blok BEGIN/END PRIVATE KEY in ni šifriran.",
+      "certificate_key_mismatch": "Certifikat in zasebni ključ se ne ujemata. Poskrbi, da sta app_cert.pem in app_key.pem ujemajoč se par iz istega vira.",
+      "certificate_import_error": "Uvoz certifikata ni uspel. Preveri certifikat PEM in zasebni ključ.",
+      "missing_app_cert": "Manjka certifikat ali zasebni ključ aplikacije. Prilepi obe vrednosti PEM ali shrani app_cert.pem in app_key.pem v /config/leapmotor."
     }
   },
   "services": {

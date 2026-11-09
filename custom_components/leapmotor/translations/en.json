@@ -36,7 +36,15 @@
           "eco_polling_enabled": "Enable eco polling when parked",
           "eco_scan_interval": "Eco update interval in minutes",
           "abrp_enabled": "Enable ABRP live data",
-          "abrp_token": "ABRP Generic token"
+          "abrp_token": "ABRP Generic token",
+          "price_home_kwh": "Home charging price per kWh",
+          "price_public_ac_kwh": "Public AC charging price per kWh",
+          "price_public_dc_kwh": "Public DC fast charging price per kWh"
+        },
+        "data_description": {
+          "price_home_kwh": "Used for sessions that start inside your Home zone. Leave 0 to skip cost tracking.",
+          "price_public_ac_kwh": "Used for sessions away from home at AC power.",
+          "price_public_dc_kwh": "Used for sessions away from home on a DC fast charger."
         }
       },
       "certificates": {
@@ -120,7 +128,11 @@
           "data": {
             "operation_password": "Vehicle PIN (optional, for control)",
             "abrp_enabled": "Enable ABRP live data",
-            "abrp_token": "ABRP Generic token"
+            "abrp_token": "ABRP Generic token",
+            "battery_reference_kwh": "Usable battery capacity (optional)"
+          },
+          "data_description": {
+            "battery_reference_kwh": "Usable capacity of the new battery in kWh, used as 100 % for battery health. Leave 0 to compare against the best capacity measured so far."
           }
         },
         "reconfigure": {
@@ -129,7 +141,11 @@
           "data": {
             "operation_password": "Vehicle PIN (optional, for control)",
             "abrp_enabled": "Enable ABRP live data",
-            "abrp_token": "ABRP Generic token"
+            "abrp_token": "ABRP Generic token",
+            "battery_reference_kwh": "Usable battery capacity (optional)"
+          },
+          "data_description": {
+            "battery_reference_kwh": "Usable capacity of the new battery in kWh, used as 100 % for battery health. Leave 0 to compare against the best capacity measured so far."
           }
         }
       },
@@ -394,6 +410,33 @@
       },
       "fuel_average_consumption": {
         "name": "Average Fuel Consumption"
+      },
+      "last_trip_distance_km": {
+        "name": "Last trip distance"
+      },
+      "last_trip_consumption_kwh_100km": {
+        "name": "Last trip consumption"
+      },
+      "trips_today_distance_km": {
+        "name": "Distance today"
+      },
+      "trips_month_distance_km": {
+        "name": "Distance this month"
+      },
+      "last_charge_session_energy_kwh": {
+        "name": "Last charging session energy"
+      },
+      "last_charge_session_cost": {
+        "name": "Last charging session cost"
+      },
+      "charging_cost_month": {
+        "name": "Charging cost this month"
+      },
+      "charged_energy_month_kwh": {
+        "name": "Charged energy this month"
+      },
+      "battery_health_percent": {
+        "name": "Battery health"
       }
     },
     "binary_sensor": {
@@ -639,13 +682,26 @@
           "eco_polling_enabled": "Enable eco polling when parked",
           "eco_scan_interval": "Eco update interval in minutes",
           "abrp_enabled": "Enable ABRP live data",
-          "abrp_token": "ABRP Generic token"
+          "abrp_token": "ABRP Generic token",
+          "price_home_kwh": "Home charging price per kWh",
+          "price_public_ac_kwh": "Public AC charging price per kWh",
+          "price_public_dc_kwh": "Public DC fast charging price per kWh"
         },
         "data_description": {
           "eco_polling_enabled": "Use the slower eco interval only while every vehicle is clearly locked, parked, and unplugged.",
-          "eco_scan_interval": "Polling interval used in eco mode. It is automatically clamped to at least the normal update interval."
+          "eco_scan_interval": "Polling interval used in eco mode. It is automatically clamped to at least the normal update interval.",
+          "price_home_kwh": "Used for sessions that start inside your Home zone. Leave 0 to skip cost tracking.",
+          "price_public_ac_kwh": "Used for sessions away from home at AC power.",
+          "price_public_dc_kwh": "Used for sessions away from home on a DC fast charger."
         }
       }
+    },
+    "error": {
+      "app_cert_invalid": "The certificate file is not a valid PEM certificate. Check that app_cert.pem contains the full BEGIN/END CERTIFICATE block.",
+      "app_key_invalid": "The private key file is not a valid PEM private key. Check that app_key.pem contains the full BEGIN/END PRIVATE KEY block and is not encrypted.",
+      "certificate_key_mismatch": "The certificate and private key do not match. Make sure app_cert.pem and app_key.pem are the matching pair from the same source.",
+      "certificate_import_error": "Certificate import failed. Check the PEM certificate and private key.",
+      "missing_app_cert": "Missing app certificate/private key. Paste both PEM values or place app_cert.pem and app_key.pem in /config/leapmotor."
     }
   },
   "services": {

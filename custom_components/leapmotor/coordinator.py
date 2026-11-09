@@ -14,10 +14,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .abrp import build_abrp_telemetry, send_abrp_telemetry
 from .api import LeapmotorApiClient
 from .const import (
+    CONF_PRICE_HOME,
+    CONF_PRICE_PUBLIC_AC,
+    CONF_PRICE_PUBLIC_DC,
     DEFAULT_ABRP_API_KEY,
     DEFAULT_STATE_STALE_SECONDS,
     DOMAIN,
@@ -29,9 +33,17 @@ from .leap_api import (
     LeapmotorAuthError,
     LeapmotorMissingAppCertError,
 )
+from .drive_analytics import (
+    STORAGE_VERSION as ANALYTICS_STORAGE_VERSION,
+    TIER_HOME,
+    TIER_PUBLIC_AC,
+    TIER_PUBLIC_DC,
+    DriveAnalytics,
+)
 from .location import CoordinateResolution, resolve_coordinate
 from .vehicle_config import (
     abrp_config_for_vehicle,
+    battery_reference_for_vehicle,
     operation_password_for_vehicle,
     vehicle_subentries,
 )
@@ -39,6 +51,8 @@ from .vehicle_config import (
 _LOGGER = logging.getLogger(__name__)
 
 GPS_SIGN_STORAGE_VERSION = 1
+ANALYTICS_SAVE_DELAY_SECONDS = 60
+DEFAULT_HOME_RADIUS_M = 100.0
 
 
 class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
@@ -79,6 +93,12 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
             f"{DOMAIN}.gps_signs.{config_entry.entry_id}",
         )
         self._location_sign_save_task: asyncio.Task[None] | None = None
+        self._analytics = DriveAnalytics()
+        self._analytics_store = Store[dict[str, Any]](
+            hass,
+            ANALYTICS_STORAGE_VERSION,
+            f"{DOMAIN}.analytics.{config_entry.entry_id}",
+        )
         self._integration_status: dict[str, Any] = {
             "last_update_status": "unknown",
             "last_update_success": None,
@@ -134,6 +154,66 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
             if isinstance(signs, dict)
         }
 
+    async def async_load_analytics(self) -> None:
+        """Load the trip log, charging sessions and full-charge history."""
+        stored = await self._analytics_store.async_load()
+        self._analytics = DriveAnalytics(stored if isinstance(stored, dict) else None)
+
+    async def async_flush_analytics(self) -> None:
+        """Write analytics immediately, e.g. before unloading."""
+        await self._analytics_store.async_save(self._analytics.as_storage())
+
+    def _analytics_home(self) -> tuple[float, float, float] | None:
+        zone = self.hass.states.get("zone.home")
+        attrs = zone.attributes if zone is not None else {}
+        lat = attrs.get("latitude", getattr(self.hass.config, "latitude", None))
+        lon = attrs.get("longitude", getattr(self.hass.config, "longitude", None))
+        try:
+            radius = float(attrs.get("radius") or DEFAULT_HOME_RADIUS_M)
+            return float(lat), float(lon), radius
+        except (TypeError, ValueError):
+            return None
+
+    def _analytics_prices(self) -> dict[str, float]:
+        options = self.config_entry.options
+        prices: dict[str, float] = {}
+        for tier, key in (
+            (TIER_HOME, CONF_PRICE_HOME),
+            (TIER_PUBLIC_AC, CONF_PRICE_PUBLIC_AC),
+            (TIER_PUBLIC_DC, CONF_PRICE_PUBLIC_DC),
+        ):
+            try:
+                value = float(options.get(key) or 0)
+            except (TypeError, ValueError):
+                continue
+            if value > 0:
+                prices[tier] = value
+        return prices
+
+    def _apply_analytics(self, data: dict) -> None:
+        """Feed this poll into the trip/charging/battery-health analysis."""
+        tz = dt_util.get_time_zone(self.hass.config.time_zone) or UTC
+        home = self._analytics_home()
+        prices = self._analytics_prices()
+        now_ts = time.time()
+        for vin, vehicle_data in (data.get("vehicles") or {}).items():
+            try:
+                vehicle_data["analytics"] = self._analytics.update(
+                    vin,
+                    vehicle_data,
+                    now_ts=now_ts,
+                    tz=tz,
+                    home=home,
+                    prices=prices,
+                    reference_kwh=battery_reference_for_vehicle(self.config_entry, vin),
+                )
+            except Exception:  # noqa: BLE001 - analytics must never break polling
+                _LOGGER.warning("Leapmotor trip/charging analysis failed", exc_info=True)
+                vehicle_data["analytics"] = {}
+        self._analytics_store.async_delay_save(
+            self._analytics.as_storage, ANALYTICS_SAVE_DELAY_SECONDS
+        )
+
     async def async_flush_location_signs(self) -> None:
         """Wait for a pending GPS sign write before unloading."""
         task = self._location_sign_save_task
@@ -188,6 +268,7 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
         self._stabilize_vehicle_states(data)
         self._apply_state_freshness(data)
         self._normalize_locations(data)
+        self._apply_analytics(data)
         self._update_polling_interval(data)
         self._integration_status = {
             "last_update_status": "ok",

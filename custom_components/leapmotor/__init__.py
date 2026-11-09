@@ -321,6 +321,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         eco_update_interval=timedelta(minutes=max(eco_scan_interval, scan_interval)),
     )
     await coordinator.async_load_location_signs()
+    await coordinator.async_load_analytics()
     await coordinator.async_config_entry_first_refresh()
     _async_ensure_vehicle_subentries(hass, entry, coordinator.data.get("vehicles") or {})
     coordinator.refresh_vehicle_configuration()
@@ -412,6 +413,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         coordinator = hass.data[DOMAIN].pop(entry.entry_id)
         coordinator.cancel_scheduled_followup_refreshes()
         await coordinator.async_flush_location_signs()
+        await coordinator.async_flush_analytics()
         await hass.async_add_executor_job(coordinator.client.close)
         if not hass.data.get(DOMAIN):
             _async_unregister_services(hass)

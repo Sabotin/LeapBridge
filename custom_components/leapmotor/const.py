@@ -17,6 +17,10 @@ CONF_DEVICE_ID = "device_id"
 CONF_OPERATION_PASSWORD = "operation_password"
 CONF_SCAN_INTERVAL = "scan_interval"
 CONF_VIN = "vin"
+CONF_PRICE_HOME = "price_home_kwh"
+CONF_PRICE_PUBLIC_AC = "price_public_ac_kwh"
+CONF_PRICE_PUBLIC_DC = "price_public_dc_kwh"
+CONF_BATTERY_REFERENCE_KWH = "battery_reference_kwh"
 
 SUBENTRY_TYPE_VEHICLE = "vehicle"
 

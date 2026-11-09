@@ -284,6 +284,56 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(mode.attributes["device_class"], "enum")
         self.assertEqual(mode.attributes["options"], ["auto", "manual"])
 
+    async def test_trip_log_and_cost_sensors_follow_polls(self):
+        import copy
+        import time
+
+        self.hass.config.currency = "EUR"
+        entry = await self.load_entry(model="C10")
+        coordinator = self.hass.data["leapmotor"][entry.entry_id]
+        base = self.client.fetch_data.return_value
+        start = time.time() - 12 * 60
+
+        def poll(minute, *, odo, speed, parked, kwh):
+            data = copy.deepcopy(base)
+            vehicle = data["vehicles"][VIN]
+            vehicle["status"].update(
+                odometer_km=odo, speed_kmh=speed, is_parked=parked,
+                vehicle_state="parked" if parked else "driving",
+                last_vehicle_timestamp=int((start + minute * 60) * 1000),
+            )
+            vehicle["diagnostics"]["available_energy_kwh"] = kwh
+            return data
+
+        polls = [poll(0, odo=1000, speed=0, parked=True, kwh=40.0)]
+        polls += [poll(i, odo=1000 + i, speed=50, parked=False, kwh=40.0 - 0.15 * i) for i in range(1, 11)]
+        polls.append(poll(11, odo=1010, speed=0, parked=True, kwh=38.5))
+        for data in polls:
+            self.client.fetch_data.return_value = data
+            await coordinator.async_refresh()
+            await self.hass.async_block_till_done()
+
+        registry = entity_registry.async_get(self.hass)
+
+        def state(suffix):
+            entity_id = registry.async_get_entity_id("sensor", "leapmotor", f"{VIN}_{suffix}")
+            self.assertIsNotNone(entity_id, suffix)
+            return self.hass.states.get(entity_id)
+
+        distance = state("last_trip_distance_km")
+        self.assertEqual(float(distance.state), 10.0)
+        self.assertEqual(distance.attributes["energy_kwh"], 1.5)
+        self.assertEqual(float(state("last_trip_consumption_kwh_100km").state), 15.0)
+        self.assertEqual(float(state("trips_today_distance_km").state), 10.0)
+        self.assertEqual(state("charging_cost_month").attributes["unit_of_measurement"], "EUR")
+        self.assertEqual(state("charging_cost_month").attributes["state_class"], "total")
+        self.assertIn(state("battery_health_percent").state, ("unknown",))
+
+        # The trip survives a reload through the stored analytics.
+        await self.hass.config_entries.async_reload(entry.entry_id)
+        await self.hass.async_block_till_done()
+        self.assertEqual(float(state("last_trip_distance_km").state), 10.0)
+
 
 if __name__ == "__main__":
     unittest.main()

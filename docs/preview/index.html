@@ -142,6 +142,33 @@
       ["close_trunk", "close_trunk"], ["find_vehicle", "find_vehicle"], ["open_windows", "open_windows"], ["close_windows", "close_windows"],
       ["quick_cool", "quick_cool"], ["quick_heat", "quick_heat"], ["windshield_defrost", "windshield_defrost"],
       ["open_sunshade", "open_sunshade"], ["close_sunshade", "close_sunshade"]]) add(`button.c10_${slug}`, tk, "unknown", meta);
+    /* trip log, charging sessions, battery health (analytics sensors) */
+    const trip = (agoStart, agoEnd, km, kwh, soc0, soc1, vmax) => ({
+      start: iso(now - agoStart * HOUR), end: iso(now - agoEnd * HOUR), distance_km: km,
+      duration_min: Math.round((agoStart - agoEnd) * 60), energy_kwh: kwh,
+      consumption_kwh_100km: +(kwh / km * 100).toFixed(1), avg_speed_kmh: Math.round(km / (agoStart - agoEnd)),
+      max_speed_kmh: vmax, start_soc: soc0, end_soc: soc1, outdoor_temp_c: 6,
+    });
+    const recent = [
+      trip(6.2, 5.3, 36.4, 6.9, 54, 44, 118),
+      trip(15.5, 14.6, 31.8, 6.2, 64, 55, 104),
+      trip(27.1, 26.8, 6.3, 1.2, 70, 68, 62),
+      trip(31.4, 30.9, 18.9, 3.3, 77, 72, 91),
+      trip(39.6, 38.7, 32.2, 5.4, 89, 81, 112),
+      trip(48.9, 48.6, 4.1, 0.9, 92, 91, 54),
+    ];
+    const tAttrs = { ...meta, unit_of_measurement: "km", ...recent[0], recent_trips: recent, current_trip: null };
+    delete tAttrs.distance_km;
+    add("sensor.c10_last_trip_distance", "last_trip_distance_km", recent[0].distance_km, tAttrs);
+    add("sensor.c10_last_trip_consumption", "last_trip_consumption_kwh_100km", recent[0].consumption_kwh_100km, u("kWh/100 km"));
+    add("sensor.c10_distance_today", "trips_today_distance_km", 68.2, u("km", { trips: 2, energy_kwh: 13.1, duration_min: 108 }));
+    add("sensor.c10_distance_this_month", "trips_month_distance_km", 412, u("km", { trips: 23, energy_kwh: 63.4, duration_min: 731 }));
+    add("sensor.c10_last_charging_session_energy", "last_charge_session_energy_kwh", 31.6,
+      u("kWh", { start: iso(now - 30 * HOUR), end: iso(now - 27 * HOUR), duration_min: 182, tier: "home", peak_power_kw: 11, cost: 6.32, price_kwh: 0.2, start_soc: 41, end_soc: 89, dc: false }));
+    add("sensor.c10_last_charging_session_cost", "last_charge_session_cost", 6.32, u("EUR", { device_class: "monetary" }));
+    add("sensor.c10_charging_cost_this_month", "charging_cost_month", 18.4, u("EUR", { device_class: "monetary", sessions: 4, energy_kwh: 92.1, home_energy_kwh: 74.6, public_energy_kwh: 17.5 }));
+    add("sensor.c10_charged_energy_this_month", "charged_energy_month_kwh", 92.1, u("kWh"));
+    add("sensor.c10_battery_health", "battery_health_percent", 97.8, u("%", { capacity_kwh: 67.4, reference_kwh: 68.9, reference_source: "observed", samples: 21 }));
     if (q.get("pic")) add("image.c10_vehicle_picture", "vehicle_picture", iso(now - DAY), { ...meta, entity_picture: q.get("pic") });
     S["sun.sun"] = { entity_id: "sun.sun", state: scene === "day" ? "above_horizon" : "below_horizon", attributes: {}, last_updated: iso(now) };
     S["zone.home"] = { entity_id: "zone.home", state: "0", attributes: { friendly_name: "Home" }, last_updated: iso(now) };

@@ -152,6 +152,23 @@ Vse možnosti kartice so v [docs/card.md](card.md).
 
 ---
 
+## Stroški polnjenja in zdravje baterije
+
+- **Cene polnjenja:** *Nastavitve → Naprave in storitve → Leapmotor → Nastavi*
+  (zobnik pri računu). Vnesi ceno na kWh za polnjenje **doma**, **javno AC** in
+  **javno DC**. Polnjenje šteje kot domače, če se začne v coni *Doma*; kot DC,
+  če vozilo javi kabel DC ali polni z več kot 22 kW. Pusti 0, če stroškov ne
+  želiš spremljati.
+- **Kapaciteta baterije:** pri posameznem vozilu (pod računom) lahko vpišeš
+  uporabno kapaciteto nove baterije v kWh. Pusti 0 za primerjavo z najboljšo
+  doslej izmerjeno vrednostjo. Ocena zdravja se pokaže po treh dneh s polnim
+  (100 %) polnjenjem.
+- **Dnevnik voženj:** vožnje in polnjenja se zaznajo samodejno iz podatkov
+  vozila. Za natančne čase začetka in konca ter kratke vožnje nastavi interval
+  posodabljanja na **1 minuto**.
+
+---
+
 ## Odpravljanje težav
 
 | Težava | Rešitev |

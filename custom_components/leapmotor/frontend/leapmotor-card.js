@@ -90,6 +90,7 @@ const STRINGS = {
     notFound: "No Leapmotor vehicle found. Set device_id or entity_prefix in the card configuration.",
     driverDoor: "Driver door", passengerDoor: "Passenger door",
     rearLeftDoor: "Rear left door", rearRightDoor: "Rear right door",
+    tripsTitle: "Trip log", tripsMeta: "today {d} · this month {m}", drivingNow: "Driving now", yesterday: "Yesterday", noTrips: "Trips appear here after your next drive. For exact start and end times, set the update interval to 1 minute.", colTrip: "Trip", colDistance: "Distance", colDuration: "Duration", colEnergy: "Energy", colConsumption: "kWh/100 km", colSoc: "Battery", colSpeed: "Avg speed", monthTrips: "This month {d} · {n}× · {e}", monthCharging: "This month", lastSession: "Last session", tierHome: "Home", tierAC: "Public AC", tierDC: "Public DC", health: "Battery health", healthSub: "{c} of {r} kWh usable", healthPending: "estimate after 3 days with a full charge", sessionsN: "{n}× charged",
   },
   sl: {
     now: "Zdaj", justNow: "pravkar", updated: "posodobljeno {x}",
@@ -139,6 +140,7 @@ const STRINGS = {
     notFound: "Vozilo Leapmotor ni najdeno. V nastavitvah kartice nastavi device_id ali entity_prefix.",
     driverDoor: "Voznikova vrata", passengerDoor: "Sovoznikova vrata",
     rearLeftDoor: "Zadnja leva vrata", rearRightDoor: "Zadnja desna vrata",
+    tripsTitle: "Dnevnik voženj", tripsMeta: "danes {d} · ta mesec {m}", drivingNow: "Vožnja poteka", yesterday: "Včeraj", noTrips: "Vožnje se pojavijo tukaj po naslednji vožnji. Za natančne čase začetka in konca nastavi interval posodabljanja na 1 minuto.", colTrip: "Vožnja", colDistance: "Razdalja", colDuration: "Trajanje", colEnergy: "Energija", colConsumption: "kWh/100 km", colSoc: "Baterija", colSpeed: "Povp. hitrost", monthTrips: "Ta mesec {d} · {n}× · {e}", monthCharging: "Ta mesec", lastSession: "Zadnje polnjenje", tierHome: "Doma", tierAC: "Javno AC", tierDC: "Javno DC", health: "Zdravje baterije", healthSub: "{c} od {r} kWh uporabnih", healthPending: "ocena po 3 dneh s polnim polnjenjem", sessionsN: "{n}× polnjeno",
   },
   de: {
     now: "Jetzt", justNow: "gerade eben", updated: "aktualisiert {x}",
@@ -188,6 +190,7 @@ const STRINGS = {
     notFound: "Kein Leapmotor-Fahrzeug gefunden. Setze device_id oder entity_prefix in der Kartenkonfiguration.",
     driverDoor: "Fahrertür", passengerDoor: "Beifahrertür",
     rearLeftDoor: "Tür hinten links", rearRightDoor: "Tür hinten rechts",
+    tripsTitle: "Fahrtenbuch", tripsMeta: "heute {d} · diesen Monat {m}", drivingNow: "Fahrt läuft", yesterday: "Gestern", noTrips: "Fahrten erscheinen hier nach der nächsten Fahrt. Für genaue Start- und Endzeiten das Aktualisierungsintervall auf 1 Minute stellen.", colTrip: "Fahrt", colDistance: "Strecke", colDuration: "Dauer", colEnergy: "Energie", colConsumption: "kWh/100 km", colSoc: "Akku", colSpeed: "Ø Tempo", monthTrips: "Diesen Monat {d} · {n}× · {e}", monthCharging: "Diesen Monat", lastSession: "Letzte Ladung", tierHome: "Zuhause", tierAC: "Öffentlich AC", tierDC: "Öffentlich DC", health: "Akkugesundheit", healthSub: "{c} von {r} kWh nutzbar", healthPending: "Schätzung nach 3 Tagen mit Vollladung", sessionsN: "{n}× geladen",
   },
 };
 
@@ -225,6 +228,15 @@ const SPEC = {
   tireRL: ["sensor", "tire_pressure_rear_left_bar", "rear_left_tire_pressure"],
   tireRR: ["sensor", "tire_pressure_rear_right_bar", "rear_right_tire_pressure"],
   fuel: ["sensor", "fuel_level_percent", "fuel_level_percent"],
+  lastTrip: ["sensor", "last_trip_distance_km", "last_trip_distance"],
+  tripConsumption: ["sensor", "last_trip_consumption_kwh_100km", "last_trip_consumption"],
+  todayDistance: ["sensor", "trips_today_distance_km", "distance_today"],
+  monthDistance: ["sensor", "trips_month_distance_km", "distance_this_month"],
+  lastSession: ["sensor", "last_charge_session_energy_kwh", "last_charging_session_energy"],
+  lastSessionCost: ["sensor", "last_charge_session_cost", "last_charging_session_cost"],
+  monthCost: ["sensor", "charging_cost_month", "charging_cost_this_month"],
+  monthEnergy: ["sensor", "charged_energy_month_kwh", "charged_energy_this_month"],
+  health: ["sensor", "battery_health_percent", "battery_health"],
   isCharging: ["binary_sensor", "is_charging", "charging"],
   isPlugged: ["binary_sensor", "is_plugged_in", "charge_cable_plugged_in"],
   isDriving: ["binary_sensor", "is_driving", "is_driving"],
@@ -267,7 +279,7 @@ const DOORS = [
 ];
 const WINDOWS = ["winFL", "winFR", "winRL", "winRR", "skylight"];
 const TIRES = [["tireFL", "FL"], ["tireFR", "FR"], ["tireRL", "RL"], ["tireRR", "RR"]];
-const ALL_SECTIONS = ["hero", "check", "chart", "week", "charging", "energy", "controls"];
+const ALL_SECTIONS = ["hero", "check", "chart", "week", "charging", "energy", "trips", "controls"];
 const TIRE_LOW_BAR = 1.9;
 const STALE_MINUTES = 120;
 
@@ -307,6 +319,7 @@ const ICONS = {
   leaf: '<path d="M5 19.5c0-8.5 5.5-14 15-14.5-.5 9.5-6 15-14 15"/><path d="m5 19.5 8.5-8.5"/>',
   arrowUp: '<path d="M12 19V5.5M6.5 11 12 5.5 17.5 11"/>',
   road: '<path d="M8.5 3 4 21M15.5 3 20 21M12 4.5v2.5M12 10.5v3M12 17v2.5"/>',
+  heart: '<path d="M12 20s-7.5-4.6-7.5-10.3A4.2 4.2 0 0 1 12 7.1a4.2 4.2 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20Z"/>',
   route: '<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/>',
 };
 
@@ -694,6 +707,34 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .split .lg span{display:inline-flex;align-items:center;gap:5px}
 .split .lg i{width:7px;height:7px;border-radius:2px;display:inline-block}
 
+/* ---------- trips ---------- */
+.trow{display:grid;grid-template-columns:minmax(0,1.5fr) repeat(6,minmax(0,1fr));align-items:center;gap:10px;padding:10px 14px;border-radius:12px}
+.trow+.trow{margin-top:6px}
+.trow.head{padding:0 14px 4px;font-size:9.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--lm-dim)}
+.trow.item{background:rgba(255,255,255,.025);border:1px solid var(--lm-line-2)}
+.trow.live{border-color:rgba(56,189,248,.4);background:linear-gradient(90deg,rgba(56,189,248,.1),rgba(56,189,248,.02))}
+.tday b{display:block;font-size:13px;font-weight:600}
+.tday small{display:block;font-family:var(--lm-mono);font-size:11px;color:var(--lm-muted);margin-top:2px}
+.tc{font-family:var(--lm-mono);font-size:13px;font-weight:600;white-space:nowrap}
+.tc small{font-size:9.5px;color:var(--lm-muted);font-weight:500;margin-left:2px}
+.tc.dist{font-size:15px}
+.cons{display:inline-block;padding:3px 8px;border-radius:7px;font-size:12px;color:#0b1020;font-weight:700}
+.socbar{position:relative;height:5px;border-radius:5px;background:rgba(148,163,184,.14);margin-top:5px;overflow:hidden}
+.socbar i{position:absolute;top:0;bottom:0;border-radius:5px;background:linear-gradient(90deg,#f6a823,#fbbf24)}
+.tfoot{font-size:11.5px;color:var(--lm-muted);margin-top:12px}
+.tfoot b{color:var(--lm-text);font-weight:600}
+/* charging summary + battery health */
+.csum{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.csum div{padding:10px 12px;border-radius:11px;background:rgba(255,255,255,.03);border:1px solid var(--lm-line-2);min-width:0}
+.csum small{display:block;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--lm-dim)}
+.csum b{display:block;font-size:15px;margin-top:5px}
+.csum span{display:block;font-size:11px;color:var(--lm-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.health{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;margin-top:12px;padding:10px 12px;border-radius:11px;background:rgba(255,255,255,.03);border:1px solid var(--lm-line-2)}
+.health .sq{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:#f472b6;background:rgba(244,114,182,.14)}
+.health b{display:block;font-size:13px;font-weight:600}
+.health small{display:block;font-size:10.5px;color:var(--lm-dim);margin-top:1px}
+.health .mono{font-size:17px;font-weight:600}
+
 /* ---------- controls ---------- */
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
 .tile{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:14px;border-radius:15px;text-align:left;min-width:0;
@@ -710,7 +751,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 /* ---------- layout ---------- */
 @container lmcard (min-width:760px){
   .lm{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .hero,.controls{grid-column:1/-1}
+  .hero,.controls,.trips{grid-column:1/-1}
 }
 @container lmcard (min-width:1180px){
   .lm{grid-template-columns:minmax(0,1.28fr) minmax(0,1.16fr) minmax(0,1fr)}
@@ -732,6 +773,9 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   .day .km{font-size:12.5px}
   .day .co{display:none}
   .tiles{grid-template-columns:repeat(auto-fill,minmax(112px,1fr))}
+  .trow{grid-template-columns:minmax(0,1fr) auto auto;gap:8px 10px;padding:10px 12px}
+  .trow.head{display:none}
+  .trow .tdur,.trow .ten,.trow .tsoc,.trow .tspd{display:none}
   .strip{grid-template-columns:repeat(3,minmax(0,1fr));padding:12px}
   .day .en{font-size:10px}
   .cell .l{letter-spacing:.08em}
@@ -773,7 +817,7 @@ class LeapmotorCard extends HTMLElement {
   static getConfigForm() {
     const sectionOptions = [
       ["hero", "Hero scene"], ["check", "Vehicle check"], ["chart", "Last 24 hours"], ["week", "Last 7 days"],
-      ["charging", "Charging"], ["energy", "Energy & tires"], ["controls", "Remote control"],
+      ["charging", "Charging"], ["energy", "Energy & tires"], ["trips", "Trip log"], ["controls", "Remote control"],
     ].map(([value, label]) => ({ value, label }));
     return {
       schema: [
@@ -1088,6 +1132,7 @@ class LeapmotorCard extends HTMLElement {
     if (has("charging") || has("energy")) {
       parts.push(`<div class="stack">${has("charging") ? `<section class="panel charge" id="charging"></section>` : ""}${has("energy") ? `<section class="panel energy" id="energy"></section>` : ""}</div>`);
     }
+    if (has("trips")) parts.push(`<section class="panel trips" id="trips"></section>`);
     if (has("controls")) parts.push(`<section class="panel controls" id="controls"></section>`);
     const solo = has("hero") && !has("check") ? " solo-hero" : "";
     this.shadowRoot.innerHTML = `<style>${STYLE}</style><div class="lm${this._config.backdrop ? " backdrop" : ""}${solo}" id="root">${parts.join("")}</div>`;
@@ -1105,8 +1150,9 @@ class LeapmotorCard extends HTMLElement {
       check: () => this._checkSig(),
       chart: () => this._chartSig(),
       week: () => this._sig(["week"]),
-      charging: () => this._sig(["battery", "chargeLimit", "isCharging", "isPlugged", "connection", "finish", "remaining", "power", "current", "voltage", "lastCharge", "range"]) + Math.floor(Date.now() / MIN),
-      energy: () => this._sig(["avg", "tireFL", "tireFR", "tireRL", "tireRR", "lwDriving", "lwClimate", "lwOther"]),
+      charging: () => this._sig(["battery", "chargeLimit", "isCharging", "isPlugged", "connection", "finish", "remaining", "power", "current", "voltage", "lastCharge", "range", "lastSession", "lastSessionCost", "monthCost", "monthEnergy"]) + Math.floor(Date.now() / MIN),
+      energy: () => this._sig(["avg", "tireFL", "tireFR", "tireRL", "tireRR", "lwDriving", "lwClimate", "lwOther", "health"]),
+      trips: () => this._sig(["lastTrip", "todayDistance", "monthDistance", "tripConsumption"]) + Math.floor(Date.now() / MIN),
       controls: () => this._controlsSig(),
     };
     const html = {
@@ -1114,6 +1160,7 @@ class LeapmotorCard extends HTMLElement {
       check: () => this._checkHtml(),
       chart: () => this._chartHtml(),
       week: () => this._weekHtml(),
+      trips: () => this._tripsHtml(),
       charging: () => this._chargingHtml(),
       energy: () => this._energyHtml(),
       controls: () => this._controlsHtml(),
@@ -1716,7 +1763,37 @@ class LeapmotorCard extends HTMLElement {
       <div class="cbottom">
         <div class="cstate"><span class="sq${charging ? " on" : ""}">${icon(charging ? "bolt" : "plug")}</span><div><b>${esc(stateTitle)}</b>${stateSub ? `<small>${esc(stateSub)}</small>` : ""}</div></div>
         ${charging && rem != null ? `<div class="cright"><span class="mono">${esc(this._dur(rem))}</span><small>${esc(t("remaining"))}</small></div>` : ""}
-      </div>`;
+      </div>
+      ${this._chargeSummaryHtml()}`;
+  }
+
+  _money(value, currency) {
+    if (value == null || !isFinite(value)) return null;
+    try {
+      return new Intl.NumberFormat(this._lang, { style: "currency", currency: currency || "EUR" }).format(value);
+    } catch (_e) {
+      return `${this._num(value, 2)} ${currency || ""}`.trim();
+    }
+  }
+
+  _tierLabel(tier) {
+    return { home: this._tr("tierHome"), public_ac: this._tr("tierAC"), public_dc: this._tr("tierDC") }[tier] || "";
+  }
+
+  _chargeSummaryHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const last = this._s("lastSession");
+    const lastE = this._v("lastSession");
+    const monthE = this._v("monthEnergy");
+    if (!last && monthE == null) return "";
+    const currency = this._unit("monthCost") || this._unit("lastSessionCost");
+    const lastBits = [this._tierLabel(last?.attributes?.tier), this._money(this._v("lastSessionCost"), currency)].filter(Boolean);
+    const sessions = this._s("monthCost")?.attributes?.sessions;
+    const monthBits = [this._money(this._v("monthCost"), currency), sessions ? t("sessionsN", { n: sessions }) : null].filter(Boolean);
+    return `<div class="csum">
+      <div class="clickable" data-more="lastSession"><small>${esc(t("lastSession"))}</small><b class="mono">${lastE != null ? `${this._num(lastE, 1)} kWh` : "—"}</b><span>${esc(lastBits.join(" · ") || "—")}</span></div>
+      <div class="clickable" data-more="monthCost"><small>${esc(t("monthCharging"))}</small><b class="mono">${monthE != null ? `${this._num(monthE, 1)} kWh` : "—"}</b><span>${esc(monthBits.join(" · ") || "—")}</span></div>
+    </div>`;
   }
 
   /* ----- energy & tires ----- */
@@ -1748,7 +1825,77 @@ class LeapmotorCard extends HTMLElement {
           <div class="scale">${pos != null ? `<i style="left:${pos * 100}%"></i>` : ""}</div></div>
       </div>
       ${tiles ? `<div class="tiles4">${tiles}</div>` : ""}
+      ${this._healthHtml()}
       ${split}`;
+  }
+
+  _healthHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const s = this._s("health");
+    if (!s) return "";
+    const soh = this._v("health");
+    const a = s.attributes || {};
+    const sub = soh != null && a.capacity_kwh != null && a.reference_kwh != null
+      ? t("healthSub", { c: this._num(a.capacity_kwh, 1), r: this._num(a.reference_kwh, 1) })
+      : t("healthPending");
+    return `<div class="health clickable" data-more="health"><span class="sq">${icon("heart")}</span>
+      <div><b>${esc(t("health"))}</b><small>${esc(sub)}</small></div>
+      <span class="mono">${soh != null ? `${this._num(soh, 1)} %` : "—"}</span></div>`;
+  }
+
+  /* ----- trip log ----- */
+
+  _tripDay(date) {
+    const today = new Date();
+    const y = new Date(today.getTime() - DAY);
+    const same = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    if (same(date, today)) return this._tr("today");
+    if (same(date, y)) return this._tr("yesterday");
+    try {
+      const s = new Intl.DateTimeFormat(this._lang, { weekday: "short", day: "numeric", month: "numeric" }).format(date);
+      return s.charAt(0).toUpperCase() + s.slice(1);
+    } catch (_e) { return date.toDateString(); }
+  }
+
+  _tripRow(trip, live = false) {
+    const t = (k, v) => this._tr(k, v);
+    const start = trip.start ? new Date(trip.start) : null;
+    const end = trip.end ? new Date(trip.end) : null;
+    const when = start ? `${this._time(start)}${end && !live ? `–${this._time(end)}` : ""}` : "";
+    const cons = trip.consumption_kwh_100km;
+    const consColor = cons != null ? rampColor(EFFICIENCY_STOPS, clamp((cons - 10) / 20, 0, 1)) : null;
+    const s0 = trip.start_soc, s1 = trip.end_soc;
+    const socBar = s0 != null && s1 != null
+      ? `<div class="socbar"><i style="left:${Math.min(s0, s1)}%;width:${Math.max(2, Math.abs(s0 - s1))}%"></i></div>` : "";
+    return `<div class="trow item${live ? " live" : ""}">
+      <div class="tday"><b>${live ? `<span class="dot pulse" style="--c:var(--lm-sky);margin-right:6px"></span>${esc(t("drivingNow"))}` : esc(start ? this._tripDay(start) : "")}</b><small>${esc(when)}</small></div>
+      <div class="tc dist">${this._num(trip.distance_km ?? 0, 1)}<small>km</small></div>
+      <div class="tc tdur">${trip.duration_min != null ? esc(this._dur(trip.duration_min)) : "—"}</div>
+      <div class="tc ten">${trip.energy_kwh != null ? `${this._num(trip.energy_kwh, 1)}<small>kWh</small>` : "—"}</div>
+      <div class="tc">${cons != null ? `<span class="cons" style="background:${consColor}">${this._num(cons, 1)}</span>` : "—"}</div>
+      <div class="tc tsoc">${s0 != null && s1 != null ? `${this._num(s0)} → ${this._num(s1)}<small>%</small>${socBar}` : "—"}</div>
+      <div class="tc tspd">${trip.avg_speed_kmh != null ? `${this._num(trip.avg_speed_kmh)}<small>km/h</small>` : "—"}</div>
+    </div>`;
+  }
+
+  _tripsHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const s = this._s("lastTrip");
+    const a = s?.attributes || {};
+    const recent = Array.isArray(a.recent_trips) ? a.recent_trips : [];
+    const current = a.current_trip && a.current_trip.start ? a.current_trip : null;
+    const today = this._v("todayDistance"), month = this._v("monthDistance");
+    const head = `<div class="ptitle"><h3>${esc(t("tripsTitle"))}</h3><span class="meta">${esc(t("tripsMeta", {
+      d: `${this._num(today ?? 0, 1)} km`, m: `${this._num(month ?? 0)} km`,
+    }))}</span></div>`;
+    if (!recent.length && !current) return `${head}<div class="empty">${esc(t("noTrips"))}</div>`;
+    const cols = `<div class="trow head"><span>${esc(t("colTrip"))}</span><span>${esc(t("colDistance"))}</span><span class="tdur">${esc(t("colDuration"))}</span><span class="ten">${esc(t("colEnergy"))}</span><span>${esc(t("colConsumption"))}</span><span class="tsoc">${esc(t("colSoc"))}</span><span class="tspd">${esc(t("colSpeed"))}</span></div>`;
+    const rows = (current ? this._tripRow(current, true) : "") + recent.slice(0, 6).map((trip) => this._tripRow(trip)).join("");
+    const ma = this._s("monthDistance")?.attributes || {};
+    const foot = month != null
+      ? `<div class="tfoot">${esc(t("monthTrips", { d: `${this._num(month)} km`, n: ma.trips ?? 0, e: ma.energy_kwh != null ? `${this._num(ma.energy_kwh, 1)} kWh` : "— kWh" }))}</div>`
+      : "";
+    return `${head}${cols}<div class="clickable" data-more="lastTrip">${rows}</div>${foot}`;
   }
 
   /* ----- remote control ----- */
