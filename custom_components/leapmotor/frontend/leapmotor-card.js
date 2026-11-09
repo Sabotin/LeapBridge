@@ -105,7 +105,7 @@ const STRINGS = {
     efficiency: "Consumption", maxL: "max {x}", startL: "Start", endL: "End",
     lookL: "Theme", look_classic: "Classic", look_cluster: "Driver display", look_console: "Car app",
     look_classic_d: "Night or day sky with your car", look_cluster_d: "Gauges around the car, warning lights", look_console_d: "Range, battery bar, round buttons",
-    pageSettings: "Settings", setLanguage: "Language", langAuto: "Auto", langAutoSub: "from your profile",
+    menu: "Menu", pageSettings: "Settings", setLanguage: "Language", langAuto: "Auto", langAutoSub: "from your profile",
     setScene: "Day or night", sceneAuto: "Auto", sceneDay: "Day", sceneNight: "Night", sceneHint: "Auto follows sunrise and sunset.",
     setSavedUser: "Saved for your Home Assistant user, on every device. The card configuration sets the defaults.",
     setSavedLocal: "Saved in this browser. The card configuration sets the defaults.", setReset: "Use card defaults",
@@ -173,7 +173,7 @@ const STRINGS = {
     efficiency: "Poraba", maxL: "največ {x}", startL: "Začetek", endL: "Konec",
     lookL: "Tema", look_classic: "Klasično", look_cluster: "Voznikov zaslon", look_console: "Aplikacija",
     look_classic_d: "Nočno ali dnevno nebo z avtom", look_cluster_d: "Merilniki ob avtu, opozorilne lučke", look_console_d: "Doseg, vrstica baterije, okrogli gumbi",
-    pageSettings: "Nastavitve", setLanguage: "Jezik", langAuto: "Samodejno", langAutoSub: "iz profila",
+    menu: "Meni", pageSettings: "Nastavitve", setLanguage: "Jezik", langAuto: "Samodejno", langAutoSub: "iz profila",
     setScene: "Dan ali noč", sceneAuto: "Samodejno", sceneDay: "Dan", sceneNight: "Noč", sceneHint: "Samodejno sledi sončnemu vzhodu in zahodu.",
     setSavedUser: "Shranjeno za tvojega uporabnika Home Assistanta, na vseh napravah. Privzete vrednosti so v nastavitvah kartice.",
     setSavedLocal: "Shranjeno v tem brskalniku. Privzete vrednosti so v nastavitvah kartice.", setReset: "Uporabi privzete",
@@ -241,7 +241,7 @@ const STRINGS = {
     efficiency: "Verbrauch", maxL: "max. {x}", startL: "Start", endL: "Ende",
     lookL: "Design", look_classic: "Klassisch", look_cluster: "Fahrerdisplay", look_console: "Auto-App",
     look_classic_d: "Nacht- oder Taghimmel mit deinem Auto", look_cluster_d: "Rundinstrumente am Auto, Warnleuchten", look_console_d: "Reichweite, Akkubalken, runde Tasten",
-    pageSettings: "Einstellungen", setLanguage: "Sprache", langAuto: "Automatisch", langAutoSub: "aus deinem Profil",
+    menu: "Menü", pageSettings: "Einstellungen", setLanguage: "Sprache", langAuto: "Automatisch", langAutoSub: "aus deinem Profil",
     setScene: "Tag oder Nacht", sceneAuto: "Automatisch", sceneDay: "Tag", sceneNight: "Nacht", sceneHint: "Automatisch folgt Sonnenauf- und -untergang.",
     setSavedUser: "Für deinen Home-Assistant-Benutzer auf allen Geräten gespeichert. Die Kartenkonfiguration legt die Vorgaben fest.",
     setSavedLocal: "In diesem Browser gespeichert. Die Kartenkonfiguration legt die Vorgaben fest.", setReset: "Vorgaben verwenden",
@@ -429,6 +429,7 @@ const GEARS = ["P", "R", "N", "D"];
 /* ------------------------------------------------------------------ */
 
 const ICONS = {
+  menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
   unlock: '<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 7.6-1.8"/>',
   bolt: '<path d="M13 2.5 5 13.5h6l-1 8 8-11h-6l1-8Z"/>',
@@ -891,6 +892,9 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px;padding:5px;border-radius:18px;z-index:6;
   background:rgba(13,20,38,.94);border:1px solid var(--lm-line);box-shadow:0 14px 30px -18px rgba(0,0,0,.8);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 .tabs.sticky{position:sticky;top:var(--lm-tabs-top,0px)}
+.tabs.has-menu{grid-template-columns:44px}
+.tab.menu{color:var(--lm-text);padding:8px 0}
+.tab.menu .ic{width:22px;height:22px}
 .tab{position:relative;display:flex;align-items:center;justify-content:center;gap:9px;min-height:46px;padding:8px 10px;border-radius:13px;
   font-size:15px;font-weight:600;color:var(--lm-muted);transition:color .2s,background .2s;min-width:0}
 .tab:hover{color:var(--lm-text);background:rgba(255,255,255,.04)}
@@ -1445,6 +1449,7 @@ button.trip:hover{background:rgba(255,255,255,.06)}
   .wrow{grid-template-columns:48px minmax(0,1fr) 86px;gap:10px;padding:7px 8px}
   .tab{flex-direction:column;gap:4px;min-height:54px;padding:7px 4px;font-size:13px}
   .tabs.has-set{grid-template-columns:repeat(var(--n),minmax(0,1fr));grid-auto-columns:50px}
+  .tabs.has-menu.has-set{grid-template-columns:40px repeat(var(--n),minmax(0,1fr))}
   .tab.set .tlb{display:none}
   .looks{grid-template-columns:minmax(0,1fr)}
   .srow{display:grid;gap:8px}
@@ -1601,6 +1606,13 @@ class LeapmotorCard extends HTMLElement {
 
   get hass() {
     return this._hass;
+  }
+
+  /** Set by the sidebar panel on narrow screens: a ☰ button in the tab row opens Home Assistant's sidebar. */
+  set menuButton(on) {
+    if (this._menu === !!on) return;
+    this._menu = !!on;
+    if (this._built) this._renderTabs();
   }
 
   getCardSize() {
@@ -1935,13 +1947,17 @@ class LeapmotorCard extends HTMLElement {
     const nav = this.shadowRoot.getElementById("tabs");
     if (!nav) return;
     const badges = this._badges();
-    const sig = `${this._lang}|${this._page}|${JSON.stringify(badges)}`;
+    const sig = `${this._lang}|${this._page}|${this._menu ? 1 : 0}|${JSON.stringify(badges)}`;
     if (this._sigs.__tabs === sig) return;
     this._sigs.__tabs = sig;
     const pages = this._pages();
     nav.classList.toggle("has-set", this._hasSettings);
+    nav.classList.toggle("has-menu", !!this._menu);
     nav.style.setProperty("--n", String(pages.length - (this._hasSettings ? 1 : 0)));
-    nav.innerHTML = pages.map((p) => {
+    const menu = this._menu
+      ? `<button class="tab menu" aria-label="${esc(this._tr("menu"))}" title="${esc(this._tr("menu"))}" data-act="menu">${icon("menu")}</button>`
+      : "";
+    nav.innerHTML = menu + pages.map((p) => {
       const b = badges[p.id];
       const on = p.id === this._page;
       return `<button class="tab${on ? " on" : ""}${p.id === "settings" ? " set" : ""}" role="tab" aria-selected="${on}" aria-label="${esc(this._tr(p.label))}" data-act="page" data-page="${p.id}">` +
@@ -3918,6 +3934,7 @@ class LeapmotorCard extends HTMLElement {
     }
     const act = el.dataset.act;
     if (act === "page") return this._setPage(el.dataset.page);
+    if (act === "menu") return this.dispatchEvent(new Event("hass-toggle-menu", { bubbles: true, composed: true }));
     if (act === "pref") return this._savePrefs({ [el.dataset.k]: el.dataset.v });
     if (act === "prefreset") return this._savePrefs({ look: null, language: null, scene: null });
     if (act === "limit") return this._bumpLimit(Number(el.dataset.delta) || 0);
@@ -3988,14 +4005,6 @@ LeapmotorCard.art = { sceneSvg, carSvg };
 const PANEL_STYLE = `
 :host{display:block;min-height:100vh;background:#060a16;color:#e9eef8;
   font-family:'LM Outfit','Outfit',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
-.bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;height:56px;padding:0 16px;
-  background:rgba(6,10,22,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid rgba(148,163,184,.1)}
-.bar h1{margin:0;font-size:18px;font-weight:600;letter-spacing:.01em}
-.bar .dot{width:8px;height:8px;border-radius:50%;background:#f6a823;box-shadow:0 0 10px #f6a823}
-.menu{display:none;width:40px;height:40px;border:0;border-radius:50%;background:none;color:inherit;cursor:pointer;place-items:center}
-.menu:hover{background:rgba(255,255,255,.06)}
-.menu svg{width:22px;height:22px}
-:host([narrow]) .menu{display:grid}
 .wrap{max-width:1640px;margin:0 auto;padding:18px;display:grid;gap:22px}
 @media (max-width:600px){.wrap{padding:8px;gap:14px}}
 `;
@@ -4015,6 +4024,12 @@ class LeapmotorPanel extends HTMLElement {
   set narrow(narrow) {
     this._narrow = !!narrow;
     this.toggleAttribute("narrow", this._narrow);
+    this._syncMenu();
+  }
+
+  /** No top bar: on narrow screens the first card's tab row carries the ☰ button for Home Assistant's sidebar. */
+  _syncMenu() {
+    [...this._cards.values()].forEach((card, i) => { card.menuButton = !!this._narrow && i === 0; });
   }
 
   set panel(panel) {
@@ -4035,15 +4050,7 @@ class LeapmotorPanel extends HTMLElement {
   }
 
   _build() {
-    this.shadowRoot.innerHTML = `<style>${PANEL_STYLE}</style>
-      <div class="bar">
-        <button class="menu" title="Menu" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-        <span class="dot"></span><h1>Leapmotor</h1>
-      </div>
-      <div class="wrap" id="wrap"></div>`;
-    this.shadowRoot.querySelector(".menu").addEventListener("click", () => {
-      this.dispatchEvent(new Event("hass-toggle-menu", { bubbles: true, composed: true }));
-    });
+    this.shadowRoot.innerHTML = `<style>${PANEL_STYLE}</style><div class="wrap" id="wrap"></div>`;
     this._built = true;
   }
 
@@ -4063,14 +4070,13 @@ class LeapmotorPanel extends HTMLElement {
       let card = this._cards.get(key);
       if (!card) {
         card = document.createElement("leapmotor-card");
-        // The tabs stay under the panel's own top bar while scrolling.
-        card.style.setProperty("--lm-tabs-top", "56px");
         card.setConfig({ type: "custom:leapmotor-card", sticky_tabs: true, ...(key === "auto" ? {} : { device_id: key }) });
         this._cards.set(key, card);
         wrap.appendChild(card);
       }
       card.hass = this._hass;
     }
+    this._syncMenu();
   }
 }
 
