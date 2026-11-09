@@ -145,6 +145,19 @@ type: custom:leapmotor-card
 (⌘ + Shift + R na macOS). V aplikaciji: *Nastavitve → Aplikacija → Razhroščevanje
 → Ponastavi predpomnilnik vmesnika*.
 
+Kartica ima štiri strani z zavihki na vrhu:
+
+- **Pregled** — avto z baterijo in hitrimi gumbi, pregled vozila in daljinsko
+  upravljanje (*Klima* ter *Vrata in varnost*),
+- **Vožnje** — podrobnosti izbrane vožnje (zemljevid, poraba, hitrost, strošek),
+  dnevnik voženj po dnevih in zadnjih 7 dni,
+- **Polnjenje** — polnjenje z mejo polnjenja in ukazi za polnjenje, zadnjih
+  24 ur ter baterija in poraba,
+- **Vozilo** — vzdrževanje, pnevmatike in vpogledi.
+
+Pika na zavihku pove, da je na tisti strani nekaj za pogledati. Kartica se
+vedno odpre na *Pregledu*; vse na eni strani dobiš s `tabs: false`.
+
 Vse možnosti kartice so v [docs/card.md](card.md).
 
 ---
@@ -195,8 +208,8 @@ servisu v nadzorni plošči pri postavki dvakrat tapni **Opravljeno**.
 
 ## Zemljevid vožnje, hitrost in meja polnjenja
 
-- **Zemljevid vožnje:** v dnevniku tapni vožnjo in pod njim se pokaže njena
-  pot, obarvana po hitrosti (modro pod omejitvijo, oranžno blizu nje, rdeče
+- **Zemljevid vožnje:** na strani *Vožnje* tapni vožnjo v dnevniku in v
+  *Podrobnostih vožnje* se pokaže njena pot, obarvana po hitrosti (modro pod omejitvijo, oranžno blizu nje, rdeče
   nad njo). Pot se nariše iz zgodovine lokacije, ki jo Home Assistant že
   shranjuje; integracija ne shranjuje dodatnih lokacij.
 - **Opozorilo na hitrost:** pri vozilu (pod računom → *Nastavi*) vpiši
@@ -206,7 +219,8 @@ servisu v nadzorni plošči pri postavki dvakrat tapni **Opravljeno**.
   Hitrost se preveri ob vsaki posodobitvi, zato ujame daljšo prehitro vožnjo,
   ne kratkih sunkov.
 - **Meja polnjenja:** v nadzorni plošči pri polnjenju s tipkama − in +
-  (na T03 od 50 do 100 % po 5 %), ali z entiteto *Meja polnjenja*. Na T03 se
+  izbereš vrednost (na T03 od 50 do 100 % po 5 %) in jo pošlješ z dvojnim
+  tapom na **Nastavi**, ali z entiteto *Meja polnjenja*. Na T03 se
   pošlje tako kot v LeapConnectu; če avto ukaza ne potrdi, se pošlje še enkrat.
 - **Živa slika avta:** avto na nadzorni plošči pokaže odprta vrata,
   prtljažnik in okna, nizek tlak v pnevmatikah, odklenjen avto, gretje ali

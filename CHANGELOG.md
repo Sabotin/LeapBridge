@@ -1,5 +1,33 @@
 # Changelog
 
+## Unreleased — card pages, trips page, readable panels
+
+- **Pages:** the card is split into **Overview** (car, vehicle check, remote
+  control), **Trips**, **Charging** and **Vehicle**, with tabs at the top and
+  a dot on a tab when that page needs a look. It always opens on Overview;
+  the tabs stay in view in the sidebar panel. Card options `tabs` and `page`.
+- **Trips page** (like LeapConnect's): trip details with the map, energy,
+  consumption, battery used, speeds, minutes above the limit, cost and
+  outside temperature, plus a **speed chart** with the limit; the trip log is
+  grouped by day with day totals and today/this month on top, and now lists
+  the last **30** trips (*Show more*). Last 7 days moved here.
+- **Charge limit needs confirmation:** − / + only pick the value; it is sent
+  after **Set** is tapped twice (like Unlock), with *Cancel* to go back.
+- **Vehicle check** shows status tiles (green fine, amber needs a look, red
+  problem) and no longer has Unlock / Find car buttons: unlock is in the
+  hero's quick buttons and Find car in the remote control.
+- **Remote control** is grouped into *Climate* and *Doors & security*, and
+  leaves out the quick buttons already shown in the hero. Charging controls
+  (start/stop, schedule, battery preheat, healthy charging, release cable)
+  moved into the charging panel.
+- **Readable panels:** larger type and contrast everywhere; the 7-day panel
+  has totals and one labelled row per day; the charging panel has a battery
+  bar with the limit; the 24-hour chart shows the value now, its change, a
+  scale and when the car was parked, driving or charging. *Charged* in the
+  24-hour summary only counts rises while the car was charging.
+- New **Tires** panel on the Vehicle page; *Energy & tires* became
+  *Battery & efficiency* on the Charging page.
+
 ## Unreleased — trip map, speed limit, live car picture, T03 charge limit
 
 - **Trip map:** a new card section draws each trip on Home Assistant's map with
