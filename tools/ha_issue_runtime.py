@@ -453,6 +453,33 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(default_of(config_flow._vehicle_settings_schema({"operation_password": ""}), "operation_password"), "")
         self.assertEqual(default_of(config_flow.STEP_USER_DATA_SCHEMA, "operation_password"), "0000")
 
+    async def test_sidebar_panel_follows_option(self):
+        from homeassistant.components import frontend, panel_custom
+
+        from custom_components.leapmotor import card
+
+        self.hass.http = Mock(async_register_static_paths=AsyncMock())
+        self.hass.config.components.add("frontend")
+        with patch.object(frontend, "add_extra_js_url") as add_js, \
+                patch.object(panel_custom, "async_register_panel", new=AsyncMock()) as register, \
+                patch.object(frontend, "async_remove_panel") as remove:
+            await card.async_setup_frontend(self.hass, show_panel=True)
+            add_js.assert_called_once()
+            kwargs = register.call_args.kwargs
+            self.assertEqual(kwargs["frontend_url_path"], "leapmotor")
+            self.assertEqual(kwargs["webcomponent_name"], "leapmotor-panel")
+            self.assertEqual(kwargs["module_url"], add_js.call_args.args[1])
+            self.assertFalse(kwargs["require_admin"])
+            await card.async_setup_frontend(self.hass, show_panel=True)  # no duplicate
+            self.assertEqual(register.call_count, 1)
+            await card.async_setup_frontend(self.hass, show_panel=False)
+            remove.assert_called_once_with(self.hass, "leapmotor")
+            await card.async_setup_frontend(self.hass, show_panel=True)
+            self.assertEqual(register.call_count, 2)
+            await card.async_remove_panel(self.hass)
+            self.assertEqual(remove.call_count, 2)
+            self.hass.http.async_register_static_paths.assert_awaited_once()
+
 
 if __name__ == "__main__":
     unittest.main()

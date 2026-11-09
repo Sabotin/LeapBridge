@@ -58,6 +58,7 @@ from .const import (
     CONF_PRICE_HOME,
     CONF_PRICE_HOME_LOW,
     CONF_PRICE_PUBLIC_AC,
+    CONF_SHOW_PANEL,
     CONF_PRICE_PUBLIC_DC,
     CONF_SCAN_INTERVAL,
     CONF_VIN,
@@ -497,6 +498,7 @@ class LeapmotorOptionsFlow(config_entries.OptionsFlow):
                     CONF_LOW_TARIFF_START: user_input.get(CONF_LOW_TARIFF_START) or "22:00:00",
                     CONF_LOW_TARIFF_END: user_input.get(CONF_LOW_TARIFF_END) or "06:00:00",
                     CONF_LOW_TARIFF_WEEKENDS: bool(user_input.get(CONF_LOW_TARIFF_WEEKENDS)),
+                    CONF_SHOW_PANEL: bool(user_input.get(CONF_SHOW_PANEL, True)),
                 },
             )
 
@@ -563,6 +565,10 @@ class LeapmotorOptionsFlow(config_entries.OptionsFlow):
                 vol.Optional(
                     CONF_LOW_TARIFF_WEEKENDS,
                     default=bool(self._config_entry.options.get(CONF_LOW_TARIFF_WEEKENDS, False)),
+                ): bool,
+                vol.Optional(
+                    CONF_SHOW_PANEL,
+                    default=bool(self._config_entry.options.get(CONF_SHOW_PANEL, True)),
                 ): bool,
             }
         )

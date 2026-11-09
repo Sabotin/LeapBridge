@@ -53,7 +53,7 @@
 1. HACS → **⋮** → **Poljubni repozitoriji** → `https://github.com/Sabotin/Leapmotor`, vrsta **Integration**.
 2. Poišči **Leapmotor** → **Prenesi** → znova zaženi Home Assistant.
 3. **Nastavitve → Naprave in storitve → Dodaj integracijo → Leapmotor**.
-4. Naloži oba certifikata in vpiši račun. Končano. 🎉
+4. Naloži oba certifikata in vpiši račun. Končano — v stranski vrstici se pojavi **Leapmotor**. 🎉
 
 Ročna namestitev brez HACS in vse podrobnosti: **[navodila v slovenščini](docs/navodila-sl.md)**.
 
@@ -64,13 +64,11 @@ Ročna namestitev brez HACS in vse podrobnosti: **[navodila v slovenščini](doc
 <table>
   <tr>
     <td width="62%" valign="top">
-      Kartica se naloži sama — ničesar ni treba dodajati.
-      <ol>
-        <li><b>Nastavitve → Nadzorne plošče → Dodaj nadzorno ploščo</b>.</li>
-        <li>Odpri jo → <b>✎ Uredi</b> → vrsta pogleda <b>Pano (ena kartica)</b>.</li>
-        <li><b>Dodaj kartico → Leapmotor</b>.</li>
-      </ol>
-      Ali ročno:
+      <b>Plug &amp; play:</b> po namestitvi se v stranski vrstici sama pojavi <b>Leapmotor</b> s celotno nadzorno ploščo. Ničesar ni treba nastavljati. Če imaš več vozil, je na strani vsako svoje.
+      <br><br>
+      Skriješ jo v <b>Leapmotor → Nastavi</b> (stikalo <i>Prikaži nadzorno ploščo v stranski vrstici</i>).
+      <br><br>
+      Kartico lahko dodaš tudi na svojo nadzorno ploščo: <b>Dodaj kartico → Leapmotor</b> ali
       <pre>type: custom:leapmotor-card</pre>
       Na telefonu se kartica sama preuredi v en stolpec. Ponoči je nočno nebo, podnevi dnevno, med polnjenjem pa se ob avtu prižge polnilnica.
       <br><br>
@@ -108,6 +106,7 @@ Pri **Vzdrževanju** po servisu dvakrat tapni **Opravljeno** in rok se začne zn
 | Cena polnjenja doma, javno AC in DC, nizka tarifa | **Leapmotor → Nastavi** (zobnik pri računu) |
 | PIN, predgretje, hlajenje, kapaciteta baterije | pri **vozilu** pod računom → **Nastavi** |
 | Natančen dnevnik voženj | interval posodabljanja na **1 minuto** |
+| Leapmotor v stranski vrstici (vklop/izklop) | **Leapmotor → Nastavi** |
 | Jezik | klikni svoje ime spodaj levo → **Jezik** |
 
 <br>

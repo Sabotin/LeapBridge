@@ -128,17 +128,14 @@ Ta mapa je zunaj `custom_components`, zato je posodobitve nikoli ne izbrišejo.
 
 ---
 
-## 5. Dodaj nadzorno ploščo
+## 5. Nadzorna plošča
 
-Integracija vgrajeno kartico **naloži sama**, zato ni treba dodajati nobenega
-vira (resource).
+**Plug & play:** po namestitvi se v stranski vrstici sama pojavi **Leapmotor** s
+celotno nadzorno ploščo (za vsako vozilo svoja). Skriješ jo v *Leapmotor →
+Nastavi* s stikalom *Prikaži nadzorno ploščo v stranski vrstici*.
 
-1. **Nastavitve → Nadzorne plošče → + Dodaj nadzorno ploščo → Nova prazna
-   nadzorna plošča**, poimenuj jo *Leapmotor*.
-2. Odpri jo → **✎ Uredi** → svinčnik ob imenu pogleda → **Vrsta pogleda: Pano
-   (ena kartica)** (*Panel*) → Shrani.
-3. **+ Dodaj kartico** → poišči **Leapmotor** (ali *Ročno* in prilepi spodnje) →
-   Shrani.
+Kartico lahko dodaš tudi na svojo nadzorno ploščo: **+ Dodaj kartico** →
+poišči **Leapmotor** (ali *Ročno* in prilepi spodnje).
 
 ```yaml
 type: custom:leapmotor-card

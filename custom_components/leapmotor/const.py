@@ -40,6 +40,7 @@ DEFAULT_PRECOOL_FAN = 7
 DEFAULT_PRECONDITION_THRESHOLD = 20
 #: Factory vehicle PIN; prefilled in setup and vehicle settings, changeable.
 DEFAULT_OPERATION_PASSWORD = "0000"
+CONF_SHOW_PANEL = "show_sidebar_panel"
 
 SUBENTRY_TYPE_VEHICLE = "vehicle"
 

@@ -43,7 +43,8 @@
           "price_home_low_kwh": "Home low-tariff price per kWh",
           "low_tariff_start": "Low tariff starts",
           "low_tariff_end": "Low tariff ends",
-          "low_tariff_weekends": "Low tariff all day on weekends"
+          "low_tariff_weekends": "Low tariff all day on weekends",
+          "show_sidebar_panel": "Show the Leapmotor dashboard in the sidebar"
         },
         "data_description": {
           "price_home_kwh": "Used for sessions that start inside your Home zone. Leave 0 to skip cost tracking.",
@@ -52,7 +53,8 @@
           "price_home_low_kwh": "Optional. With a low-tariff price, home charging is split between the low and the normal home price by time. Leave 0 for a single price.",
           "low_tariff_start": "For example 22:00.",
           "low_tariff_end": "For example 06:00. Overnight windows are supported.",
-          "low_tariff_weekends": "Common for two-rate tariffs such as the Slovenian MT/VT."
+          "low_tariff_weekends": "Common for two-rate tariffs such as the Slovenian MT/VT.",
+          "show_sidebar_panel": "Adds a Leapmotor entry to the sidebar with the full dashboard. Turn off to hide it."
         }
       },
       "certificates": {
@@ -780,7 +782,8 @@
           "price_home_low_kwh": "Home low-tariff price per kWh",
           "low_tariff_start": "Low tariff starts",
           "low_tariff_end": "Low tariff ends",
-          "low_tariff_weekends": "Low tariff all day on weekends"
+          "low_tariff_weekends": "Low tariff all day on weekends",
+          "show_sidebar_panel": "Show the Leapmotor dashboard in the sidebar"
         },
         "data_description": {
           "eco_polling_enabled": "Use the slower eco interval only while every vehicle is clearly locked, parked, and unplugged.",
@@ -791,7 +794,8 @@
           "price_home_low_kwh": "Optional. With a low-tariff price, home charging is split between the low and the normal home price by time. Leave 0 for a single price.",
           "low_tariff_start": "For example 22:00.",
           "low_tariff_end": "For example 06:00. Overnight windows are supported.",
-          "low_tariff_weekends": "Common for two-rate tariffs such as the Slovenian MT/VT."
+          "low_tariff_weekends": "Common for two-rate tariffs such as the Slovenian MT/VT.",
+          "show_sidebar_panel": "Adds a Leapmotor entry to the sidebar with the full dashboard. Turn off to hide it."
         }
       }
     },

@@ -2284,6 +2284,99 @@ class LeapmotorCard extends HTMLElement {
 // Artwork is exposed for the docs banner and previews.
 LeapmotorCard.art = { sceneSvg, carSvg };
 
+/* ------------------------------------------------------------------ */
+/* Sidebar panel: the full dashboard, one per vehicle (plug and play)  */
+/* ------------------------------------------------------------------ */
+
+const PANEL_STYLE = `
+:host{display:block;min-height:100vh;background:#060a16;color:#e9eef8;
+  font-family:'LM Outfit','Outfit',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+.bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;height:56px;padding:0 16px;
+  background:rgba(6,10,22,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid rgba(148,163,184,.1)}
+.bar h1{margin:0;font-size:18px;font-weight:600;letter-spacing:.01em}
+.bar .dot{width:8px;height:8px;border-radius:50%;background:#f6a823;box-shadow:0 0 10px #f6a823}
+.menu{display:none;width:40px;height:40px;border:0;border-radius:50%;background:none;color:inherit;cursor:pointer;place-items:center}
+.menu:hover{background:rgba(255,255,255,.06)}
+.menu svg{width:22px;height:22px}
+:host([narrow]) .menu{display:grid}
+.wrap{max-width:1640px;margin:0 auto;padding:18px;display:grid;gap:22px}
+@media (max-width:600px){.wrap{padding:8px;gap:14px}}
+`;
+
+class LeapmotorPanel extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+    this._cards = new Map();
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    this._update();
+  }
+
+  set narrow(narrow) {
+    this._narrow = !!narrow;
+    this.toggleAttribute("narrow", this._narrow);
+  }
+
+  set panel(panel) {
+    this._panel = panel;
+  }
+
+  connectedCallback() {
+    ensureFonts();
+  }
+
+  _vehicles() {
+    const entities = Object.values(this._hass?.entities || {});
+    const ids = entities
+      .filter((e) => e && e.platform === "leapmotor" && e.translation_key === "battery_percent" && e.entity_id.startsWith("sensor."))
+      .map((e) => e.device_id)
+      .filter(Boolean);
+    return [...new Set(ids)];
+  }
+
+  _build() {
+    this.shadowRoot.innerHTML = `<style>${PANEL_STYLE}</style>
+      <div class="bar">
+        <button class="menu" title="Menu" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+        <span class="dot"></span><h1>Leapmotor</h1>
+      </div>
+      <div class="wrap" id="wrap"></div>`;
+    this.shadowRoot.querySelector(".menu").addEventListener("click", () => {
+      this.dispatchEvent(new Event("hass-toggle-menu", { bubbles: true, composed: true }));
+    });
+    this._built = true;
+  }
+
+  _update() {
+    if (!this._hass) return;
+    if (!this._built) this._build();
+    const wrap = this.shadowRoot.getElementById("wrap");
+    const vehicles = this._vehicles();
+    const keys = vehicles.length ? vehicles : ["auto"];
+    for (const [key, card] of this._cards) {
+      if (!keys.includes(key)) {
+        card.remove();
+        this._cards.delete(key);
+      }
+    }
+    for (const key of keys) {
+      let card = this._cards.get(key);
+      if (!card) {
+        card = document.createElement("leapmotor-card");
+        card.setConfig(key === "auto" ? { type: "custom:leapmotor-card" } : { type: "custom:leapmotor-card", device_id: key });
+        this._cards.set(key, card);
+        wrap.appendChild(card);
+      }
+      card.hass = this._hass;
+    }
+  }
+}
+
+if (!customElements.get("leapmotor-panel")) customElements.define("leapmotor-panel", LeapmotorPanel);
+
 if (!customElements.get("leapmotor-card")) {
   customElements.define("leapmotor-card", LeapmotorCard);
   window.customCards = window.customCards || [];

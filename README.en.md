@@ -240,13 +240,14 @@ Then continue with [Set up the integration](#set-up-the-integration).
 4. Done — your car appears as a device with all its entities. Each vehicle is
    listed below the account entry; open it to set its PIN or ABRP token.
 
-### Add the dashboard
+### The dashboard
 
-1. **Settings → Dashboards → + Add dashboard → New dashboard from scratch**,
-   name it *Leapmotor*.
-2. Open it → **✎ Edit** → pencil next to the view → **View type: Panel (single card)** → Save.
-3. **+ Add card** → search **Leapmotor** (or choose *Manual* and paste
-   `type: custom:leapmotor-card`) → Save.
+**Plug and play:** after setup a **Leapmotor** entry appears in the sidebar
+with the full dashboard — one per vehicle. Hide it with *Show the Leapmotor
+dashboard in the sidebar* in the integration options.
+
+You can also put the card on any dashboard: **+ Add card → Leapmotor**, or
+`type: custom:leapmotor-card`.
 
 If the card is not found, refresh the browser once with **Ctrl + F5**
 (⌘ + Shift + R on macOS). In the companion app use
