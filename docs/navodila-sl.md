@@ -264,8 +264,9 @@ certifikatov. Za javne prijave napak raje uporabi `leapmotor.export_diagnostics`
 
 ## Posodabljanje
 
-- **HACS:** v HACS odpri Leapmotor → **Prenesi znova** (*Redownload*) → znova
-  zaženi.
+- **HACS:** v HACS odpri Leapmotor → **⋮ → Posodobi informacije** (*Update
+  information*) → **Prenesi znova** (*Redownload*) → znova zaženi. Če je
+  kartica še stara, osveži brskalnik (**Ctrl + F5**).
 - **Ročno:** ponovi [1. korak](#1-namestitev-integracije) (zamenjaj mapo) in
   znova zaženi. Tvoja certifikata v `/config/leapmotor/` ostaneta nedotaknjena.
 
