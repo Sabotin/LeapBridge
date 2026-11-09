@@ -73,7 +73,8 @@ Ročna namestitev brez HACS in vse podrobnosti: **[navodila v slovenščini](doc
       <br><br>
       Kartico lahko dodaš tudi na svojo nadzorno ploščo: <b>Dodaj kartico → Leapmotor</b> ali
       <pre>type: custom:leapmotor-card</pre>
-      Takoj pod baterijo so hitri gumbi: <b>Zakleni/Odkleni</b>, <b>Hitro gretje</b>, <b>Hitro hlajenje</b> in <b>Odpri/Zapri okna</b>.<br><br>
+      Kartica ima štiri strani z zavihki: <b>Pregled</b> (avto, pregled vozila in daljinsko upravljanje), <b>Vožnje</b> (vsaka vožnja z zemljevidom, hitrostjo in porabo), <b>Polnjenje</b> in <b>Vozilo</b> (vzdrževanje, pnevmatike, vpogledi).<br><br>
+      Takoj pod baterijo so hitri gumbi: <b>Zakleni/Odkleni</b>, <b>Hitro gretje</b>, <b>Hitro hlajenje</b> in <b>Odpri/Zapri okna</b>. Mejo polnjenja izbereš s − in + ter jo potrdiš z dvojnim tapom na <b>Nastavi</b>.<br><br>
       Na telefonu se kartica sama preuredi v en stolpec. Ponoči je nočno nebo, podnevi dnevno, med polnjenjem pa se ob avtu prižge polnilnica.
       <br><br>
       Če kartice ne najde, enkrat osveži brskalnik (<b>Ctrl + F5</b>).

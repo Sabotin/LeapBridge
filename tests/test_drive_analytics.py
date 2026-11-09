@@ -156,6 +156,24 @@ class TripTests(unittest.TestCase):
         self.assertEqual(s["today"]["trips"], 1)
         self.assertEqual(len(s["recent_trips"]), 1)
 
+    def test_recent_trips_lists_more_than_recent_sessions(self) -> None:
+        engine = da.DriveAnalytics()
+        ts, odo = T0, 10000.0
+        polls = [(ts, vehicle(ts, odo=odo))]
+        for _ in range(da.RECENT_TRIPS + 3):  # short drives, each ended by parking
+            for _ in range(3):
+                ts += MIN; odo += 1
+                polls.append((ts, vehicle(ts, odo=odo, speed=40, parked=False)))
+            ts += MIN
+            polls.append((ts, vehicle(ts, odo=odo)))
+            ts += 10 * MIN
+            polls.append((ts, vehicle(ts, odo=odo)))
+        s = self.feed(engine, polls)
+        self.assertGreater(da.RECENT_TRIPS, da.RECENT_ITEMS)
+        self.assertEqual(len(s["recent_trips"]), da.RECENT_TRIPS)
+        starts = [t["start"] for t in s["recent_trips"]]
+        self.assertEqual(starts, sorted(starts, reverse=True))  # newest first
+
 
 class ChargingTests(unittest.TestCase):
     def charge(self, *, lat=46.0569, lon=14.5058, power=11.0, dc=False, prices=None):
