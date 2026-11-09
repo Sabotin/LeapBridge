@@ -33,7 +33,7 @@
 ## ✦ The dashboard
 
 <p align="center">
-  <img src="docs/images/dashboard.png" alt="Leapmotor dashboard at night while charging" width="100%">
+  <img src="docs/images/dashboard.png" alt="Overview page at night while charging" width="100%">
 </p>
 
 One card, everything about the car. It ships **inside** the integration and is
@@ -81,12 +81,12 @@ Four pages with tabs: **Overview** (car, vehicle check, remote control),
 <table>
   <tr>
     <td width="68%" valign="top">
-      <img src="docs/images/dashboard-day-de.png" alt="Day scene, German" width="100%">
-      <p align="center"><sub>Day sky, parked away from home — German</sub></p>
+      <img src="docs/images/dashboard-day-de.png" alt="Trips page, German" width="100%">
+      <p align="center"><sub>Trips page: trip details with map and speed chart, trip log, last 7 days — German</sub></p>
     </td>
     <td width="32%" valign="top">
       <img src="docs/images/mobile-sl.png" alt="Phone layout in Slovenian, needs attention" width="100%">
-      <p align="center"><sub>Phone layout — Slovenščina, “Potrebna pozornost”</sub></p>
+      <p align="center"><sub>Overview on a phone — Slovenščina, “Potrebna pozornost”</sub></p>
     </td>
   </tr>
 </table>
@@ -166,6 +166,11 @@ You need:
 2. Search for **Leapmotor** in HACS and **Download** it.
 3. **Restart** Home Assistant.
 4. Continue with [Set up the integration](#set-up-the-integration).
+
+**Updating:** HACS installs from the `main` branch (there are no releases).
+Open Leapmotor in HACS → **⋮ → Update information**, then **Redownload** and
+restart Home Assistant. If the card still looks old, refresh the browser
+(Ctrl + F5).
 
 ### ✦ Manual installation (step by step)
 
