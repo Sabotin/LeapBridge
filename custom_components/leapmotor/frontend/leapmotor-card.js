@@ -936,8 +936,8 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 :where(.lm:not(.look-classic)) .car img{display:block;max-width:100%;max-height:220px;object-fit:contain;filter:drop-shadow(0 18px 14px rgba(0,0,0,.6))}
 :where(.lm:not(.look-classic)) .car img.flip{transform:scaleX(-1)}
 :where(.lm:not(.look-classic)) .car .carsvg{width:100%;height:auto;display:block}
-:where(.lm:not(.look-classic)) .car.charging::after{content:"";position:absolute;left:8%;right:8%;bottom:-6px;height:36px;border-radius:50%;
-  background:radial-gradient(closest-side,rgba(52,211,153,.55),transparent);filter:blur(6px);animation:lm-pulse 2.4s ease-in-out infinite;z-index:-1}
+:where(.lm:not(.look-classic)) .car.charging::after{content:"";position:absolute;left:0;right:0;bottom:-16px;height:66px;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(52,211,153,.8),rgba(52,211,153,.28) 62%,transparent);filter:blur(10px);animation:lm-pulse 2.4s ease-in-out infinite;z-index:-1}
 :where(.lm:not(.look-classic)) .wallbox{position:absolute;left:-30px;bottom:8px;width:20px;height:66px;border-radius:7px;background:linear-gradient(180deg,#26324f,#141c33);
   border:1px solid rgba(148,163,184,.25);box-shadow:0 10px 20px rgba(0,0,0,.4)}
 :where(.lm:not(.look-classic)) .wallbox i{position:absolute;left:50%;top:12px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--c,#34d399);box-shadow:0 0 10px var(--c,#34d399)}
@@ -1084,8 +1084,8 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 :where(.look-classic) .car img{display:block;max-width:100%;max-height:230px;object-fit:contain;filter:drop-shadow(0 20px 16px rgba(0,0,0,.55)) brightness(.94)}
 :where(.look-classic) .car img.flip{transform:scaleX(-1)}
 :where(.look-classic) .car .carsvg{width:100%;height:auto;display:block}
-:where(.look-classic) .car.charging::after{content:"";position:absolute;left:8%;right:8%;bottom:-6px;height:36px;border-radius:50%;
-  background:radial-gradient(closest-side,rgba(52,211,153,.55),transparent);filter:blur(6px);animation:lm-pulse 2.4s ease-in-out infinite;z-index:-1}
+:where(.look-classic) .car.charging::after{content:"";position:absolute;left:0;right:0;bottom:-16px;height:66px;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(52,211,153,.8),rgba(52,211,153,.28) 62%,transparent);filter:blur(10px);animation:lm-pulse 2.4s ease-in-out infinite;z-index:-1}
 :where(.look-classic) .wallbox{position:absolute;left:-30px;bottom:8px;width:20px;height:66px;border-radius:7px;background:linear-gradient(180deg,#26324f,#141c33);
   border:1px solid rgba(148,163,184,.25);box-shadow:0 10px 20px rgba(0,0,0,.4)}
 :where(.look-classic) .wallbox i{position:absolute;left:50%;top:12px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--c,#34d399);box-shadow:0 0 10px var(--c,#34d399)}
@@ -1497,6 +1497,13 @@ button.trip:hover{background:rgba(255,255,255,.06)}
 .map .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--lm-soft);margin-top:12px}
 .map .legend i{display:inline-block;width:18px;height:5px;border-radius:3px;background:var(--c);box-shadow:0 0 8px var(--c);vertical-align:middle;margin-right:7px}
 .map .stats{margin-top:14px}
+/* ---------- charging: the hero and the car glow green ---------- */
+.hero.charging{border-color:rgba(52,211,153,.55);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),inset 0 0 70px -22px rgba(52,211,153,.4),0 0 34px -8px rgba(52,211,153,.5),0 24px 48px -30px rgba(0,0,0,.7)}
+.hero.charging .car img{filter:drop-shadow(0 18px 14px rgba(0,0,0,.6)) drop-shadow(0 0 14px rgba(52,211,153,.6))}
+.look-classic .hero.charging .car img{filter:drop-shadow(0 20px 16px rgba(0,0,0,.55)) drop-shadow(0 0 14px rgba(52,211,153,.6)) brightness(.94)}
+.hero.charging .car .carsvg{filter:drop-shadow(0 0 14px rgba(52,211,153,.5))}
+.look-console .hero.charging .carzone::before{background:radial-gradient(closest-side,rgba(52,211,153,.24),transparent)}
 @keyframes lm-streak{0%{transform:translateX(40%);opacity:0}30%{opacity:1}100%{transform:translateX(-60%);opacity:0}}
 @keyframes lm-flowbg{to{background-position:-200% 0}}
 @keyframes lm-pulse{0%,100%{opacity:1}50%{opacity:.45}}
@@ -2042,6 +2049,7 @@ class LeapmotorCard extends HTMLElement {
     this._sigs[name] = sig;
     if (name === "hero") {
       for (const [id, part] of Object.entries(this._heroHtml())) this._patch(id, part);
+      this.shadowRoot.getElementById("hero")?.classList.toggle("charging", this._chargeState().charging);
       return;
     }
     if (name === "map") {

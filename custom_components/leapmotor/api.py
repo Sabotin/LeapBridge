@@ -93,6 +93,7 @@ from .model_helpers import (
 from .signal_helpers import (
     charge_connection_allows_charging,
     nonzero_state,
+    stationary_charge_inflow,
     steering_wheel_heating_state,
     vehicle_precludes_charging,
     window_open_state,
@@ -2254,6 +2255,10 @@ def normalize_vehicle(
         and _safe_float(signal.get("1178")) == 0
         and _safe_int(signal.get("1200")) == 0
     )
+    # On the T03 the charge-state code can read "not charging" with the cable
+    # in (#75) and the car may be switched on while it charges. Either makes
+    # the regular checks deny a real session, so measured inflow decides.
+    measured_charge = t03 and stationary_charge_inflow(signal)
     schedule_enabled = _safe_int(charge_plan.get("isEnable"))
     schedule_enabled = schedule_enabled if schedule_enabled in (0, 1) else None
     mileage_data = (mileage_json or {}).get("data") or {}
@@ -2368,15 +2373,23 @@ def normalize_vehicle(
             "last_vehicle_timestamp": signal.get("sts"),
         },
         "charging": {
-            "is_charging": _is_charging(signal),
-            "is_plugged_in": True if paused_connector else _is_plugged_in(signal),
+            "is_charging": True if measured_charge else _is_charging(signal),
+            "is_plugged_in": (
+                True if paused_connector or measured_charge else _is_plugged_in(signal)
+            ),
             "is_regening": _is_regening(signal),
-            "connection_state": "plugged_in" if paused_connector else _charging_connection_state(signal),
+            "connection_state": (
+                "charging" if measured_charge
+                else "plugged_in" if paused_connector
+                else _charging_connection_state(signal)
+            ),
             "charge_limit_percent": charge_plan.get("percent"),
             "charge_limit_source": "config_3" if config.get("3") else "named_status",
             "charge_limit_reliability": "unverified" if t03 else "reported",
             "remaining_charge_minutes": _safe_int(signal.get("1200")),
-            "charging_power_kw": _charging_power_kw(signal),
+            "charging_power_kw": (
+                _pack_power_kw(signal) if measured_charge else _charging_power_kw(signal)
+            ),
             "charging_current_a": _safe_float(signal.get("1178")),
             "charging_voltage_v": _safe_float(signal.get("1177")),
             # On T03, 1197=1 also appears in a paused AC session (#75).
@@ -3458,6 +3471,15 @@ def _ac_operation_mode(signal: dict[str, Any]) -> str | None:
         0: "auto",
         1: "manual",
     }.get(mode)
+
+
+def _pack_power_kw(signal: dict[str, Any]) -> float | None:
+    """Return the measured pack power, without the plausibility gates."""
+    current = _safe_float(signal.get("1178"))
+    voltage = _safe_float(signal.get("1177"))
+    if current is None or voltage is None:
+        return None
+    return round(abs(current * voltage) / 1000.0, 3)
 
 
 def _charging_power_kw(signal: dict[str, Any]) -> float | None:
