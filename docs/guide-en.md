@@ -436,6 +436,7 @@ state, charging, `evcc_status`, charging power/current/voltage, odometer and
 | *Token is invalid* / *Leapmotor rejected the session* | The integration logs in again and retries on its own. If it keeps happening, the official app is probably signed in with the same account; use a second account with the car shared to it. |
 | *Leapmotor accepted the command but did not confirm the result* | The command most likely reached the car. Wait a few seconds and check its state before sending it again. |
 | Card not found | Hard-refresh the browser (Ctrl + F5) or reset the companion-app frontend cache. |
+| No tabs or no Settings tab on a tablet or phone | The app is still running an older copy of the dashboard. In the companion app: *Settings → Companion app → Debugging → Reset frontend cache*, then reopen it. In a browser: Ctrl + F5. |
 
 <details>
 <summary><b>Debug logging</b></summary>

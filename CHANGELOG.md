@@ -21,6 +21,11 @@
 - **More readable:** small text one size up and more contrast for secondary
   text on every page; section headings without letter-spaced capitals.
 - The map-less trip drawing keeps its stars only in Classic.
+- **Sidebar panel without a top bar:** the dashboard starts right at the
+  tabs. On phones and narrow screens a ☰ button at the start of the tab row
+  opens Home Assistant's sidebar.
+- **New logo:** a mint city car on the night sky, in the
+  integration, the HACS brand icons and the README banners.
 - **Docs:** shorter Slovenian README; the English README now follows it
   section by section, with English screenshots of every page and the remote
   control. The full English details (manual install, all settings, services,
