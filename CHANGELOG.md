@@ -27,6 +27,8 @@
   24-hour summary only counts rises while the car was charging.
 - New **Tires** panel on the Vehicle page; *Energy & tires* became
   *Battery & efficiency* on the Charging page.
+- Hero metric labels wrap instead of being cut off (e.g. *Meja polnjenja*).
+- README screenshots show the new pages.
 
 ## Unreleased — trip map, speed limit, live car picture, T03 charge limit
 

@@ -58,39 +58,47 @@
 3. **Nastavitve → Naprave in storitve → Dodaj integracijo → Leapmotor**.
 4. Naloži oba certifikata in vpiši račun. Končano — v stranski vrstici se pojavi **Leapmotor**. 🎉
 
+**Posodobitev:** HACS namesti zadnjo različico z veje `main`. V HACS odpri Leapmotor → **⋮ → Posodobi informacije** (*Update information*) → **Prenesi znova** (*Redownload*) → znova zaženi Home Assistant. Če je kartica še stara, osveži brskalnik (**Ctrl + F5**).
+
 Ročna namestitev brez HACS in vse podrobnosti: **[navodila v slovenščini](docs/navodila-sl.md)**.
 
 <br>
 
 ## ✦ Nadzorna plošča
 
+**Plug & play:** po namestitvi se v stranski vrstici sama pojavi **Leapmotor** s celotno nadzorno ploščo. Ničesar ni treba nastavljati. Če imaš več vozil, ima vsako svojo. Skriješ jo v **Leapmotor → Nastavi** (stikalo *Prikaži nadzorno ploščo v stranski vrstici*).
+
+Kartica ima **štiri strani z zavihki**. Pika na zavihku pove, da je na tisti strani nekaj za pogledati.
+
 <table>
   <tr>
-    <td width="62%" valign="top">
-      <b>Plug &amp; play:</b> po namestitvi se v stranski vrstici sama pojavi <b>Leapmotor</b> s celotno nadzorno ploščo. Ničesar ni treba nastavljati. Če imaš več vozil, je na strani vsako svoje.
-      <br><br>
-      Skriješ jo v <b>Leapmotor → Nastavi</b> (stikalo <i>Prikaži nadzorno ploščo v stranski vrstici</i>).
-      <br><br>
-      Kartico lahko dodaš tudi na svojo nadzorno ploščo: <b>Dodaj kartico → Leapmotor</b> ali
-      <pre>type: custom:leapmotor-card</pre>
-      Kartica ima štiri strani z zavihki: <b>Pregled</b> (avto, pregled vozila in daljinsko upravljanje), <b>Vožnje</b> (vsaka vožnja z zemljevidom, hitrostjo in porabo), <b>Polnjenje</b> in <b>Vozilo</b> (vzdrževanje, pnevmatike, vpogledi).<br><br>
-      Takoj pod baterijo so hitri gumbi: <b>Zakleni/Odkleni</b>, <b>Hitro gretje</b>, <b>Hitro hlajenje</b> in <b>Odpri/Zapri okna</b>. Mejo polnjenja izbereš s − in + ter jo potrdiš z dvojnim tapom na <b>Nastavi</b>.<br><br>
-      Na telefonu se kartica sama preuredi v en stolpec. Ponoči je nočno nebo, podnevi dnevno, med polnjenjem pa se ob avtu prižge polnilnica.
-      <br><br>
-      Če kartice ne najde, enkrat osveži brskalnik (<b>Ctrl + F5</b>).
-    </td>
-    <td width="38%" valign="top">
-      <img src="docs/images/sl/telefon.png" alt="Na telefonu" width="100%">
-    </td>
+    <td width="25%" valign="top"><img src="docs/images/sl/stran-pregled.png" alt="Pregled" width="100%"></td>
+    <td width="25%" valign="top"><img src="docs/images/sl/stran-voznje.png" alt="Vožnje" width="100%"></td>
+    <td width="25%" valign="top"><img src="docs/images/sl/stran-polnjenje.png" alt="Polnjenje" width="100%"></td>
+    <td width="25%" valign="top"><img src="docs/images/sl/stran-vozilo.png" alt="Vozilo" width="100%"></td>
+  </tr>
+  <tr>
+    <td valign="top"><b>Pregled</b><br><sub>Avto z baterijo in hitrimi gumbi (<i>Odkleni, Hitro gretje, Hitro hlajenje, Okna</i>), pregled vozila in daljinsko upravljanje.</sub></td>
+    <td valign="top"><b>Vožnje</b><br><sub>Vsaka vožnja z zemljevidom, hitrostjo, porabo, baterijo in stroškom. Dnevnik po dnevih in zadnjih 7 dni.</sub></td>
+    <td valign="top"><b>Polnjenje</b><br><sub>Polnjenje, meja polnjenja (izberi s − in +, potrdi z dvojnim tapom na <i>Nastavi</i>), zadnjih 24 ur in zdravje baterije.</sub></td>
+    <td valign="top"><b>Vozilo</b><br><sub>Vzdrževanje, pnevmatike in vpogledi (stroški, praznjenje, poraba glede na temperaturo).</sub></td>
   </tr>
 </table>
+
+Kartico lahko dodaš tudi na svojo nadzorno ploščo: **Dodaj kartico → Leapmotor** ali
+
+```yaml
+type: custom:leapmotor-card
+```
+
+Ponoči je nočno nebo, podnevi dnevno, med polnjenjem pa se ob avtu prižge polnilnica. Če kartice ne najde, enkrat osveži brskalnik (**Ctrl + F5**).
 
 <br>
 
 ## ✦ Predgretje, hlajenje in upravljanje
 
 <p align="center">
-  <img src="docs/images/sl/upravljanje.png" alt="Vzdrževanje, vpogledi in daljinsko upravljanje" width="100%">
+  <img src="docs/images/sl/upravljanje.png" alt="Daljinsko upravljanje" width="100%">
 </p>
 
 - **Predgrej kabino** — 22 °C, ventilator 7, samo kroženje zraka

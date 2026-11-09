@@ -808,8 +808,8 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .spin .ic{animation:lm-spin 1s linear infinite}
 .strip{grid-area:strip;display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:12px 8px;padding:13px 16px;border-radius:15px;
   background:rgba(8,13,29,.58);border:1px solid rgba(148,163,184,.15);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-.cell{min-width:0}
-.cell .l{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--lm-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cell{min-width:0;display:flex;flex-direction:column;justify-content:space-between}
+.cell .l{font-size:11px;font-weight:600;letter-spacing:.14em;line-height:1.25;text-transform:uppercase;color:var(--lm-muted);overflow-wrap:anywhere;hyphens:auto}
 .cell .v{font-family:var(--lm-mono);font-size:16.5px;font-weight:600;margin-top:6px;white-space:nowrap}
 .cell .v small{font-size:11.5px;color:var(--lm-muted);font-weight:500;margin-left:3px}
 
