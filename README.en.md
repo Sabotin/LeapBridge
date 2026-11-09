@@ -103,17 +103,21 @@ Full options: **[docs/card.md](docs/card.md)**.
 | | |
 | --- | --- |
 | 🔋 **Vehicle state** | Battery (also high-precision), range, odometer, speed, gear, READY/ON3, interior & outdoor temperature |
-| 🔌 **Charging** | Plugged-in / charging / finished, power, current, voltage, finish time, charge limit, schedule switch, EVCC helpers |
+| 🔌 **Charging** | Plugged-in / charging / finished, power, current, voltage, finish time, **settable charge limit** (also on the T03, the way LeapConnect sets it), schedule switch, EVCC helpers |
 | 🚪 **Body** | Lock, four doors, trunk, four windows with position, panoramic roof, sunshade |
 | 🛞 **Tires** | Pressure for every wheel |
 | 📍 **Location** | GPS device tracker with sign-correction for known backend issues |
 | 🛣️ **Trip log** | Every drive detected automatically: distance, duration, energy, kWh/100 km, average and top speed, battery used. Sensors for the last trip, today and this month |
+| 🗺️ **Trip map** | The route of every trip on a dark map, coloured by speed — tap a trip in the log to show it. Polls every minute while driving |
+| 🚦 **Speed limit** | The car's speed-limit setting, a *Speeding* sensor with your own alert speed, time above the limit per trip |
+| ⚡ **Quick buttons** | Lock/unlock, quick heat, quick cool and open/close windows right under the battery on the first page |
+| 🚗 **Live car picture** | The car on the card shows open doors, trunk, windows and sunroof, low tires, unlocked, climate heating or cooling, sentry, driving and charging |
 | 💶 **Charging costs** | Charging sessions detected automatically and priced with your tariffs for home, public AC and public DC — including a **low (night) tariff** for home. Sensors for the last session and this month |
 | 🔥 **Cabin preheat & pre-cool** | One tap to heat (your temperature, fan 7, recirculation) or cool (18 °C, fan 7, A/C) the cabin — or **auto**, which picks heat or cool from the outside temperature. Presets per vehicle, works on the T03 |
 | 🔧 **Maintenance** | Factory schedules for T03, B10, C10 and C10 REEV (plus common items), due dates by km and time, *Done* button to log a service. Works from day one — assumes services were on schedule until you log one |
 | 🛡️ **More controls** | Sentry mode, healthy charging, start/stop charging and sunroof |
 | 💡 **Insights** | Cost per trip and per 100 km, parked battery drain, temperature-compensated **slow-leak tire detection**, consumption vs. your usual for similar trips and by outside temperature, an *attention needed* sensor, charge-to-limit cost now vs. low tariff |
-| 🤖 **Blueprints** | Ready-made automations: pre-condition before departure, charging complete, car left unlocked (with auto-lock), plug-in reminder, attention/tire/maintenance alerts |
+| 🤖 **Blueprints** | Ready-made automations: pre-condition before departure, charging complete, car left unlocked (with auto-lock), plug-in reminder, attention/tire/maintenance alerts, speeding alert |
 | ❤️ **Battery health** | State-of-health estimate from full-charge readings, against your car's capacity or the best value measured |
 | 📊 **History** | Last-7-days mileage & energy with daily detail, six-week average consumption, weekly and daily energy split |
 | 🌡️ **Comfort** | Climate on/off, quick heat/cool, defrost, steering-wheel & mirror heating, seat heating/ventilation 0–3, one-touch *prepare car* |
@@ -266,6 +270,8 @@ If the card is not found, refresh the browser once with **Ctrl + F5**
 | Severe-use schedule | Per vehicle | Shorter maintenance intervals for C10 (severe use) and T03 (city use). |
 | Update interval | Options | In **minutes**. Diagnostics show it in seconds (`60` → `3600`). Use `1` for one-minute polling. |
 | Eco polling | Options | Slows polling while every car is clearly locked, parked and unplugged. Minimum `5` minutes. Never wakes the car. |
+| Interval while driving | Options | Default **1 minute** while a car is driving, so trip maps and the speed alert get enough points. Never slower than the update interval. |
+| Speed alert | Per vehicle | The *Speeding* sensor turns on above this speed (km/h). `0` uses the speed limit set in the car, if it is switched on. |
 | ABRP live data | Per vehicle | Optional. Needs only that car's ABRP *Generic* token — no API key. |
 | Low tariff | Options | Optional home low-tariff price, start/end time (e.g. 22:00–06:00) and "all day on weekends" (two-rate tariffs such as MT/VT). Home sessions are split by time between the two prices. |
 | Charging tariffs | Options | Price per kWh for **home**, **public AC** and **public DC**. A session counts as home when it starts inside your Home zone; DC when the car reports a DC cable or charges above 22 kW. Leave 0 to skip costs. Prices apply to sessions from then on. |
@@ -294,6 +300,19 @@ copied to every car — set it on the intended vehicle.
   exact start and end times and to catch short trips. Trips and sessions are
   stored locally in Home Assistant and survive restarts.
   Regenerated energy is not estimated — polling is too coarse for regen bursts.
+- **Trip map** draws the route from the location history Home Assistant
+  already records for the car's device tracker (and the speed sensor for the
+  colours); the integration stores no extra location data. Points come once
+  per update, so the line connects them straight. If Home Assistant's map
+  cannot load, the card draws the route without a background map.
+- **Speeding** is checked once per update, so it catches sustained speeding,
+  not short bursts. Setting the car's own speed limit from Home Assistant is
+  not supported (no verified command).
+- **Charge limit on the T03** is sent like LeapConnect does (leapmotor-api
+  0.6.0): command 190 built from the cloud's charging schedule, range
+  50–100 % in steps of 5. If the car does not confirm it, it is sent once
+  more — the same value twice is harmless. Switching the T03 charging
+  schedule on or off stays unsupported.
 - **Battery health** needs at least three days with a full (100 %) charge.
 - **Trip comparison** keeps approximate trip start and end points (rounded to
   about 100 m) in Home Assistant's local storage, only to find similar trips.
@@ -454,6 +473,7 @@ Import a ready-made automation with one click, then pick your car's entities:
 | **Car left unlocked** — notify, optionally lock automatically | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fsabotin%2Fleapmotor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fleft_unlocked.yaml) |
 | **Plug-in reminder** — evening reminder when home, low and unplugged | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fsabotin%2Fleapmotor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fplug_in_reminder.yaml) |
 | **Attention, tires & maintenance** — alerts with the reason | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fsabotin%2Fleapmotor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fattention_alert.yaml) |
+| **Speeding alert** — speed and limit on your phone | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fsabotin%2Fleapmotor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fspeed_alert.yaml) |
 
 <br>
 

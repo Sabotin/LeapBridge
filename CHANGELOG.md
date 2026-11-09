@@ -1,5 +1,35 @@
 # Changelog
 
+## Unreleased — trip map, speed limit, live car picture, T03 charge limit
+
+- **Trip map:** a new card section draws each trip on Home Assistant's map with
+  dark tiles, coloured by speed against your limit. Tap a trip in the trip log
+  to show it; the live trip updates every minute. It uses the location and
+  speed history the recorder already keeps; no extra location data is stored.
+  Without Home Assistant's map (or with `map: drawn`) the route is drawn on
+  the night-sky background instead.
+- **Faster polling while driving:** new option *Update interval while driving*
+  (default 1 minute) so maps, trips and the speed alert get enough points.
+- **Speed limit:** a *Speeding* binary sensor (your per-vehicle *Speed alert*
+  in km/h, or the car's own limit when it is switched on), a red *Too fast*
+  chip and a speed-limit cell on the card, top speed and minutes above the
+  limit per trip, and a *Speeding alert* blueprint.
+- **Live car picture:** the car on the card shows open doors, trunk, windows
+  and sunroof, low tires, an unlocked ring, climate heating or cooling, sentry,
+  motion and headlights while driving, and a battery bar while plugged in.
+  The image entity lists the files in the official picture package
+  (`package_images`) for future state renders.
+- **Charge limit on the T03,** ported from LeapConnect (leapmotor-api 0.6.0):
+  command 190 is built from the cloud's charging schedule, keeping every field
+  it returns, 50–100 % in steps of 5. An unconfirmed command is sent once
+  more (the same value twice is harmless). The card's charging panel has − / +
+  buttons for the limit. Switching the T03 schedule on or off stays off.
+- **Quick buttons on the first page:** lock/unlock, quick heat, quick cool and
+  open/close windows under the battery (double-tap to confirm; card option
+  `quick_actions`).
+- Charge-limit errors now use the same clear, translated messages as the
+  buttons.
+
 ## Unreleased — remote commands survive an expired session
 
 - **Fix:** *Preheat cabin* (and every other remote command) failed with

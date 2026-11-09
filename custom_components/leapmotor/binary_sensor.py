@@ -382,6 +382,17 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[LeapmotorBinarySensorEntityDescription, ...] =
         extra_attrs_fn=lambda data: {"reasons": _an(data, "attention", "reasons") or []},
     ),
     LeapmotorBinarySensorEntityDescription(
+        key="speeding",
+        translation_key="speeding",
+        device_class=BinarySensorDeviceClass.PROBLEM,
+        icon="mdi:speedometer-medium",
+        value_fn=lambda data: (data.get("speed_alert") or {}).get("speeding"),
+        extra_attrs_fn=lambda data: {
+            key: (data.get("speed_alert") or {}).get(key)
+            for key in ("speed_kmh", "threshold_kmh", "threshold_source")
+        },
+    ),
+    LeapmotorBinarySensorEntityDescription(
         key="tire_pressure_warning",
         translation_key="tire_pressure_warning",
         device_class=BinarySensorDeviceClass.PROBLEM,

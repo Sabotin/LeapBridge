@@ -13,6 +13,7 @@ CONF_ABRP_ENABLED = "abrp_enabled"
 CONF_ABRP_TOKEN = "abrp_token"
 CONF_ECO_POLLING_ENABLED = "eco_polling_enabled"
 CONF_ECO_SCAN_INTERVAL = "eco_scan_interval"
+CONF_DRIVING_SCAN_INTERVAL = "driving_scan_interval"
 CONF_DEVICE_ID = "device_id"
 CONF_OPERATION_PASSWORD = "operation_password"
 CONF_SCAN_INTERVAL = "scan_interval"
@@ -38,6 +39,7 @@ CONF_PRECONDITION_THRESHOLD = "precondition_cool_above"
 DEFAULT_PRECOOL_TEMPERATURE = 18
 DEFAULT_PRECOOL_FAN = 7
 DEFAULT_PRECONDITION_THRESHOLD = 20
+CONF_SPEED_ALERT = "speed_alert_kmh"
 #: Factory vehicle PIN; prefilled in setup and vehicle settings, changeable.
 DEFAULT_OPERATION_PASSWORD = "0000"
 CONF_SHOW_PANEL = "show_sidebar_panel"
@@ -65,6 +67,8 @@ DEFAULT_OPERPWD_AES_KEY = "f1cf0c025baec0e2"
 DEFAULT_OPERPWD_AES_IV = "6b6a1fe94e133fd7"
 DEFAULT_SCAN_INTERVAL_MINUTES = 5
 DEFAULT_ECO_SCAN_INTERVAL_MINUTES = 15
+#: Faster polling while a car is driving, so trip maps get a usable route.
+DEFAULT_DRIVING_SCAN_INTERVAL_MINUTES = 1
 DEFAULT_STATE_STALE_SECONDS = 900
 REMOTE_ACTION_COOLDOWN_SECONDS = 10
 VEHICLE_ABILITY_UNLOCK_CHARGE_GUN = 53

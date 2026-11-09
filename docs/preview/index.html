@@ -25,6 +25,7 @@
     <a href="?state=charging">Charging · night</a>
     <a href="?state=parked&scene=day">Parked · day</a>
     <a href="?state=attention">Needs attention</a>
+    <a href="?state=driving">Driving · too fast</a>
     <span>Language</span>
     <a href="?lang=en">EN</a><a href="?lang=sl">SL</a><a href="?lang=de">DE</a>
   </nav>
@@ -46,6 +47,7 @@
     const iso = (t) => new Date(t).toISOString();
     const charging = scenario === "charging";
     const attention = scenario === "attention";
+    const driving = scenario === "driving";
 
     /* ---------- 24 h timeline (hours ago) ---------- */
     const events = [
@@ -97,7 +99,7 @@
     add("sensor.c10_precise_battery", "battery_percent_precise", soc, u("%"));
     add("sensor.c10_range", "remaining_range_km", Math.round(soc * 4.45), u("km"));
     add("sensor.c10_odometer", "odometer_km", Math.round(odo), u("km"));
-    add("sensor.c10_speed", "speed_kmh", 0, u("km/h"));
+    add("sensor.c10_speed", "speed_kmh", driving ? 128 : 0, u("km/h"));
     add("sensor.c10_gear", "gear", "P", meta);
     add("sensor.c10_interior_temperature", "interior_temp_c", scene === "day" ? 17.5 : 11.5, u("°C"));
     add("sensor.c10_outdoor_temperature", "outdoor_temp_c", scene === "day" ? 9.4 : 2.8, u("°C"));
@@ -108,7 +110,7 @@
     add("sensor.c10_charging_current", "charging_current_a", charging ? -15.6 : 0, u("A"));
     add("sensor.c10_charging_voltage", "charging_voltage_v", charging ? 401 : 0, u("V"));
     add("sensor.c10_charging_connection", "charging_connection_state", charging ? "charging" : "unplugged", meta);
-    add("sensor.c10_vehicle_state", "vehicle_state", "parked", meta);
+    add("sensor.c10_vehicle_state", "vehicle_state", driving ? "driving" : "parked", meta);
     add("sensor.c10_last_vehicle_update", "last_vehicle_update", iso(now - 3 * MIN), meta);
     add("sensor.c10_last_7_days_mileage", "last_7_days_mileage_km", km.reduce((a, b) => a + b, 0), u("km", { daily_detail: daily }));
     add("sensor.c10_six_week_average_consumption", "average_consumption_6w_kwh_100km", 15.8, u("kWh/100 km"));
@@ -122,15 +124,21 @@
     add("sensor.c10_rear_right_tire_pressure", "tire_pressure_rear_right_bar", 2.4, u("bar"));
     add("binary_sensor.c10_charging", "is_charging", charging ? "on" : "off", meta);
     add("binary_sensor.c10_charge_cable_plugged_in", "is_plugged_in", charging ? "on" : "off", meta);
-    add("binary_sensor.c10_is_driving", "is_driving", "off", meta);
+    add("binary_sensor.c10_is_driving", "is_driving", driving ? "on" : "off", meta);
     add("binary_sensor.c10_driver_door", "driver_door_open", attention ? "on" : "off", meta);
     add("binary_sensor.c10_passenger_door", "passenger_door_open", "off", meta);
     add("binary_sensor.c10_rear_left_door", "rear_left_door_open", "off", meta);
     add("binary_sensor.c10_rear_right_door", "rear_right_door_open", "off", meta);
-    add("binary_sensor.c10_trunk", "trunk_open", "off", meta);
+    add("binary_sensor.c10_trunk", "trunk_open", attention ? "on" : "off", meta);
     for (const w of ["front_left", "front_right", "rear_left", "rear_right"]) add(`binary_sensor.c10_${w}_window`, `${w}_window_open`, "off", meta);
     add("binary_sensor.c10_skylight_open", "skylight_open", "off", meta);
-    add("binary_sensor.c10_climate", "climate_on", "off", meta);
+    add("binary_sensor.c10_climate", "climate_on", driving || attention ? "on" : "off", meta);
+    add("sensor.c10_climate_mode", "climate_mode", driving || attention ? "fast_heat" : "off", meta);
+    add("sensor.c10_speed_limit", "speed_limit_kmh", 120, u("km/h"));
+    add("binary_sensor.c10_speed_limit_active", "speed_limit_enabled", "on", meta);
+    add("binary_sensor.c10_speeding", "speeding", driving ? "on" : "off",
+      { ...meta, device_class: "problem", speed_kmh: driving ? 128 : 0, threshold_kmh: 120, threshold_source: "vehicle" });
+    add("number.c10_charge_limit_setting", "charge_limit_setting", 90, { ...meta, min: 50, max: 100, step: 5, unit_of_measurement: "%" });
     add("lock.c10_lock", "vehicle_lock", attention ? "unlocked" : "locked", meta);
     add("device_tracker.c10_location", "location", scenario === "parked" ? "not_home" : "home", { ...meta, latitude: 46.05, longitude: 14.5 });
     add("switch.c10_climate", "climate_control", "off", meta);
@@ -157,7 +165,8 @@
       trip(39.6, 38.7, 32.2, 5.4, 89, 81, 112),
       trip(48.9, 48.6, 4.1, 0.9, 92, 91, 54),
     ];
-    const tAttrs = { ...meta, unit_of_measurement: "km", ...recent[0], recent_trips: recent, current_trip: null };
+    const live = driving ? { start: iso(now - 26 * MIN), end: iso(now - MIN), distance_km: 31.4, duration_min: 25 } : null;
+    const tAttrs = { ...meta, unit_of_measurement: "km", ...recent[0], recent_trips: recent, current_trip: live };
     delete tAttrs.distance_km;
     add("sensor.c10_last_trip_distance", "last_trip_distance_km", recent[0].distance_km, tAttrs);
     add("sensor.c10_last_trip_consumption", "last_trip_consumption_kwh_100km", recent[0].consumption_kwh_100km, u("kWh/100 km"));
@@ -209,6 +218,23 @@
       "sensor.c10_odometer": series.odometer, "binary_sensor.c10_charging": series.charging, "binary_sensor.c10_is_driving": series.driving,
     };
 
+    /* ---------- GPS route and speed for the trip map (synthetic, around Ljubljana) ---------- */
+    const route = { "device_tracker.c10_location": [], "sensor.c10_speed": [] };
+    const drive = (t0, t1, from, to, bend, seed) => {
+      const n = 34;
+      for (let i = 0; i <= n; i++) {
+        const k = i / n, t = t0 + (t1 - t0) * k;
+        const lat = from[0] + (to[0] - from[0]) * k + Math.sin(k * Math.PI) * bend + Math.sin(k * 9 + seed) * 0.0035;
+        const lon = from[1] + (to[1] - from[1]) * k + Math.sin(k * 6 + seed) * 0.006;
+        const v = k < 0.18 || k > 0.86 ? 38 + 14 * Math.sin(k * 30) : 104 + 20 * Math.sin(k * 7 + seed);
+        route["device_tracker.c10_location"].push({ s: "not_home", a: { latitude: +lat.toFixed(6), longitude: +lon.toFixed(6) }, lu: t / 1000 });
+        route["sensor.c10_speed"].push({ s: String(Math.max(0, Math.round(v))), lu: t / 1000 });
+      }
+    };
+    drive(now - 6.2 * HOUR, now - 5.3 * HOUR, [46.0569, 14.5058], [46.2397, 14.3556], 0.012, 1);
+    drive(now - 15.5 * HOUR, now - 14.6 * HOUR, [46.2397, 14.3556], [46.0569, 14.5058], -0.01, 4);
+    if (driving) drive(now - 26 * MIN, now - MIN, [46.0569, 14.5058], [45.9606, 14.6589], 0.008, 2.5);
+
     const hass = {
       states: S,
       entities: E,
@@ -218,7 +244,12 @@
       callWS: async (msg) => {
         if (msg.type !== "history/history_during_period") return {};
         const out = {};
+        const from = Date.parse(msg.start_time) / 1000, to = Date.parse(msg.end_time) / 1000;
         for (const id of msg.entity_ids) {
+          if (route[id]) {
+            out[id] = route[id].filter((st) => st.lu >= from && st.lu <= to);
+            continue;
+          }
           const s = histIds[id];
           if (!s) continue;
           let last;

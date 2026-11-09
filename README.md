@@ -23,8 +23,11 @@
 
 - 🔋 **Stanje vozila** — baterija, doseg, ključavnica, vrata, okna, pnevmatike, lokacija
 - 🔥 **Predgretje in hlajenje** — en dotik: ogrej (22 °C) ali ohladi s klimo (18 °C), ventilator 7, kroženje zraka; ali **samodejno** glede na zunanjo temperaturo
-- ⚡ **Polnjenje in stroški** — vsako polnjenje s ceno za dom, javno AC in DC, tudi **nizka tarifa** (MT/VT)
+- ⚡ **Polnjenje in stroški** — **meja polnjenja** (tudi na T03), vsako polnjenje s ceno za dom, javno AC in DC, tudi **nizka tarifa** (MT/VT)
 - 🛣️ **Dnevnik voženj** — razdalja, poraba in strošek vsake vožnje ter primerjava z običajnimi vožnjami
+- 🗺️ **Zemljevid vožnje** — pot vsake vožnje, obarvana po hitrosti
+- 🚦 **Omejitev hitrosti** — opozorilo, ko voziš hitreje od svoje meje ali omejitve v avtu
+- 🚗 **Živa slika avta** — pokaže odprta vrata, prtljažnik in okna, klimo, polnjenje in vožnjo
 - 🔧 **Vzdrževanje** — tovarniški servisni načrt za T03, B10, C10 in C10 REEV
 - 💡 **Vpogledi** — zdravje baterije, praznjenje med parkiranjem, opozorilo, ko pnevmatika počasi pušča
 - 🎛️ **Daljinsko upravljanje** — zaklepanje, prtljažnik, okna, stražarski način, polnjenje …
@@ -70,6 +73,7 @@ Ročna namestitev brez HACS in vse podrobnosti: **[navodila v slovenščini](doc
       <br><br>
       Kartico lahko dodaš tudi na svojo nadzorno ploščo: <b>Dodaj kartico → Leapmotor</b> ali
       <pre>type: custom:leapmotor-card</pre>
+      Takoj pod baterijo so hitri gumbi: <b>Zakleni/Odkleni</b>, <b>Hitro gretje</b>, <b>Hitro hlajenje</b> in <b>Odpri/Zapri okna</b>.<br><br>
       Na telefonu se kartica sama preuredi v en stolpec. Ponoči je nočno nebo, podnevi dnevno, med polnjenjem pa se ob avtu prižge polnilnica.
       <br><br>
       Če kartice ne najde, enkrat osveži brskalnik (<b>Ctrl + F5</b>).
@@ -104,8 +108,8 @@ Pri **Vzdrževanju** po servisu dvakrat tapni **Opravljeno** in rok se začne zn
 | Kaj | Kje |
 | --- | --- |
 | Cena polnjenja doma, javno AC in DC, nizka tarifa | **Leapmotor → Nastavi** (zobnik pri računu) |
-| PIN, predgretje, hlajenje, kapaciteta baterije | pri **vozilu** pod računom → **Nastavi** |
-| Natančen dnevnik voženj | interval posodabljanja na **1 minuto** |
+| PIN, predgretje, hlajenje, kapaciteta baterije, opozorilo na hitrost | pri **vozilu** pod računom → **Nastavi** |
+| Pogostost med vožnjo (za zemljevid) | **Leapmotor → Nastavi**, privzeto **1 minuta** |
 | Leapmotor v stranski vrstici (vklop/izklop) | **Leapmotor → Nastavi** |
 | Jezik | klikni svoje ime spodaj levo → **Jezik** |
 
@@ -120,6 +124,7 @@ Pri **Vzdrževanju** po servisu dvakrat tapni **Opravljeno** in rok se začne zn
 | 🔓 **Avto ostal odklenjen** — obvestilo ali samodejno zaklepanje | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapmotor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fleft_unlocked.yaml) |
 | 🔌 **Opomnik za polnjenje** — zvečer, ko je baterija nizka | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapmotor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fplug_in_reminder.yaml) |
 | ⚠️ **Opozorila** — vrata, okna, pnevmatike, servis | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapmotor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fattention_alert.yaml) |
+| 🚦 **Prehitra vožnja** — hitrost in omejitev na telefon | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapmotor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fspeed_alert.yaml) |
 
 <br>
 

@@ -1,0 +1,40 @@
+blueprint:
+  name: Leapmotor — speeding alert
+  description: >-
+    Notify when the car drives faster than the speed alert set in the vehicle
+    settings, or than the speed limit switched on in the car. Speed is checked
+    on every update (every minute while driving by default), so this catches
+    sustained speeding, not short bursts.
+  domain: automation
+  source_url: https://github.com/sabotin/leapmotor/blob/main/blueprints/automation/leapmotor/speed_alert.yaml
+  input:
+    speeding_sensor:
+      name: Speeding sensor
+      description: The Speeding binary sensor of your Leapmotor.
+      selector:
+        entity:
+          filter:
+            - integration: leapmotor
+              domain: binary_sensor
+              device_class: problem
+    notify_device:
+      name: Phone
+      selector:
+        device:
+          filter:
+            - integration: mobile_app
+mode: single
+max_exceeded: silent
+trigger:
+  - platform: state
+    entity_id: !input speeding_sensor
+    from: "off"
+    to: "on"
+action:
+  - domain: mobile_app
+    type: notify
+    device_id: !input notify_device
+    title: Too fast
+    message: >-
+      {{ state_attr(trigger.entity_id, 'speed_kmh') | int(0) }} km/h,
+      limit {{ state_attr(trigger.entity_id, 'threshold_kmh') | int(0) }} km/h.

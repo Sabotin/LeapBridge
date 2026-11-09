@@ -147,7 +147,8 @@
             "precool_temperature": "Pre-cool temperature",
             "precool_fan_speed": "Pre-cool fan level",
             "precool_recirculate": "Pre-cool with recirculation only",
-            "precondition_cool_above": "Auto: cool when it is warmer than"
+            "precondition_cool_above": "Auto: cool when it is warmer than",
+            "speed_alert_kmh": "Speed alert (km/h)"
           },
           "data_description": {
             "battery_reference_kwh": "Usable capacity of the new battery in kWh, used as 100 % for battery health. Leave 0 to compare against the best capacity measured so far.",
@@ -158,7 +159,8 @@
             "precool_temperature": "A/C target; 18 °C is the lowest.",
             "precool_fan_speed": "1–7; 7 is maximum.",
             "precool_recirculate": "Cool cabin air only for faster cooling.",
-            "precondition_cool_above": "The auto button cools at or above this outside temperature and heats below it."
+            "precondition_cool_above": "The auto button cools at or above this outside temperature and heats below it.",
+            "speed_alert_kmh": "The Speeding sensor turns on above this speed. 0 uses the speed limit set in the car, if it is switched on."
           }
         },
         "reconfigure": {
@@ -176,7 +178,8 @@
             "precool_temperature": "Pre-cool temperature",
             "precool_fan_speed": "Pre-cool fan level",
             "precool_recirculate": "Pre-cool with recirculation only",
-            "precondition_cool_above": "Auto: cool when it is warmer than"
+            "precondition_cool_above": "Auto: cool when it is warmer than",
+            "speed_alert_kmh": "Speed alert (km/h)"
           },
           "data_description": {
             "battery_reference_kwh": "Usable capacity of the new battery in kWh, used as 100 % for battery health. Leave 0 to compare against the best capacity measured so far.",
@@ -187,7 +190,8 @@
             "precool_temperature": "A/C target; 18 °C is the lowest.",
             "precool_fan_speed": "1–7; 7 is maximum.",
             "precool_recirculate": "Cool cabin air only for faster cooling.",
-            "precondition_cool_above": "The auto button cools at or above this outside temperature and heats below it."
+            "precondition_cool_above": "The auto button cools at or above this outside temperature and heats below it.",
+            "speed_alert_kmh": "The Speeding sensor turns on above this speed. 0 uses the speed limit set in the car, if it is switched on."
           }
         }
       },
@@ -634,6 +638,9 @@
       },
       "maintenance_due": {
         "name": "Maintenance due"
+      },
+      "speeding": {
+        "name": "Speeding"
       }
     },
     "image": {
@@ -783,7 +790,8 @@
           "low_tariff_start": "Low tariff starts",
           "low_tariff_end": "Low tariff ends",
           "low_tariff_weekends": "Low tariff all day on weekends",
-          "show_sidebar_panel": "Show the Leapmotor dashboard in the sidebar"
+          "show_sidebar_panel": "Show the Leapmotor dashboard in the sidebar",
+          "driving_scan_interval": "Update interval while driving (minutes)"
         },
         "data_description": {
           "eco_polling_enabled": "Use the slower eco interval only while every vehicle is clearly locked, parked, and unplugged.",
@@ -795,7 +803,8 @@
           "low_tariff_start": "For example 22:00.",
           "low_tariff_end": "For example 06:00. Overnight windows are supported.",
           "low_tariff_weekends": "Common for two-rate tariffs such as the Slovenian MT/VT.",
-          "show_sidebar_panel": "Adds a Leapmotor entry to the sidebar with the full dashboard. Turn off to hide it."
+          "show_sidebar_panel": "Adds a Leapmotor entry to the sidebar with the full dashboard. Turn off to hide it.",
+          "driving_scan_interval": "Polls this often while a car is driving, so trip maps and the speed alert get more points. It is never slower than the normal interval."
         }
       }
     },

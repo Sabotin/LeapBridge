@@ -27,12 +27,14 @@ from .const import (
     CONF_ABRP_ENABLED,
     CONF_ABRP_TOKEN,
     CONF_DEVICE_ID,
+    CONF_DRIVING_SCAN_INTERVAL,
     CONF_ECO_POLLING_ENABLED,
     CONF_ECO_SCAN_INTERVAL,
     CONF_OPERATION_PASSWORD,
     CONF_SCAN_INTERVAL,
     CONF_VIN,
     DEFAULT_SCAN_INTERVAL_MINUTES,
+    DEFAULT_DRIVING_SCAN_INTERVAL_MINUTES,
     DEFAULT_ECO_SCAN_INTERVAL_MINUTES,
     DOMAIN,
     STATIC_CERT_STORAGE_DIR,
@@ -44,7 +46,9 @@ from .lock import LOCK_ACTION, UNLOCK_ACTION
 from .remote_helpers import (
     RemoteActionSpec,
     async_execute_remote_action,
+    failure_starts_cooldown,
     format_remote_error,
+    remote_action_error,
     resolve_target_vin,
 )
 from .vehicle_config import legacy_config_value, vehicle_subentries
@@ -323,6 +327,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             entry_data.get(CONF_ECO_SCAN_INTERVAL, DEFAULT_ECO_SCAN_INTERVAL_MINUTES),
         )
     )
+    driving_scan_interval = int(
+        entry.options.get(CONF_DRIVING_SCAN_INTERVAL, DEFAULT_DRIVING_SCAN_INTERVAL_MINUTES)
+    )
     operation_password = (
         entry.options[CONF_OPERATION_PASSWORD]
         if CONF_OPERATION_PASSWORD in entry.options
@@ -349,6 +356,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
         ),
         eco_update_interval=timedelta(minutes=max(eco_scan_interval, scan_interval)),
+        driving_update_interval=timedelta(minutes=driving_scan_interval),
     )
     await coordinator.async_load_location_signs()
     await coordinator.async_load_analytics()
@@ -572,8 +580,9 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 "set_charge_limit",
                 success=False,
                 error=message,
+                cooldown=failure_starts_cooldown(exc),
             )
-            raise HomeAssistantError(message) from exc
+            raise remote_action_error(exc) from exc
 
         coordinator.record_remote_action(
             target_vin,

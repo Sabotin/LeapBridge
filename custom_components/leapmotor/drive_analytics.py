@@ -469,6 +469,36 @@ def next_low_tariff_start(now_ts: float, band: dict[str, Any] | None, tz: tzinfo
     return None
 
 
+# --- Speed alert --------------------------------------------------------------
+
+
+def speed_alert(vehicle: dict[str, Any], threshold_kmh: float | None) -> dict[str, Any]:
+    """Is the car faster than the user's alert speed or its own speed limit?
+
+    The user's threshold wins; without one, the speed limit the car reports as
+    switched on is used. Speed is sampled once per poll, so this catches
+    sustained speeding, not short bursts.
+    """
+    status = vehicle.get("status") or {}
+    diagnostics = vehicle.get("diagnostics") or {}
+    speed = _num(status.get("speed_kmh"))
+    source = None
+    threshold = _num(threshold_kmh)
+    if threshold is not None and threshold > 0:
+        source = "setting"
+    else:
+        car_limit = _num(diagnostics.get("speed_limit_kmh"))
+        threshold = None
+        if diagnostics.get("speed_limit_enabled") is True and car_limit and car_limit > 0:
+            threshold, source = car_limit, "vehicle"
+    return {
+        "speeding": bool(threshold is not None and speed is not None and speed > threshold),
+        "speed_kmh": speed,
+        "threshold_kmh": threshold,
+        "threshold_source": source,
+    }
+
+
 # --- Trip comparison (LeapConnect similarity) ---------------------------------
 
 SIMILAR_SCORE = 0.75

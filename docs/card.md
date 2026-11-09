@@ -49,14 +49,16 @@ or pick just the parts you want with `sections` (see below).
 | --- | --- | --- |
 | `device_id` | first Leapmotor | Which vehicle to show when you have more than one. The visual editor offers a picker. |
 | `name` | `Leapmotor <model>` | Title shown in the hero. |
-| `sections` | all | Any of `hero`, `check`, `chart`, `week`, `charging`, `energy`, `trips`, `maintenance`, `insights`, `controls`. Order is fixed; the list picks what is shown. |
+| `sections` | all | Any of `hero`, `check`, `chart`, `week`, `charging`, `energy`, `trips`, `map`, `maintenance`, `insights`, `controls`. Order is fixed; the list picks what is shown. |
 | `scene` | `auto` | `auto` follows `sun.sun` (day sky / night sky), or force `night` / `day`. |
 | `language` | `auto` | `auto` follows your profile. Built in: `en`, `sl`, `de`. |
 | `confirm_actions` | `true` | Remote actions need a second tap within 4 seconds. |
 | `backdrop` | `true` | Dark rounded backdrop behind the panels, so the card looks right on light themes too. |
 | `show_image` | `true` | Show **your own car**: the official render of your model and colour that the integration downloads from the Leapmotor cloud (`image.<model>_vehicle_picture`). Falls back to a drawn silhouette until it is available. |
 | `image` | – | Your own picture URL (a transparent PNG works best). |
-| `image_flip` | `false` | Mirror the car picture if it faces the other way. |
+| `image_flip` | `false` | Mirror the car picture if it faces the other way. The state markers (doors, trunk, tires) assume the car faces right. |
+| `quick_actions` | `true` | Quick buttons under the battery on the first page: lock/unlock, quick heat, quick cool and open/close windows (same double-tap confirm as the remote-control panel). |
+| `map` | `auto` | `auto` draws trips on Home Assistant's own map (dark tiles); `drawn` always uses the map-less route drawing. |
 | `entity_prefix` | – | Only needed if auto-discovery fails, e.g. `c10` for `sensor.c10_battery`. |
 | `entities` | – | Override single entities, e.g. `{ battery: sensor.my_battery }`. Keys match the card's internal names (`battery`, `range`, `lock`, `tracker`, …). |
 
@@ -83,15 +85,16 @@ confirm_actions: false
 
 | Panel | Contents |
 | --- | --- |
-| **Hero** | Night or day scene with your car, wallbox and animated cable while plugged in. State of charge, lock and driving state, location, range, inside temperature and a metric strip (outside/inside temperature, odometer, charge limit, speed, consumption, data age). |
+| **Hero** | Night or day scene with your car, wallbox and animated cable while plugged in. The car shows its state: open doors, trunk, windows and sunroof, low tires, an amber ring when unlocked, a warm or cool glow while the climate runs, sentry, motion and headlights while driving, and a battery bar while plugged in. State of charge, lock and driving state (red *Too fast* chip above the speed limit), quick buttons (lock/unlock, quick heat, quick cool, open/close windows), location, range, inside temperature and a metric strip (outside/inside temperature, odometer, charge limit, speed, speed limit, consumption, data age). |
 | **Vehicle check** | One glance answer: *All secure* or *Needs attention*. Lock, doors, windows and sunroof, trunk, tire pressure, battery and data freshness, with Lock/Unlock and Find car buttons. |
 | **Last 24 hours** | Battery, range or charging power from the recorder, with charging and driving periods shaded and an icon for what the car was doing every three hours. |
 | **Last 7 days** | Kilometres per day from the Leapmotor cloud, with energy and consumption per day. |
-| **Charging** | Arc from 0 to 100 % with the charge limit, power, current and voltage, finish time and remaining time. Below it: the last charging session (energy, home/public, cost) and this month's energy and cost. |
+| **Charging** | Arc from 0 to 100 % with the charge limit and − / + buttons to change it (taps are collected, then one command is sent), power, current and voltage, finish time and remaining time. Below it: the last charging session (energy, home/public, cost) and this month's energy and cost. |
 | **Energy & tires** | Six-week average consumption on an efficiency scale, four tire pressures, battery health and last week's driving/climate/other split. |
 | **Maintenance** | The next six service items with status (OK / soon / overdue), km and days left, a progress bar and a **Done** button (tap twice) that logs the service. |
 | **Insights** | Driving cost this month and per 100 km, parked drain, last trip vs. your usual, tire status and consumption by outside temperature. |
-| **Trip log** | Recent drives with time, distance, duration, energy, consumption (colour-coded), battery used and average speed; a live row while driving; today's and this month's totals. |
+| **Trip log** | Recent drives with time, distance, duration, energy, consumption (colour-coded), battery used and average speed; a live row while driving; today's and this month's totals. Tap a trip to show it on the map. |
+| **Trip map** | The selected trip (or the live one) on a dark map, coloured by speed: blue below the limit, amber close to it, red above (without a limit: up to 50, 50–90, over 90 km/h). Top and average speed, the limit and minutes above it. Built from the device tracker and speed history in the recorder. |
 | **Remote control** | Preheat cabin, pre-cool cabin and auto pre-condition (with your presets), climate, quick heat/cool, defrost, battery preheat, steering wheel and mirror heating, charge schedule, start/stop charging, sentry mode, healthy charging, trunk, windows, sunshade, sunroof, cable release and find car — only the ones your car supports. |
 
 Click any value to open Home Assistant's detail dialog for that entity.

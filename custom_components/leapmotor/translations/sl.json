@@ -147,7 +147,8 @@
             "precool_temperature": "Temperatura hlajenja",
             "precool_fan_speed": "Moč ventilatorja pri hlajenju",
             "precool_recirculate": "Hlajenje samo s kroženjem zraka",
-            "precondition_cool_above": "Samodejno: hladi, ko je topleje od"
+            "precondition_cool_above": "Samodejno: hladi, ko je topleje od",
+            "speed_alert_kmh": "Opozorilo na hitrost (km/h)"
           },
           "data_description": {
             "battery_reference_kwh": "Uporabna kapaciteta nove baterije v kWh, ki se šteje kot 100 % pri zdravju baterije. Pusti 0 za primerjavo z najboljšo doslej izmerjeno kapaciteto.",
@@ -158,7 +159,8 @@
             "precool_temperature": "Ciljna temperatura klime; 18 °C je najnižja.",
             "precool_fan_speed": "1–7; 7 je največ.",
             "precool_recirculate": "Hladi le zrak v kabini za hitrejše hlajenje.",
-            "precondition_cool_above": "Samodejni gumb hladi pri tej zunanji temperaturi ali višji, pod njo greje."
+            "precondition_cool_above": "Samodejni gumb hladi pri tej zunanji temperaturi ali višji, pod njo greje.",
+            "speed_alert_kmh": "Senzor Prehitra vožnja se vklopi nad to hitrostjo. 0 uporabi omejitev hitrosti, nastavljeno v avtu, če je vklopljena."
           }
         },
         "reconfigure": {
@@ -176,7 +178,8 @@
             "precool_temperature": "Temperatura hlajenja",
             "precool_fan_speed": "Moč ventilatorja pri hlajenju",
             "precool_recirculate": "Hlajenje samo s kroženjem zraka",
-            "precondition_cool_above": "Samodejno: hladi, ko je topleje od"
+            "precondition_cool_above": "Samodejno: hladi, ko je topleje od",
+            "speed_alert_kmh": "Opozorilo na hitrost (km/h)"
           },
           "data_description": {
             "battery_reference_kwh": "Uporabna kapaciteta nove baterije v kWh, ki se šteje kot 100 % pri zdravju baterije. Pusti 0 za primerjavo z najboljšo doslej izmerjeno kapaciteto.",
@@ -187,7 +190,8 @@
             "precool_temperature": "Ciljna temperatura klime; 18 °C je najnižja.",
             "precool_fan_speed": "1–7; 7 je največ.",
             "precool_recirculate": "Hladi le zrak v kabini za hitrejše hlajenje.",
-            "precondition_cool_above": "Samodejni gumb hladi pri tej zunanji temperaturi ali višji, pod njo greje."
+            "precondition_cool_above": "Samodejni gumb hladi pri tej zunanji temperaturi ali višji, pod njo greje.",
+            "speed_alert_kmh": "Senzor Prehitra vožnja se vklopi nad to hitrostjo. 0 uporabi omejitev hitrosti, nastavljeno v avtu, če je vklopljena."
           }
         }
       },
@@ -634,6 +638,9 @@
       },
       "maintenance_due": {
         "name": "Servis kmalu"
+      },
+      "speeding": {
+        "name": "Prehitra vožnja"
       }
     },
     "image": {
@@ -783,7 +790,8 @@
           "low_tariff_start": "Nizka tarifa se začne",
           "low_tariff_end": "Nizka tarifa se konča",
           "low_tariff_weekends": "Nizka tarifa ves dan ob vikendih",
-          "show_sidebar_panel": "Prikaži nadzorno ploščo Leapmotor v stranski vrstici"
+          "show_sidebar_panel": "Prikaži nadzorno ploščo Leapmotor v stranski vrstici",
+          "driving_scan_interval": "Interval posodabljanja med vožnjo (minute)"
         },
         "data_description": {
           "eco_polling_enabled": "Počasnejši varčni interval uporabi le, ko so vsa vozila zanesljivo zaklenjena, parkirana in odklopljena.",
@@ -795,7 +803,8 @@
           "low_tariff_start": "Na primer 22:00.",
           "low_tariff_end": "Na primer 06:00. Okno čez polnoč je podprto.",
           "low_tariff_weekends": "Običajno pri dvotarifnem merjenju (MT/VT).",
-          "show_sidebar_panel": "Doda vnos Leapmotor v stransko vrstico s celotno nadzorno ploščo. Izklopi, če ga želiš skriti."
+          "show_sidebar_panel": "Doda vnos Leapmotor v stransko vrstico s celotno nadzorno ploščo. Izklopi, če ga želiš skriti.",
+          "driving_scan_interval": "Med vožnjo poizveduje tako pogosto, da imata zemljevid vožnje in opozorilo na hitrost več točk. Nikoli ni počasnejši od običajnega intervala."
         }
       }
     },
