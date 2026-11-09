@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased — stage 1 of the LeapConnect port
+
+- **Licence:** the project is now GNU AGPL-3.0, because it includes code
+  ported from LeapConnect. The original MIT notice of leapmotor-ha is kept in
+  `NOTICE.md`.
+- **Trip log:** drives are detected from each poll with LeapConnect's
+  segmentation and merge rules (explicit parks at segment boundaries also end
+  a trip, to suit minute-level polling). New sensors: last trip distance and
+  consumption, distance today, distance this month; recent trips as attributes.
+- **Charging sessions and costs:** sessions are detected from the charging
+  flag, classified as home, public AC or public DC, and priced with new tariff
+  options. New sensors: last session energy and cost, charging cost this
+  month, charged energy this month.
+- **Battery health:** LeapConnect's state-of-health estimate from daily
+  full-charge readings, with an optional usable-capacity reference per vehicle.
+- Analytics are stored locally and survive restarts; no coordinates are kept.
+- Setup and options validate the certificate pair and say which file is wrong.
+- Dashboard card: new Trip log panel, charging costs and battery health.
+
 ## Unreleased — sabotin/leapmotor redesign
 
 - New built-in dashboard card (`type: custom:leapmotor-card`), served and

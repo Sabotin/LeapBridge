@@ -100,6 +100,27 @@ OPTIONAL_SENSOR_PATHS = {
 }
 
 
+MONETARY_KEYS = {"last_charge_session_cost", "charging_cost_month"}
+DAY_TOTAL_KEYS = {"trips_today_distance_km"}
+MONTH_TOTAL_KEYS = {"trips_month_distance_km", "charging_cost_month", "charged_energy_month_kwh"}
+
+
+def _analytics(data: dict[str, Any], *path: str) -> Any:
+    """Read a value from the trip/charging analysis summary."""
+    current: Any = data.get("analytics") or {}
+    for part in path:
+        if not isinstance(current, dict):
+            return None
+        current = current.get(part)
+    return current
+
+
+def _record_attrs(record: Any, *, skip: str) -> dict[str, Any]:
+    if not isinstance(record, dict):
+        return {}
+    return {k: v for k, v in record.items() if k != skip}
+
+
 @dataclass(frozen=True, kw_only=True)
 class LeapmotorSensorEntityDescription(SensorEntityDescription):
     """Describes a Leapmotor sensor."""
@@ -859,6 +880,105 @@ SENSOR_DESCRIPTIONS: tuple[LeapmotorSensorEntityDescription, ...] = (
             (data.get("notifications") or {}).get("last_message_time")
         ),
     ),
+    # Trip log, charging sessions and battery health (ported from LeapConnect).
+    LeapmotorSensorEntityDescription(
+        key="last_trip_distance_km",
+        translation_key="last_trip_distance_km",
+        native_unit_of_measurement=UnitOfLength.KILOMETERS,
+        device_class=SensorDeviceClass.DISTANCE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        icon="mdi:map-marker-path",
+        value_fn=lambda data: _analytics(data, "last_trip", "distance_km"),
+        extra_attrs_fn=lambda data: {
+            **_record_attrs(_analytics(data, "last_trip"), skip="distance_km"),
+            "current_trip": _analytics(data, "current_trip"),
+            "recent_trips": _analytics(data, "recent_trips") or [],
+        },
+    ),
+    LeapmotorSensorEntityDescription(
+        key="last_trip_consumption_kwh_100km",
+        translation_key="last_trip_consumption_kwh_100km",
+        native_unit_of_measurement=CONSUMPTION_KWH_PER_100KM,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        icon="mdi:car-electric-outline",
+        value_fn=lambda data: _analytics(data, "last_trip", "consumption_kwh_100km"),
+    ),
+    LeapmotorSensorEntityDescription(
+        key="trips_today_distance_km",
+        translation_key="trips_today_distance_km",
+        native_unit_of_measurement=UnitOfLength.KILOMETERS,
+        device_class=SensorDeviceClass.DISTANCE,
+        state_class=SensorStateClass.TOTAL,
+        suggested_display_precision=1,
+        icon="mdi:calendar-today",
+        value_fn=lambda data: _analytics(data, "today", "distance_km"),
+        extra_attrs_fn=lambda data: _record_attrs(_analytics(data, "today"), skip="distance_km"),
+    ),
+    LeapmotorSensorEntityDescription(
+        key="trips_month_distance_km",
+        translation_key="trips_month_distance_km",
+        native_unit_of_measurement=UnitOfLength.KILOMETERS,
+        device_class=SensorDeviceClass.DISTANCE,
+        state_class=SensorStateClass.TOTAL,
+        suggested_display_precision=0,
+        icon="mdi:calendar-month",
+        value_fn=lambda data: _analytics(data, "month", "distance_km"),
+        extra_attrs_fn=lambda data: _record_attrs(_analytics(data, "month"), skip="distance_km"),
+    ),
+    LeapmotorSensorEntityDescription(
+        key="last_charge_session_energy_kwh",
+        translation_key="last_charge_session_energy_kwh",
+        native_unit_of_measurement=ENERGY_KWH,
+        device_class=SensorDeviceClass.ENERGY,
+        suggested_display_precision=2,
+        icon="mdi:ev-station",
+        value_fn=lambda data: _analytics(data, "last_session", "energy_kwh"),
+        extra_attrs_fn=lambda data: {
+            **_record_attrs(_analytics(data, "last_session"), skip="energy_kwh"),
+            "current_session": _analytics(data, "current_session"),
+            "recent_sessions": _analytics(data, "recent_sessions") or [],
+        },
+    ),
+    LeapmotorSensorEntityDescription(
+        key="last_charge_session_cost",
+        translation_key="last_charge_session_cost",
+        device_class=SensorDeviceClass.MONETARY,
+        suggested_display_precision=2,
+        icon="mdi:cash",
+        value_fn=lambda data: _analytics(data, "last_session", "cost"),
+    ),
+    LeapmotorSensorEntityDescription(
+        key="charging_cost_month",
+        translation_key="charging_cost_month",
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        suggested_display_precision=2,
+        icon="mdi:cash-multiple",
+        value_fn=lambda data: _analytics(data, "month_charging", "cost"),
+        extra_attrs_fn=lambda data: _record_attrs(_analytics(data, "month_charging"), skip="cost"),
+    ),
+    LeapmotorSensorEntityDescription(
+        key="charged_energy_month_kwh",
+        translation_key="charged_energy_month_kwh",
+        native_unit_of_measurement=ENERGY_KWH,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL,
+        suggested_display_precision=1,
+        icon="mdi:battery-charging-high",
+        value_fn=lambda data: _analytics(data, "month_charging", "energy_kwh"),
+    ),
+    LeapmotorSensorEntityDescription(
+        key="battery_health_percent",
+        translation_key="battery_health_percent",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        icon="mdi:battery-heart-variant",
+        value_fn=lambda data: _analytics(data, "battery_health", "soh_pct"),
+        extra_attrs_fn=lambda data: _record_attrs(_analytics(data, "battery_health"), skip="soh_pct"),
+    ),
 )
 
 
@@ -884,6 +1004,7 @@ class LeapmotorSensor(CoordinatorEntity[LeapmotorDataUpdateCoordinator], SensorE
     """Leapmotor sensor."""
 
     entity_description: LeapmotorSensorEntityDescription
+    _unrecorded_attributes = frozenset({"recent_trips", "recent_sessions", "current_trip", "current_session"})
 
     def __init__(
         self,
@@ -922,6 +1043,27 @@ class LeapmotorSensor(CoordinatorEntity[LeapmotorDataUpdateCoordinator], SensorE
         if self.entity_description.key in {"remaining_charge_minutes", "charging_finish_time"}:
             return bool(self.vehicle_data["charging"].get("is_charging"))
         return True
+
+    @property
+    def native_unit_of_measurement(self) -> str | None:
+        """Use the Home Assistant currency for charging costs."""
+        if self.entity_description.key in MONETARY_KEYS:
+            hass = getattr(self, "hass", None)
+            return hass.config.currency if hass is not None else None
+        return super().native_unit_of_measurement
+
+    @property
+    def last_reset(self) -> datetime | None:
+        """Daily and monthly totals restart at local midnight / the 1st."""
+        key = self.entity_description.key
+        if key not in DAY_TOTAL_KEYS and key not in MONTH_TOTAL_KEYS:
+            return None
+        period = _analytics(self.vehicle_data, "period") or {}
+        value = period.get("day_start" if key in DAY_TOTAL_KEYS else "month_start")
+        try:
+            return datetime.fromisoformat(value) if value else None
+        except (TypeError, ValueError):
+            return None
 
     @property
     def native_value(self) -> Any:

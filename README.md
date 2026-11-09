@@ -7,12 +7,12 @@
   <img src="https://img.shields.io/badge/Home%20Assistant-2025.3%2B-38bdf8?style=for-the-badge&labelColor=0f1729&logo=homeassistant&logoColor=white" alt="Home Assistant 2025.3+">
   <img src="https://img.shields.io/badge/version-0.7.5-34d399?style=for-the-badge&labelColor=0f1729" alt="Version 0.7.5">
   <img src="https://img.shields.io/badge/jezik-EN%20%C2%B7%20SL-c3cbe0?style=for-the-badge&labelColor=0f1729" alt="English and Slovenian">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-a78bfa?style=for-the-badge&labelColor=0f1729" alt="MIT License"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-a78bfa?style=for-the-badge&labelColor=0f1729" alt="AGPL-3.0 License"></a>
 </p>
 
 <p align="center">
   <b>Your Leapmotor, at home in Home Assistant.</b><br>
-  Battery, charging, doors, windows, tires, trips and remote control —<br>
+  Battery, charging, doors, windows, tires, a trip log, charging costs and remote control —<br>
   plus a built-in night-sky dashboard that installs itself.
 </p>
 
@@ -55,14 +55,14 @@ type: custom:leapmotor-card
       <sub>“All secure” or “Needs attention” at a glance — lock, doors, windows, trunk, tires, battery and data freshness.</sub>
     </td>
     <td width="33%" valign="top">
-      <b>⚡ Charging arc</b><br>
-      <sub>State of charge against your limit, live power, current and voltage, finish time and time remaining.</sub>
+      <b>⚡ Charging &amp; costs</b><br>
+      <sub>State of charge against your limit, live power, finish time — and what the last session and this month cost.</sub>
     </td>
   </tr>
   <tr>
     <td valign="top">
-      <b>📈 Last 24 hours</b><br>
-      <sub>Battery, range or charging power from the recorder, with charging and driving periods shaded.</sub>
+      <b>🛣️ Trip log</b><br>
+      <sub>Every drive with distance, duration, energy, consumption and battery used — plus today's and this month's totals.</sub>
     </td>
     <td valign="top">
       <b>🗓️ Last 7 days</b><br>
@@ -107,6 +107,9 @@ Full options: **[docs/card.md](docs/card.md)**.
 | 🚪 **Body** | Lock, four doors, trunk, four windows with position, panoramic roof, sunshade |
 | 🛞 **Tires** | Pressure for every wheel |
 | 📍 **Location** | GPS device tracker with sign-correction for known backend issues |
+| 🛣️ **Trip log** | Every drive detected automatically: distance, duration, energy, kWh/100 km, average and top speed, battery used. Sensors for the last trip, today and this month |
+| 💶 **Charging costs** | Charging sessions detected automatically and priced with your tariffs for home, public AC and public DC. Sensors for the last session and this month |
+| ❤️ **Battery health** | State-of-health estimate from full-charge readings, against your car's capacity or the best value measured |
 | 📊 **History** | Last-7-days mileage & energy with daily detail, six-week average consumption, weekly and daily energy split |
 | 🌡️ **Comfort** | Climate on/off, quick heat/cool, defrost, steering-wheel & mirror heating, seat heating/ventilation 0–3, one-touch *prepare car* |
 | 🧭 **Navigation** | Send a destination to the car |
@@ -255,6 +258,8 @@ If the card is not found, refresh the browser once with **Ctrl + F5**
 | Update interval | Options | In **minutes**. Diagnostics show it in seconds (`60` → `3600`). Use `1` for one-minute polling. |
 | Eco polling | Options | Slows polling while every car is clearly locked, parked and unplugged. Minimum `5` minutes. Never wakes the car. |
 | ABRP live data | Per vehicle | Optional. Needs only that car's ABRP *Generic* token — no API key. |
+| Charging tariffs | Options | Price per kWh for **home**, **public AC** and **public DC**. A session counts as home when it starts inside your Home zone; DC when the car reports a DC cable or charges above 22 kW. Leave 0 to skip costs. Prices apply to sessions from then on. |
+| Battery capacity | Per vehicle | Optional usable capacity in kWh (e.g. 69.9). Used as 100 % for battery health; leave 0 to compare with the best capacity measured. |
 
 With several vehicles, entities are created per VIN and services accept either
 `vin` or any Leapmotor `entity_id`. Existing single-vehicle settings migrate
@@ -274,6 +279,12 @@ copied to every car — set it on the intended vehicle.
   closer to your Home Assistant home location.
 - EV consumption is exposed as `kWh/100 km`, plus `mi/kWh` when the API
   provides it.
+- **Trip log and charging sessions** are worked out from the polled data, so
+  their precision follows the update interval: set it to **1 minute** for
+  exact start and end times and to catch short trips. Trips and sessions are
+  stored locally in Home Assistant (no coordinates) and survive restarts.
+  Regenerated energy is not estimated — polling is too coarse for regen bursts.
+- **Battery health** needs at least three days with a full (100 %) charge.
 - **Last 7 days** covers today and the six previous calendar days in your
   Home Assistant time zone. `energy_complete` validates field and mileage
   coverage only, not physical accuracy. The original cloud day label stays in
@@ -496,6 +507,9 @@ Full history in [CHANGELOG.md](CHANGELOG.md).
   by [kerniger](https://github.com/kerniger) (MIT). All the hard reverse-engineering
   work is theirs; this repository adds the redesign, the dashboard card and the
   Slovenian translation.
+- The trip log, charging-session detection and battery-health estimate are
+  ported from **[LeapConnect](https://github.com/markoceri/leapconnect)** by
+  [Marco Mancino](https://github.com/markoceri) (AGPL-3.0).
 - [sbstn-0x2a](https://github.com/sbstn-0x2a) — raw-signal mappings for charging,
   doors, climate, heating, seating, range and diagnostics.
 - [markoceri](https://github.com/markoceri) — public Leapmotor API and
@@ -514,6 +528,7 @@ Read [LEGAL.md](LEGAL.md) and [SECURITY.md](SECURITY.md) before publishing
 logs, diagnostics or modified builds. Never post certificates, tokens, VINs or
 precise locations.
 
-**MIT** — see [LICENSE](LICENSE).
+**GNU AGPL-3.0** — see [LICENSE](LICENSE). Third-party notices, including the
+original MIT licence of leapmotor-ha, are in [NOTICE.md](NOTICE.md).
 
 <p align="center"><br><img src="custom_components/leapmotor/logo.svg" width="56" alt=""><br><sub>Made for Leapmotor drivers · not affiliated with Leapmotor</sub></p>

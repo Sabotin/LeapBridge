@@ -44,7 +44,7 @@ or pick just the parts you want with `sections` (see below).
 | --- | --- | --- |
 | `device_id` | first Leapmotor | Which vehicle to show when you have more than one. The visual editor offers a picker. |
 | `name` | `Leapmotor <model>` | Title shown in the hero. |
-| `sections` | all | Any of `hero`, `check`, `chart`, `week`, `charging`, `energy`, `controls`. Order is fixed; the list picks what is shown. |
+| `sections` | all | Any of `hero`, `check`, `chart`, `week`, `charging`, `energy`, `trips`, `controls`. Order is fixed; the list picks what is shown. |
 | `scene` | `auto` | `auto` follows `sun.sun` (day sky / night sky), or force `night` / `day`. |
 | `language` | `auto` | `auto` follows your profile. Built in: `en`, `sl`, `de`. |
 | `confirm_actions` | `true` | Remote actions need a second tap within 4 seconds. |
@@ -82,8 +82,9 @@ confirm_actions: false
 | **Vehicle check** | One glance answer: *All secure* or *Needs attention*. Lock, doors, windows and sunroof, trunk, tire pressure, battery and data freshness, with Lock/Unlock and Find car buttons. |
 | **Last 24 hours** | Battery, range or charging power from the recorder, with charging and driving periods shaded and an icon for what the car was doing every three hours. |
 | **Last 7 days** | Kilometres per day from the Leapmotor cloud, with energy and consumption per day. |
-| **Charging** | Arc from 0 to 100 % with the charge limit, power, current and voltage, finish time and remaining time. |
-| **Energy & tires** | Six-week average consumption on an efficiency scale, four tire pressures and last week's driving/climate/other split. |
+| **Charging** | Arc from 0 to 100 % with the charge limit, power, current and voltage, finish time and remaining time. Below it: the last charging session (energy, home/public, cost) and this month's energy and cost. |
+| **Energy & tires** | Six-week average consumption on an efficiency scale, four tire pressures, battery health and last week's driving/climate/other split. |
+| **Trip log** | Recent drives with time, distance, duration, energy, consumption (colour-coded), battery used and average speed; a live row while driving; today's and this month's totals. |
 | **Remote control** | Climate, quick heat/cool, defrost, battery preheat, steering wheel and mirror heating, charge schedule, trunk, windows, sunshade, cable release and find car — only the ones your car supports. |
 
 Click any value to open Home Assistant's detail dialog for that entity.

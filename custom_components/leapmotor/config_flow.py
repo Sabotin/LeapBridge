@@ -33,10 +33,14 @@ from .const import (
     CONF_APP_CERT_PEM,
     CONF_APP_KEY_FILE,
     CONF_APP_KEY_PEM,
+    CONF_BATTERY_REFERENCE_KWH,
     CONF_DEVICE_ID,
     CONF_ECO_POLLING_ENABLED,
     CONF_ECO_SCAN_INTERVAL,
     CONF_OPERATION_PASSWORD,
+    CONF_PRICE_HOME,
+    CONF_PRICE_PUBLIC_AC,
+    CONF_PRICE_PUBLIC_DC,
     CONF_SCAN_INTERVAL,
     CONF_VIN,
     DEFAULT_ECO_SCAN_INTERVAL_MINUTES,
@@ -449,12 +453,28 @@ class LeapmotorOptionsFlow(config_entries.OptionsFlow):
                     data_schema=self._options_schema(),
                     errors={"base": "certificate_import_error"},
                 )
+            if any(user_input.get(key) for key in (
+                CONF_APP_CERT_FILE, CONF_APP_KEY_FILE, CONF_APP_CERT_PEM, CONF_APP_KEY_PEM,
+            )):
+                try:
+                    await self.hass.async_add_executor_job(
+                        validate_app_certificate_material, self.hass
+                    )
+                except ValueError as exc:
+                    return self.async_show_form(
+                        step_id="init",
+                        data_schema=self._options_schema(),
+                        errors={"base": str(exc)},
+                    )
             return self.async_create_entry(
                 title="",
                 data={
                     CONF_SCAN_INTERVAL: user_input[CONF_SCAN_INTERVAL],
                     CONF_ECO_POLLING_ENABLED: bool(user_input.get(CONF_ECO_POLLING_ENABLED)),
                     CONF_ECO_SCAN_INTERVAL: user_input[CONF_ECO_SCAN_INTERVAL],
+                    CONF_PRICE_HOME: float(user_input.get(CONF_PRICE_HOME) or 0),
+                    CONF_PRICE_PUBLIC_AC: float(user_input.get(CONF_PRICE_PUBLIC_AC) or 0),
+                    CONF_PRICE_PUBLIC_DC: float(user_input.get(CONF_PRICE_PUBLIC_DC) or 0),
                 },
             )
 
@@ -504,8 +524,27 @@ class LeapmotorOptionsFlow(config_entries.OptionsFlow):
                     vol.Coerce(int),
                     vol.Range(min=5, max=240),
                 ),
+                **{
+                    vol.Optional(
+                        key, default=float(self._config_entry.options.get(key) or 0)
+                    ): _price_selector(self.hass.config.currency)
+                    for key in (CONF_PRICE_HOME, CONF_PRICE_PUBLIC_AC, CONF_PRICE_PUBLIC_DC)
+                },
             }
         )
+
+
+def _price_selector(currency: str | None) -> selector.NumberSelector:
+    """Tariff per kWh; 0 means unknown and leaves costs empty."""
+    return selector.NumberSelector(
+        selector.NumberSelectorConfig(
+            min=0,
+            max=10,
+            step=0.001,
+            mode=selector.NumberSelectorMode.BOX,
+            unit_of_measurement=f"{currency}/kWh" if currency else "/kWh",
+        )
+    )
 
 
 class LeapmotorVehicleSubentryFlow(config_entries.ConfigSubentryFlow):
@@ -610,6 +649,16 @@ def _vehicle_settings_schema(data: dict[str, Any] | None = None) -> vol.Schema:
                 CONF_ABRP_TOKEN,
                 default=str(current.get(CONF_ABRP_TOKEN) or ""),
             ): str,
+            vol.Optional(
+                CONF_BATTERY_REFERENCE_KWH,
+                default=float(current.get(CONF_BATTERY_REFERENCE_KWH) or 0),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0, max=200, step=0.1,
+                    mode=selector.NumberSelectorMode.BOX,
+                    unit_of_measurement="kWh",
+                )
+            ),
         }
     )
 
@@ -621,6 +670,7 @@ def _vehicle_settings_data(vin: str, data: dict[str, Any]) -> dict[str, Any]:
         CONF_OPERATION_PASSWORD: str(data.get(CONF_OPERATION_PASSWORD) or "").strip(),
         CONF_ABRP_ENABLED: bool(data.get(CONF_ABRP_ENABLED)),
         CONF_ABRP_TOKEN: str(data.get(CONF_ABRP_TOKEN) or "").strip(),
+        CONF_BATTERY_REFERENCE_KWH: float(data.get(CONF_BATTERY_REFERENCE_KWH) or 0),
     }
 
 

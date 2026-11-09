@@ -9,6 +9,7 @@ CONF_ABRP_ENABLED = "abrp_enabled"
 CONF_ABRP_TOKEN = "abrp_token"
 CONF_OPERATION_PASSWORD = "operation_password"
 CONF_VIN = "vin"
+CONF_BATTERY_REFERENCE_KWH = "battery_reference_kwh"
 SUBENTRY_TYPE_VEHICLE = "vehicle"
 
 
@@ -39,6 +40,18 @@ def operation_password_for_vehicle(config_entry: Any, vin: str) -> str | None:
     )
     value = str(value or "").strip()
     return value or None
+
+
+def battery_reference_for_vehicle(config_entry: Any, vin: str) -> float | None:
+    """Return the user-entered usable battery capacity (kWh) for one VIN."""
+    subentry = vehicle_subentries(config_entry).get(vin)
+    if subentry is None:
+        return None
+    try:
+        value = float(subentry.data.get(CONF_BATTERY_REFERENCE_KWH) or 0)
+    except (TypeError, ValueError):
+        return None
+    return value if value > 0 else None
 
 
 def abrp_config_for_vehicle(
