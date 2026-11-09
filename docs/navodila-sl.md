@@ -6,7 +6,7 @@
 
 Ta vodnik te pelje skozi namestitev integracije **Leapmotor** v Home Assistant,
 od začetka do delujoče nadzorne plošče. Za angleška navodila glej
-[README.md](../README.md).
+[guide-en.md](guide-en.md).
 
 > [!IMPORTANT]
 > To je neuradna integracija, ni povezana z družbo Leapmotor. Uporaba na lastno
