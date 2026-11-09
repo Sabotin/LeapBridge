@@ -27,7 +27,12 @@ The card is built as a full dashboard and adapts to the space it gets:
 | 760 – 1180 px | Two columns |
 | < 760 px | One column, phone layout |
 
-For the full experience create a dedicated dashboard and switch its view to
+**The easiest way is already done for you:** the integration adds a
+**Leapmotor** entry to the sidebar that shows this dashboard full screen, one
+per vehicle. Switch it off in the integration options if you prefer your own
+dashboard.
+
+To build your own instead, create a dashboard and switch its view to
 **Panel (single card)**:
 
 1. **Settings → Dashboards → Add dashboard → New dashboard from scratch**.

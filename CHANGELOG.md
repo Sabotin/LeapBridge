@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — plug-and-play sidebar dashboard
+
+- After setup a **Leapmotor** sidebar entry shows the full dashboard, one per
+  vehicle, with a menu button on phones. It is on by default and can be
+  switched off in the options (*Show the Leapmotor dashboard in the sidebar*).
+- Slovenian README with Slovenian screenshots; the English README moved to
+  `README.en.md`.
+
 ## Unreleased — stages 2 and 3 of the LeapConnect port, plus extras
 
 - **Cabin preheat, pre-cool and auto pre-condition:** one-tap buttons and

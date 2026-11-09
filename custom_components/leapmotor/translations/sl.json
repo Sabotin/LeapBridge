@@ -43,7 +43,8 @@
           "price_home_low_kwh": "Cena polnjenja doma v nizki tarifi (MT) na kWh",
           "low_tariff_start": "Nizka tarifa se začne",
           "low_tariff_end": "Nizka tarifa se konča",
-          "low_tariff_weekends": "Nizka tarifa ves dan ob vikendih"
+          "low_tariff_weekends": "Nizka tarifa ves dan ob vikendih",
+          "show_sidebar_panel": "Prikaži nadzorno ploščo Leapmotor v stranski vrstici"
         },
         "data_description": {
           "price_home_kwh": "Uporabi se za polnjenja, ki se začnejo v coni Doma. Pusti 0, če stroškov ne želiš spremljati.",
@@ -52,7 +53,8 @@
           "price_home_low_kwh": "Neobvezno. Z nizko tarifo se polnjenje doma po času razdeli med nizko (MT) in običajno ceno (VT). Pusti 0 za eno ceno.",
           "low_tariff_start": "Na primer 22:00.",
           "low_tariff_end": "Na primer 06:00. Okno čez polnoč je podprto.",
-          "low_tariff_weekends": "Običajno pri dvotarifnem merjenju (MT/VT)."
+          "low_tariff_weekends": "Običajno pri dvotarifnem merjenju (MT/VT).",
+          "show_sidebar_panel": "Doda vnos Leapmotor v stransko vrstico s celotno nadzorno ploščo. Izklopi, če ga želiš skriti."
         }
       },
       "certificates": {
@@ -780,7 +782,8 @@
           "price_home_low_kwh": "Cena polnjenja doma v nizki tarifi (MT) na kWh",
           "low_tariff_start": "Nizka tarifa se začne",
           "low_tariff_end": "Nizka tarifa se konča",
-          "low_tariff_weekends": "Nizka tarifa ves dan ob vikendih"
+          "low_tariff_weekends": "Nizka tarifa ves dan ob vikendih",
+          "show_sidebar_panel": "Prikaži nadzorno ploščo Leapmotor v stranski vrstici"
         },
         "data_description": {
           "eco_polling_enabled": "Počasnejši varčni interval uporabi le, ko so vsa vozila zanesljivo zaklenjena, parkirana in odklopljena.",
@@ -791,7 +794,8 @@
           "price_home_low_kwh": "Neobvezno. Z nizko tarifo se polnjenje doma po času razdeli med nizko (MT) in običajno ceno (VT). Pusti 0 za eno ceno.",
           "low_tariff_start": "Na primer 22:00.",
           "low_tariff_end": "Na primer 06:00. Okno čez polnoč je podprto.",
-          "low_tariff_weekends": "Običajno pri dvotarifnem merjenju (MT/VT)."
+          "low_tariff_weekends": "Običajno pri dvotarifnem merjenju (MT/VT).",
+          "show_sidebar_panel": "Doda vnos Leapmotor v stransko vrstico s celotno nadzorno ploščo. Izklopi, če ga želiš skriti."
         }
       }
     },

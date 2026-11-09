@@ -19,8 +19,9 @@ import voluptuous as vol
 
 from .api import LeapmotorApiClient
 from .button import BUTTON_SPECS
-from .card import async_register_card
+from .card import async_remove_panel, async_setup_frontend
 from .const import (
+    CONF_SHOW_PANEL,
     DEFAULT_OPERATION_PASSWORD,
     CONF_ACCOUNT_P12_PASSWORD,
     CONF_ABRP_ENABLED,
@@ -362,7 +363,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     await async_remove_obsolete_entities(hass)
-    await async_register_card(hass)
+    await async_setup_frontend(
+        hass,
+        show_panel=any(
+            item.options.get(CONF_SHOW_PANEL, True)
+            for item in hass.config_entries.async_entries(DOMAIN)
+        ),
+    )
     return True
 
 
@@ -446,6 +453,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await hass.async_add_executor_job(coordinator.client.close)
         if not hass.data.get(DOMAIN):
             _async_unregister_services(hass)
+            await async_remove_panel(hass)
     return unload_ok
 
 
