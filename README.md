@@ -68,7 +68,7 @@ Ročna namestitev brez HACS in vse podrobnosti: **[navodila v slovenščini](doc
 
 **Plug & play:** po namestitvi se v stranski vrstici sama pojavi **Leapmotor** s celotno nadzorno ploščo. Ničesar ni treba nastavljati. Če imaš več vozil, ima vsako svojo. Skriješ jo v **Leapmotor → Nastavi** (stikalo *Prikaži nadzorno ploščo v stranski vrstici*).
 
-Kartica ima **štiri strani z zavihki**. Pika na zavihku pove, da je na tisti strani nekaj za pogledati.
+Kartica ima **štiri strani z zavihki** in zavihek **Nastavitve** (zobnik). Pika na zavihku pove, da je na tisti strani nekaj za pogledati. Slike kažejo temo **Aplikacija**.
 
 <table>
   <tr>
