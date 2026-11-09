@@ -43,20 +43,20 @@
     <div class="scene" id="scene"></div>
     <div class="shade"></div>
     <div class="copy">
-      <div class="eyebrow"><span class="dot"></span>Home Assistant integration</div>
+      <div class="eyebrow"><span class="dot"></span><span data-sl="Integracija za Home Assistant">Home Assistant integration</span></div>
       <div class="brand">
         <img src="../../custom_components/leapmotor/logo.svg" alt="">
-        <h1>Leapmotor<span>for Home Assistant</span></h1>
+        <h1>Leapmotor<span data-sl="za Home Assistant">for Home Assistant</span></h1>
       </div>
-      <p>Battery, charging, doors, tires, trips and remote control — with a built-in night-sky dashboard.</p>
+      <p data-sl="Baterija, polnjenje, vrata, pnevmatike, vožnje in daljinsko upravljanje — z vgrajeno nočno nadzorno ploščo.">Battery, charging, doors, tires, trips and remote control — with a built-in night-sky dashboard.</p>
       <div class="chips">
-        <span class="chip"><i style="--c:#f6a823"></i>HACS ready</span>
+        <span class="chip"><i style="--c:#f6a823"></i><span data-sl="Namestitev prek HACS">HACS ready</span></span>
         <span class="chip"><i style="--c:#34d399"></i>C10 · B10 · T03 · A10</span>
-        <span class="chip"><i style="--c:#38bdf8"></i>Dashboard card included</span>
+        <span class="chip"><i style="--c:#38bdf8"></i><span data-sl="Slovenščina">Dashboard card included</span></span>
       </div>
     </div>
     <div class="stat">
-      <small>Now · charging</small>
+      <small data-sl="Zdaj · polnjenje">Now · charging</small>
       <b>71,4<em>%</em></b>
       <div class="row"><span style="color:#34d399">● 10.8 kW</span><span>1 h 14 min</span><span>318 km</span></div>
     </div>
@@ -69,6 +69,10 @@
     const art = customElements.get("leapmotor-card").art;
     document.getElementById("scene").innerHTML = art.sceneSvg("night");
     document.getElementById("car").insertAdjacentHTML("beforeend", art.carSvg(true));
+    if (new URLSearchParams(location.search).get("lang") === "sl") {
+      document.documentElement.lang = "sl";
+      for (const el of document.querySelectorAll("[data-sl]")) el.textContent = el.dataset.sl;
+    }
   </script>
 </body>
 </html>
