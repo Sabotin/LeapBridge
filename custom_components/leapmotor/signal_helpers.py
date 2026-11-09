@@ -83,6 +83,38 @@ def charge_connection_allows_charging(
     return legacy_plugged is not False
 
 
+# Below this the pack current of a parked car is also explained by its own
+# consumers settling; the regular cable-state checks decide there.
+STATIONARY_INFLOW_MIN_A = 3.0
+
+
+def stationary_charge_inflow(signals: dict[str, object]) -> bool:
+    """Return whether a standing vehicle in Park is taking charge into the pack.
+
+    Negative pack current is energy flowing into the battery. A vehicle that
+    stands still cannot regenerate, so a clear inflow can only come from a
+    cable, whatever the charge-state code or the READY flag report. State 5
+    is the vehicle's own "this inflow is regeneration" and stays excluded.
+    """
+    gear = _safe_int(signals.get("1010"))
+    speed = _safe_float(signals.get("1319"))
+    if gear in {1, 2, 3} or (speed is not None and speed > 0):
+        return False
+    if gear != 0 and speed != 0:
+        # Standstill has to be reported, not assumed from missing data.
+        return False
+    if _safe_int(signals.get("1149")) == 5:
+        return False
+    current = _safe_float(signals.get("1178"))
+    if current is None or not current <= -STATIONARY_INFLOW_MIN_A:
+        return False
+    remaining_minutes = _safe_int(signals.get("1200"))
+    if remaining_minutes is not None and remaining_minutes > 0:
+        return True
+    voltage = _safe_float(signals.get("1177"))
+    return voltage is not None and abs(current * voltage) / 1000.0 >= 1.0
+
+
 def _safe_int(raw: object) -> int | None:
     """Return a status value as int or None."""
     if raw is None:

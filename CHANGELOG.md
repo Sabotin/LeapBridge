@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased — charging shows on the T03, green glow while charging
+
+- **T03 charging is read from the measured current:** when the car stands in
+  Park and about 1 kW or more flows into the battery, it is reported as
+  charging and plugged in — also when the car's own charge-state code says
+  "not charging" or the car is switched on while it charges. Until now either
+  of those hid a real session and the card showed *Parked*. The charging and
+  cable sensors, connection state, charging power, EVCC status and the
+  charging sessions all follow. Regeneration while driving and other models
+  are unchanged.
+- **Green glow while charging:** the car panel gets a green edge and the car a
+  green outline over a brighter pool of light, in all three themes.
+
 ## Unreleased — themes and a settings tab
 
 - **Three themes** for the card (option `look`):

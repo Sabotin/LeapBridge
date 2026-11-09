@@ -280,7 +280,9 @@ copied to every car, so set it on the intended vehicle.
   are not supported; use the car or the official app. Read-only charge-limit
   values can be stale (`reliability: unverified`). Wallbox pauses with the
   observed idle signal are reported as connected (`plugged_in`, EVCC `B`);
-  signal 1197 alone cannot identify DC on T03.
+  signal 1197 alone cannot identify DC on T03. Standing in Park with about
+  1 kW or more flowing into the battery counts as charging, whatever the
+  charge-state code or the READY flag report.
 - **A10:** steering-wheel heating levels 1/2 and remote mode 3 are detected;
   unknown A10 modes stay unknown.
 - Battery preheating is a stateful **switch**, so it can be turned on and off.

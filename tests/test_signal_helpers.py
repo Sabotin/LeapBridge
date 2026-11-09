@@ -124,5 +124,46 @@ class ChargingPlausibilityTests(unittest.TestCase):
         self.assertIs(signals.charge_connection_allows_charging(None, None), True)
 
 
+class StationaryChargeInflowTests(unittest.TestCase):
+    """Measured inflow into a standing vehicle in Park is a cable charge."""
+
+    PARKED = {"1010": 0, "1319": 0, "1177": 340}
+
+    def inflow(self, **overrides: object) -> bool:
+        return signals.stationary_charge_inflow({**self.PARKED, **overrides})
+
+    def test_inflow_counts_whatever_state_code_or_ready_flag_say(self) -> None:
+        for extra in ({}, {"1149": 0}, {"1149": 6}, {"1258": 1}, {"1149": 0, "1258": 1}):
+            with self.subTest(extra=extra):
+                self.assertIs(self.inflow(**{"1178": -6.5, **extra}), True)
+
+    def test_remaining_time_confirms_inflow_without_voltage(self) -> None:
+        self.assertIs(self.inflow(**{"1178": -6.5, "1177": None, "1200": 95}), True)
+        self.assertIs(self.inflow(**{"1178": -6.5, "1177": None, "1200": 0}), False)
+
+    def test_discharge_and_weak_inflow_do_not_count(self) -> None:
+        for current in (5, 0, -2.9, None, "bad", float("nan")):
+            with self.subTest(current=current):
+                self.assertIs(self.inflow(**{"1178": current, "1200": 95}), False)
+
+    def test_inflow_below_one_kilowatt_needs_remaining_time(self) -> None:
+        self.assertIs(self.inflow(**{"1178": -3, "1177": 300}), False)
+        self.assertIs(self.inflow(**{"1178": -3, "1177": 300, "1200": 40}), True)
+
+    def test_gear_or_motion_makes_inflow_regeneration(self) -> None:
+        for extra in ({"1010": 1}, {"1010": 2}, {"1010": 3}, {"1319": 12}, {"1149": 5}):
+            with self.subTest(extra=extra):
+                self.assertIs(self.inflow(**{"1178": -40, "1200": 95, **extra}), False)
+
+    def test_standstill_must_be_reported(self) -> None:
+        charging = {"1178": -6.5, "1177": 340}
+        self.assertIs(signals.stationary_charge_inflow(charging), False)
+        self.assertIs(signals.stationary_charge_inflow({**charging, "1010": 16777215}), False)
+        self.assertIs(signals.stationary_charge_inflow({**charging, "1319": 0}), True)
+        self.assertIs(
+            signals.stationary_charge_inflow({**charging, "1010": 16777215, "1319": 0}), True
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
