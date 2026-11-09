@@ -29,9 +29,9 @@
     <span>Language</span>
     <a href="?lang=en">EN</a><a href="?lang=sl">SL</a><a href="?lang=de">DE</a>
     <span>Look</span>
-    <a href="?look=cluster">Driver display</a><a href="?look=console">Car app</a>
+    <a href="?look=classic">Classic</a><a href="?look=cluster">Driver display</a><a href="?look=console">Car app</a>
     <span>Page</span>
-    <a href="?page=trips">Trips</a><a href="?page=charging">Charging</a><a href="?page=vehicle">Vehicle</a><a href="?tabs=0">One page</a><a href="?panel=1">Sidebar panel</a>
+    <a href="?page=trips">Trips</a><a href="?page=charging">Charging</a><a href="?page=vehicle">Vehicle</a><a href="?page=settings">Settings</a><a href="?tabs=0">One page</a><a href="?panel=1">Sidebar panel</a>
   </nav>
   <div class="wrap"><leapmotor-card id="card"></leapmotor-card></div>
 
@@ -256,6 +256,14 @@
       language: lang,
       locale: { language: lang },
       callWS: async (msg) => {
+        /* Per-user frontend data (the card's Settings tab), kept in this browser for the preview. */
+        if (msg.type === "frontend/get_user_data") {
+          try { return { value: JSON.parse(localStorage.getItem(`preview-user-data-${msg.key}`) || "null") }; } catch (_e) { return { value: null }; }
+        }
+        if (msg.type === "frontend/set_user_data") {
+          try { localStorage.setItem(`preview-user-data-${msg.key}`, JSON.stringify(msg.value)); } catch (_e) {}
+          return null;
+        }
         if (msg.type !== "history/history_during_period") return {};
         const out = {};
         const from = Date.parse(msg.start_time) / 1000, to = Date.parse(msg.end_time) / 1000;
