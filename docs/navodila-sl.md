@@ -243,6 +243,7 @@ servisu v nadzorni plošči pri postavki dvakrat tapni **Opravljeno**.
 | *Token is invalid* ali *Leapmotor je zavrnil prijavo* | Integracija se sama znova prijavi in ukaz ponovi. Če se napaka ponavlja, si najbrž v uradni aplikaciji prijavljen z istim računom — uporabi drugi račun z deljenim vozilom. |
 | *Leapmotor je ukaz sprejel, izida pa ni potrdil* | Ukaz je verjetno že prišel do avta. Počakaj nekaj sekund in preveri stanje, preden ga pošlješ znova. |
 | Kartice ni mogoče najti | Osveži brskalnik (Ctrl + F5) ali ponastavi predpomnilnik vmesnika v aplikaciji. |
+| Na tablici ali telefonu ni zavihkov ali zavihka Nastavitve | Aplikacija še uporablja staro različico nadzorne plošče. V aplikaciji: *Nastavitve → Aplikacija → Razhroščevanje → Ponastavi predpomnilnik vmesnika*, nato jo znova odpri. V brskalniku: Ctrl + F5. |
 
 <details>
 <summary><b>Beleženje za razhroščevanje</b></summary>
