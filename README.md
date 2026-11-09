@@ -91,7 +91,7 @@ Kartico lahko dodaš tudi na svojo nadzorno ploščo: **Dodaj kartico → Leapmo
 type: custom:leapmotor-card
 ```
 
-Ponoči je nočno nebo, podnevi dnevno, med polnjenjem pa se ob avtu prižge polnilnica. Če kartice ne najde, enkrat osveži brskalnik (**Ctrl + F5**).
+Kartica je videti kot armaturna plošča avta (možnost `look`: `cluster` za merilnike ali `console` za videz aplikacije), ponoči je zaslon temnejši, med polnjenjem pa se ob avtu prižge polnilnica. Če kartice ne najde, enkrat osveži brskalnik (**Ctrl + F5**).
 
 <br>
 

@@ -28,6 +28,8 @@
     <a href="?state=driving">Driving · too fast</a>
     <span>Language</span>
     <a href="?lang=en">EN</a><a href="?lang=sl">SL</a><a href="?lang=de">DE</a>
+    <span>Look</span>
+    <a href="?look=cluster">Driver display</a><a href="?look=console">Car app</a>
     <span>Page</span>
     <a href="?page=trips">Trips</a><a href="?page=charging">Charging</a><a href="?page=vehicle">Vehicle</a><a href="?tabs=0">One page</a><a href="?panel=1">Sidebar panel</a>
   </nav>
@@ -43,6 +45,7 @@
     const scene = q.get("scene") || (scenario === "parked" ? "day" : "night");
     const sections = q.get("sections") ? q.get("sections").split(",") : undefined;
     const page = q.get("page") || undefined;
+    const look = q.get("look") || undefined;
     const tabs = q.get("tabs") !== "0";
     const asPanel = q.get("panel") === "1";
     if (q.get("shot")) document.body.classList.add("shot");
@@ -105,7 +108,7 @@
     add("sensor.c10_range", "remaining_range_km", Math.round(soc * 4.45), u("km"));
     add("sensor.c10_odometer", "odometer_km", Math.round(odo), u("km"));
     add("sensor.c10_speed", "speed_kmh", driving ? 128 : 0, u("km/h"));
-    add("sensor.c10_gear", "gear", "P", meta);
+    add("sensor.c10_gear", "gear", driving ? "D" : "P", meta);
     add("sensor.c10_interior_temperature", "interior_temp_c", scene === "day" ? 17.5 : 11.5, u("°C"));
     add("sensor.c10_outdoor_temperature", "outdoor_temp_c", scene === "day" ? 9.4 : 2.8, u("°C"));
     add("sensor.c10_charge_limit", "charge_limit_percent", 90, u("%"));
@@ -286,7 +289,7 @@
       panel.hass = hass;
       window.__panel = panel;
     } else {
-      card.setConfig({ type: "custom:leapmotor-card", scene, language: lang, tabs, ...(page ? { page } : {}), ...(sections ? { sections } : {}) });
+      card.setConfig({ type: "custom:leapmotor-card", scene, language: lang, tabs, ...(look ? { look } : {}), ...(page ? { page } : {}), ...(sections ? { sections } : {}) });
       card.hass = hass;
       window.__card = card;
     }

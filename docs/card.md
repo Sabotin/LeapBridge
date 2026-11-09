@@ -4,7 +4,7 @@
 
 # Leapmotor dashboard card
 
-A night-sky dashboard for your Leapmotor, shipped inside the integration.
+A car-style dashboard for your Leapmotor, shipped inside the integration.
 Home Assistant loads it automatically once the integration is set up — there
 is no Lovelace resource to add and nothing extra to install from HACS.
 
@@ -33,6 +33,17 @@ maintenance or tires).
 The card always opens on **Overview** (set `page` to start elsewhere). In the
 Leapmotor sidebar panel the tabs stay at the top while you scroll. Set
 `tabs: false` to show every page one below the other instead.
+
+## Looks
+
+Pick the look of the car panel on Overview with `look`. Everything else (pages,
+panels, buttons, double-tap confirm) is the same in both.
+
+| `look: cluster` — driver display (default) | `look: console` — car app |
+| --- | --- |
+| <img src="images/looks/cluster-wide.webp" alt="Driver display look"> | <img src="images/looks/console-wide.webp" alt="Car app look"> |
+| <img src="images/looks/cluster-drive.webp" alt="Driver display while driving"> | <img src="images/looks/console-drive.webp" alt="Car app while driving"> |
+| <img src="images/looks/cluster-phone.webp" alt="Driver display on a phone" width="320"> | <img src="images/looks/console-phone.webp" alt="Car app on a phone" width="320"> |
 
 ## Best layout
 
@@ -69,7 +80,8 @@ or pick just the parts you want with `sections` (see below).
 | `sections` | all | Any of `hero`, `check`, `controls`, `map`, `trips`, `week`, `charging`, `chart`, `energy`, `maintenance`, `tires`, `insights`. Order is fixed; the list picks what is shown. Pages without a section are left out, and with only one page left there are no tabs. |
 | `tabs` | `true` | Split the card into the Overview, Trips, Charging and Vehicle pages. `false` shows everything on one page. |
 | `page` | `overview` | The page the card opens on: `overview`, `trips`, `charging` or `vehicle`. |
-| `scene` | `auto` | `auto` follows `sun.sun` (day sky / night sky), or force `night` / `day`. |
+| `look` | `cluster` | How the car panel on Overview looks. `cluster`: a driver display with the battery gauge, the car on a lit floor, a speed gauge (charging power while charging, gear while parked), warning lights and a trip-computer strip. `console`: a car-app screen with range, a segmented battery bar, status chips, the car with tire pressures at the wheels and round quick buttons. |
+| `scene` | `auto` | Day or night display, like the car's own screens: `auto` follows `sun.sun`, or force `night` / `day`. |
 | `language` | `auto` | `auto` follows your profile. Built in: `en`, `sl`, `de`. |
 | `confirm_actions` | `true` | Remote actions, logging a service and setting the charge limit need a second tap within 4 seconds. |
 | `backdrop` | `true` | Dark rounded backdrop behind the panels, so the card looks right on light themes too. |
@@ -111,7 +123,7 @@ confirm_actions: false
 
 | Panel | Page | Contents |
 | --- | --- | --- |
-| **Hero** | Overview | Night or day scene with your car, wallbox and animated cable while plugged in. The car shows its state: open doors, trunk, windows and sunroof, low tires, an amber ring when unlocked, a warm or cool glow while the climate runs, sentry, motion and headlights while driving, and a battery bar while plugged in. State of charge, lock and driving state (red *Too fast* chip above the speed limit), quick buttons (lock/unlock, quick heat, quick cool, open/close windows), location, range, inside temperature and a metric strip (outside/inside temperature, odometer, charge limit, speed, speed limit, consumption). |
+| **Hero** | Overview | Your car in the chosen `look` (driver display or car app), with wallbox and animated cable while plugged in. The car shows its state: open doors, trunk, windows and sunroof, low tires, an amber ring when unlocked, a warm or cool glow while the climate runs, sentry, motion and headlights while driving, and a battery bar while plugged in. *Driver display:* battery gauge with range and the charge limit, speed gauge with the speed limit sign and gear (charging power and finish time while charging), warning lights (lock, doors, trunk, windows, tires, cable, climate, sentry) and a trip-computer strip (odometer, today, consumption, outside and inside temperature). *Car app:* range, a segmented battery bar with the charge limit, lock/driving/charging chips, tire pressures at the wheels and a strip with odometer, today, consumption and outside temperature. Both have the quick buttons (lock/unlock, quick heat, quick cool, open/close windows). |
 | **Vehicle check** | Overview | One glance answer: *All secure* or *Needs attention*, then a tile each for lock, doors, windows and sunroof, trunk, tires and data freshness (and the battery when it is below 20 %). Green is fine, amber needs a look, red is a problem. No buttons: unlock is in the hero, Find car in the remote control. |
 | **Remote control** | Overview | Grouped into *Climate* (preheat, pre-cool and auto pre-condition with your presets, climate, quick heat/cool, defrost, steering wheel and mirror heating) and *Doors & security* (trunk, windows, sunroof, sunshade, sentry mode, find car) — only what your car supports. |
 | **Trip details** | Trips | The selected trip (or the live one): distance, day, time and duration, the route on a dark map coloured by speed (blue below the limit, amber close to it, red above; without a limit: up to 50, 50–90, over 90 km/h), energy, consumption, battery used, average and top speed, minutes above the limit, cost and outside temperature, and a speed chart with the limit as a dashed line. Built from the device tracker and speed history in the recorder. |
