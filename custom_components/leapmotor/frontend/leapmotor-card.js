@@ -1,6 +1,6 @@
 /*!
  * Leapmotor Card
- * A night-sky dashboard for the Leapmotor Home Assistant integration.
+ * A car-style dashboard for the Leapmotor Home Assistant integration.
  *
  * Part of https://github.com/sabotin/leapmotor (MIT License).
  * Bundled fonts: Outfit and JetBrains Mono, SIL Open Font License 1.1.
@@ -388,6 +388,9 @@ const BAD_C = "#fb7185";
 const TRIPS_SHOWN = 8;
 const TIRE_LOW_BAR = 1.9;
 const STALE_MINUTES = 120;
+/** Hero designs: "cluster" (driver display with gauges) and "console" (car app / centre screen). */
+const LOOKS = ["cluster", "console"];
+const GEARS = ["P", "R", "N", "D"];
 
 /* ------------------------------------------------------------------ */
 /* Icons (24px line icons, drawn for this card)                        */
@@ -431,6 +434,8 @@ const ICONS = {
   cctv: '<path d="M3 7l12-3 2 6-12 3-2-6Z"/><path d="m17 10 3 1v4M5 13l1 4H3"/>',
   roof: '<path d="M3 15 7 8h10l4 7"/><path d="M8.5 11h7M3 15h18v3H3z"/>',
   route: '<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/>',
+  fuel: '<path d="M4.5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h13M4.5 10h10"/><path d="M14.5 8.5 18 11v6.5a1.5 1.5 0 0 0 3 0V8l-3-3"/>',
+  sign: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/>',
 };
 
 const icon = (name, cls = "") =>
@@ -564,16 +569,14 @@ function routeSvg(track, startLabel, endLabel, W = 640, H = 300) {
   const ox = (W - (maxX - minX) * scale) / 2, oy = (H - (maxY - minY) * scale) / 2;
   const xy = (lat, lon) => [f1(ox + (lon * kx - minX) * scale), f1(oy + (-lat - minY) * scale)];
   const line = (run) => run.pts.map(([la, lo], i) => `${i ? "L" : "M"}${xy(la, lo).join(" ")}`).join("");
-  const r = rng(Math.round(Math.abs(pts[0][1] * 1e4)));
-  const stars = Array.from({ length: 34 }, () => `<circle cx="${f1(r() * W)}" cy="${f1(r() * H)}" r="${f1(0.4 + r())}" fill="#c7d2fe" opacity="${f1(0.15 + r() * 0.35)}"/>`).join("");
   const [sx, sy] = xy(pts[0][1], pts[0][2]);
   const [ex, ey] = xy(pts[pts.length - 1][1], pts[pts.length - 1][2]);
   return `<svg class="routesvg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(startLabel)} → ${esc(endLabel)}">
     <defs>
-      <pattern id="lm-grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="rgba(148,163,184,.07)"/></pattern>
+      <pattern id="lm-grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="rgba(148,163,184,.1)"/></pattern>
       <filter id="lm-routeglow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     </defs>
-    <rect width="${W}" height="${H}" fill="url(#lm-grid)"/>${stars}
+    <rect width="${W}" height="${H}" fill="url(#lm-grid)"/>
     ${track.runs.map((run) => `<path d="${line(run)}" fill="none" stroke="${run.color}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#lm-routeglow)"/>`).join("")}
     <circle cx="${sx}" cy="${sy}" r="7" fill="${SPEED_SLOW}" stroke="#e9eef8" stroke-width="2"/>
     <circle cx="${ex}" cy="${ey}" r="8" fill="${SPEED_MID}" stroke="#e9eef8" stroke-width="2"/>
@@ -700,6 +703,63 @@ function carSvg(night) {
 </svg>`;
 }
 
+/**
+ * Round instrument gauge (240° sweep) as used in a driver display: track,
+ * tick marks, the value arc and an optional marker (e.g. the charge limit).
+ */
+function gaugeSvg({ frac = 0, color = "#f6a823", mark = null, flow = false }) {
+  const cx = 100, cy = 100, r = 78, a0 = 150, sweep = 240;
+  const pt = (a, rr) => [cx + rr * Math.cos((a * Math.PI) / 180), cy + rr * Math.sin((a * Math.PI) / 180)];
+  const arc = (from, to) => {
+    const [x0, y0] = pt(from, r), [x1, y1] = pt(to, r);
+    return `M${f1(x0)} ${f1(y0)}A${r} ${r} 0 ${to - from > 180 ? 1 : 0} 1 ${f1(x1)} ${f1(y1)}`;
+  };
+  const f = clamp(frac || 0, 0, 1);
+  let ticks = "";
+  for (let i = 0; i <= 24; i++) {
+    const a = a0 + (sweep * i) / 24;
+    const major = i % 6 === 0;
+    const [x0, y0] = pt(a, 87), [x1, y1] = pt(a, major ? 97 : 92);
+    ticks += `<path d="M${f1(x0)} ${f1(y0)}L${f1(x1)} ${f1(y1)}" class="tk${major ? " mj" : ""}${f > 0 && i / 24 <= f + 1e-6 ? " lit" : ""}"/>`;
+  }
+  const val = f > 0.004 ? `<path d="${arc(a0, a0 + sweep * f)}" class="gval${flow ? " flow" : ""}"/>` : "";
+  let mk = "";
+  if (mark != null && isFinite(mark)) {
+    const a = a0 + sweep * clamp(mark, 0, 1);
+    const [x0, y0] = pt(a, 68), [x1, y1] = pt(a, 88);
+    mk = `<path d="M${f1(x0)} ${f1(y0)}L${f1(x1)} ${f1(y1)}" class="gmark"/>`;
+  }
+  return `<svg class="gsvg" viewBox="0 0 200 168" style="color:${color}" aria-hidden="true">` +
+    `<path d="${arc(a0, a0 + sweep)}" class="gtrack"/>${ticks}${val}${mk}</svg>`;
+}
+
+/** Perspective floor under the car in the driver display. */
+function floorSvg() {
+  const W = 600, H = 150, vx = 300, vy = -170;
+  let lines = "";
+  for (let x = -1500; x <= 2100; x += 100) {
+    const k = (0 - vy) / (H - vy);
+    lines += `<path d="M${f1(vx + (x - vx) * k)} 0L${x} ${H}"/>`;
+  }
+  for (let i = 1; i <= 7; i++) {
+    const y = f1(H * Math.pow(i / 7, 1.7));
+    lines += `<path d="M0 ${y}H${W}"/>`;
+  }
+  return `<svg class="floor" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+  <defs>
+    <radialGradient id="lm-floorfade" cx="50%" cy="100%" r="62%">
+      <stop offset="0" stop-color="#fff" stop-opacity="1"/><stop offset=".55" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="lm-horizon" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#38bdf8" stop-opacity="0"/><stop offset=".5" stop-color="#7dd3fc" stop-opacity=".75"/><stop offset="1" stop-color="#38bdf8" stop-opacity="0"/>
+    </linearGradient>
+    <mask id="lm-floormask"><rect width="${W}" height="${H}" fill="url(#lm-floorfade)"/></mask>
+  </defs>
+  <g class="grid" mask="url(#lm-floormask)">${lines}</g>
+  <rect y="0" width="${W}" height="1.6" fill="url(#lm-horizon)"/>
+</svg>`;
+}
+
 /* ------------------------------------------------------------------ */
 /* Styles                                                               */
 /* ------------------------------------------------------------------ */
@@ -707,7 +767,8 @@ function carSvg(night) {
 const STYLE = `
 :host{
   --lm-bg:#080d1c;--lm-panel:#0f1729;--lm-line:rgba(148,163,184,.13);--lm-line-2:rgba(148,163,184,.07);
-  --lm-text:#eef2fa;--lm-soft:#cdd5e6;--lm-muted:#9ba6bd;--lm-dim:#7b869d;
+  --lm-text:#f1f4fa;--lm-soft:#d3dae8;--lm-muted:#a9b3c7;--lm-dim:#8892a8;
+  --lm-panel-a:rgba(21,30,51,.96);--lm-panel-b:rgba(13,20,36,.98);--lm-halo:#111b3a;
   --lm-amber:#f6a823;--lm-amber-2:#ffc461;--lm-green:#34d399;--lm-red:#fb7185;--lm-sky:#38bdf8;--lm-violet:#a78bfa;
   --lm-font:'LM Outfit','Outfit',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
   --lm-mono:'LM JetBrains Mono','JetBrains Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
@@ -723,14 +784,16 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .page{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;min-width:0;align-items:start}
 .page+.page{margin-top:10px}
 .lm.tabbed .page+.page{margin-top:0}
-.lm.backdrop{background:radial-gradient(1200px 500px at 20% -10%,#111b3a 0%,transparent 60%),var(--lm-bg);padding:14px;border-radius:26px}
+.lm.backdrop{background:radial-gradient(1200px 500px at 20% -10%,var(--lm-halo) 0%,transparent 60%),var(--lm-bg);padding:14px;border-radius:26px}
+/* Driver display: graphite surfaces. Car app: the navy surfaces of the original card. */
+.lm.look-cluster{--lm-bg:#05070b;--lm-halo:#121826;--lm-panel-a:rgba(19,23,32,.97);--lm-panel-b:rgba(11,14,20,.98);--lm-line:rgba(148,163,184,.12)}
 .panel{position:relative;min-width:0;overflow:hidden;border-radius:20px;padding:18px 20px;
-  background:linear-gradient(180deg,rgba(21,30,51,.96),rgba(13,20,36,.98));
+  background:linear-gradient(180deg,var(--lm-panel-a),var(--lm-panel-b));
   border:1px solid var(--lm-line);box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 24px 48px -30px rgba(0,0,0,.7)}
 .ptitle{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px;min-height:30px}
-.ptitle h3{margin:0;display:flex;align-items:center;gap:10px;font-size:17px;font-weight:650;letter-spacing:-.005em;color:var(--lm-text);white-space:nowrap}
+.ptitle h3{margin:0;display:flex;align-items:center;gap:10px;font-size:18px;font-weight:650;letter-spacing:-.005em;color:var(--lm-text);white-space:nowrap}
 .ptitle h3 .ic{width:20px;height:20px;color:var(--lm-amber-2)}
-.ptitle .meta{font-size:13px;color:var(--lm-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ptitle .meta{font-size:13.5px;color:var(--lm-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .mono{font-family:var(--lm-mono);font-feature-settings:"zero" 1}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--c,var(--lm-amber));box-shadow:0 0 10px var(--c,var(--lm-amber));flex:none;display:inline-block}
 .dot.pulse{animation:lm-pulse 1.8s ease-in-out infinite}
@@ -748,41 +811,41 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   font-size:15px;font-weight:600;color:var(--lm-muted);transition:color .2s,background .2s;min-width:0}
 .tab:hover{color:var(--lm-text);background:rgba(255,255,255,.04)}
 .tab.on{color:var(--lm-amber-2);background:rgba(246,168,35,.14);box-shadow:inset 0 0 0 1px rgba(246,168,35,.45)}
+.look-cluster .tabs{background:rgba(9,11,16,.94);border-radius:16px}
+.look-cluster .tab{border-radius:11px}
+.look-cluster .tab.on{color:var(--lm-text);background:rgba(255,255,255,.06);box-shadow:inset 0 -3px 0 var(--lm-amber)}
+.look-cluster .tab.on .ic{color:var(--lm-amber-2)}
 .tab .ti{position:relative;display:grid;place-items:center}
 .tab .ic{width:20px;height:20px}
 .tab .tlb{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tab .tb{position:absolute;top:-3px;right:-5px;width:9px;height:9px;border-radius:50%;background:var(--c);box-shadow:0 0 0 2px #0d1426,0 0 10px var(--c)}
+.tab .tb{position:absolute;top:-3px;right:-5px;width:9px;height:9px;border-radius:50%;background:var(--c);box-shadow:0 0 0 2px var(--lm-bg),0 0 10px var(--c)}
 .tab .tb.pulse{animation:lm-pulse 1.6s ease-in-out infinite}
 .lm.sticky .panel{scroll-margin-top:calc(var(--lm-tabs-top,0px) + 76px)}
 .stat{padding:11px 13px;border-radius:13px;background:rgba(255,255,255,.035);border:1px solid var(--lm-line-2);min-width:0}
-.stat small{display:block;font-size:12.5px;color:var(--lm-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat small{display:block;font-size:13px;color:var(--lm-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat b{display:block;font-size:20px;font-weight:700;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
 .stat b span{font-size:13px;font-weight:500;color:var(--lm-muted);margin-left:3px;letter-spacing:0}
-.stat em{display:block;font-style:normal;font-size:12.5px;color:var(--lm-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat em{display:block;font-style:normal;font-size:13px;color:var(--lm-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:8px}
-.subh{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--lm-muted);margin:20px 0 10px 2px}
+.subh{font-size:14px;font-weight:650;color:var(--lm-soft);margin:20px 0 10px 2px}
 
-/* ---------- hero ---------- */
-.hero{padding:0;min-height:470px;display:flex;background:#0b1430}
-.scene{position:absolute;inset:0;overflow:hidden}
-.scene svg.sky{position:absolute;inset:0;width:100%;height:100%;display:block}
-.hero-ui{position:relative;z-index:2;flex:1;display:grid;min-width:0;
-  grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);grid-template-rows:1fr auto;
-  grid-template-areas:"info car" "strip strip";padding:22px 24px 18px;column-gap:18px}
-.info{grid-area:info;min-width:0}
-.eyebrow{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--lm-soft)}
-.name{margin:8px 0 2px;font-size:27px;line-height:1.1;font-weight:700;letter-spacing:-.01em;text-shadow:0 2px 18px rgba(0,0,0,.4)}
-.sub{font-size:14px;color:#c0c9dc;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.big{display:flex;align-items:flex-start;margin:16px 0 6px;font-weight:700;font-size:98px;line-height:.86;letter-spacing:-.045em;text-shadow:0 6px 30px rgba(0,0,0,.35)}
-.big .u{font-size:30px;line-height:1;font-weight:500;color:var(--lm-amber);margin:8px 0 0 6px;letter-spacing:0}
-.state{display:flex;align-items:center;gap:9px;font-size:16px;font-weight:600;margin-top:4px}
-.state .ic{width:17px;height:17px;color:var(--lm-amber-2)}
-.metaline{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:13.5px;color:#b3bdd2;margin-top:10px}
-.metaline b{color:var(--lm-text);font-weight:600}
-.metaline .ic{width:12px;height:12px;vertical-align:-1px}
-.carzone{grid-area:car;position:relative;min-height:150px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:12px}
-.car{position:relative;width:min(100%,540px);display:flex;align-items:flex-end;justify-content:center}
-.car img{display:block;max-width:100%;max-height:230px;object-fit:contain;filter:drop-shadow(0 20px 16px rgba(0,0,0,.55)) brightness(.94)}
+/* ---------- hero (shared frame) ---------- */
+.hero{padding:0;display:flex;min-height:0}
+.stage{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.hero-ui{position:relative;z-index:2;flex:1;display:grid;min-width:0;padding:18px 22px 20px;gap:14px 20px;align-items:center}
+.h-top{grid-area:top;display:flex;align-items:center;gap:10px 16px;min-width:0;flex-wrap:wrap}
+.h-left{grid-area:left;min-width:0}
+.h-right{grid-area:right;min-width:0}
+.h-quick{grid-area:quick;min-width:0}
+.h-quick:empty,.h-right:empty,.stripwrap:empty{display:none}
+.idb{min-width:0;flex:1 1 180px}
+.idb h2{margin:0;font-size:22px;line-height:1.15;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.idb .sub{margin-top:4px;font-size:14px;line-height:1.4;color:var(--lm-muted)}
+.idb .sub .ic{width:14px;height:14px;margin-right:5px;vertical-align:-2px;color:var(--lm-amber)}
+.h-top .refresh{margin-left:auto;flex:none}
+.carzone{grid-area:car;position:relative;min-width:0;min-height:170px;align-self:stretch;display:flex;align-items:flex-end;justify-content:center;padding:0 0 16px}
+.car{position:relative;width:min(100%,520px);display:flex;align-items:flex-end;justify-content:center;z-index:1}
+.car img{display:block;max-width:100%;max-height:220px;object-fit:contain;filter:drop-shadow(0 18px 14px rgba(0,0,0,.6))}
 .car img.flip{transform:scaleX(-1)}
 .car .carsvg{width:100%;height:auto;display:block}
 .car.charging::after{content:"";position:absolute;left:8%;right:8%;bottom:-6px;height:36px;border-radius:50%;
@@ -793,25 +856,122 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .cable{position:absolute;left:-22px;bottom:6%;width:calc(16% + 22px);height:52%;overflow:visible}
 .cable path{fill:none;stroke:var(--c,#34d399);stroke-width:2.4;stroke-linecap:round;stroke-dasharray:5 7;animation:lm-flow 1.1s linear infinite;filter:drop-shadow(0 0 4px var(--c,#34d399))}
 .cable.idle path{animation:none;stroke-dasharray:none;opacity:.7}
-.chip{position:absolute;z-index:3;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;
-  background:rgba(9,15,33,.62);border:1px solid rgba(148,163,184,.17);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  font-size:13.5px;font-weight:600;white-space:nowrap;box-shadow:0 10px 24px -12px rgba(0,0,0,.6)}
-.chip .ic{width:13px;height:13px;color:var(--lm-amber)}
-.chip.a{top:22px;left:36%}
-.chip.b{top:70px;right:22px}
-.chip.c{top:44%;left:52%}
-.btn-amber{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:8px 15px;border-radius:999px;font-size:12.5px;font-weight:600;
+.btn-amber{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:8px 15px;border-radius:999px;font-size:13.5px;font-weight:600;
   color:var(--lm-amber-2);background:rgba(246,168,35,.13);border:1px solid rgba(246,168,35,.5);transition:background .2s,transform .2s}
 .btn-amber:hover{background:rgba(246,168,35,.22)}
-.btn-amber .ic{width:14px;height:14px}
-.hero .refresh{position:absolute;z-index:3;top:20px;right:22px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.btn-amber .ic{width:15px;height:15px}
 .spin .ic{animation:lm-spin 1s linear infinite}
-.strip{grid-area:strip;display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:12px 8px;padding:13px 16px;border-radius:15px;
-  background:rgba(8,13,29,.58);border:1px solid rgba(148,163,184,.15);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-.cell{min-width:0;display:flex;flex-direction:column;justify-content:space-between}
-.cell .l{font-size:11px;font-weight:600;letter-spacing:.14em;line-height:1.25;text-transform:uppercase;color:var(--lm-muted);overflow-wrap:anywhere;hyphens:auto}
-.cell .v{font-family:var(--lm-mono);font-size:16.5px;font-weight:600;margin-top:6px;white-space:nowrap}
-.cell .v small{font-size:11.5px;color:var(--lm-muted);font-weight:500;margin-left:3px}
+.strip{display:grid;min-width:0}
+.cell{min-width:0;display:flex}
+.cell .cx{min-width:0;display:flex;flex-direction:column;gap:5px}
+.cell .l{font-size:13px;font-weight:600;line-height:1.2;color:var(--lm-muted);overflow-wrap:anywhere;hyphens:auto}
+.cell .v{font-family:var(--lm-mono);font-size:18px;font-weight:600;line-height:1.1;white-space:nowrap;color:var(--lm-text)}
+.cell .v small{font-size:12px;color:var(--lm-muted);font-weight:500;margin-left:4px}
+.quick{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.qbtn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;font:600 14px var(--lm-font);color:var(--lm-text);transition:background .2s,border-color .2s}
+.qbtn .qi{display:grid;place-items:center;flex:none}
+.qbtn .ic{width:18px;height:18px;color:var(--c)}
+.qbtn.busy{opacity:.55;pointer-events:none}
+
+/* ---------- hero: driver display (look: cluster) ---------- */
+.look-cluster .hero{background:radial-gradient(46% 60% at 50% 52%,rgba(56,189,248,.075),transparent 72%),radial-gradient(120% 80% at 50% -12%,#161d2b 0%,transparent 62%),linear-gradient(180deg,#0b0e15,#05070b)}
+.look-cluster .hero.day{background:radial-gradient(46% 60% at 50% 52%,rgba(125,211,252,.13),transparent 72%),radial-gradient(120% 80% at 50% -12%,#2a3650 0%,transparent 62%),linear-gradient(180deg,#1a2233,#0e131d)}
+.look-cluster .hero-ui{grid-template-columns:minmax(150px,196px) minmax(0,1fr) minmax(150px,196px);grid-template-areas:"top top top" "left car right" "quick quick quick" "strip strip strip"}
+.tells{display:flex;align-items:center;gap:2px;padding:4px 6px;border-radius:13px;background:rgba(0,0,0,.38);border:1px solid rgba(148,163,184,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+.tell{position:relative;width:34px;height:32px;display:grid;place-items:center;border-radius:9px;color:rgba(148,163,184,.3)}
+.tell:hover{background:rgba(255,255,255,.06)}
+.tell .ic{width:20px;height:20px}
+.tell.on{color:var(--c);filter:drop-shadow(0 0 5px color-mix(in srgb,var(--c) 75%,transparent))}
+.tell.pulse .ic{animation:lm-pulse 1.6s ease-in-out infinite}
+.upd{font-size:13.5px;color:var(--lm-muted);white-space:nowrap}
+.look-cluster .idb{flex:0 1 auto}
+.look-cluster .tells{margin:0 auto}
+.look-cluster .h-top .refresh{margin-left:0}
+.gauge{position:relative;width:100%;max-width:196px;margin:0 auto;aspect-ratio:200/168}
+.gsvg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.gtrack{fill:none;stroke:rgba(148,163,184,.13);stroke-width:8;stroke-linecap:round}
+.gval{fill:none;stroke:currentColor;stroke-width:8;stroke-linecap:round;filter:drop-shadow(0 0 5px currentColor)}
+.gval.flow{animation:lm-pulse 2.2s ease-in-out infinite}
+.tk{stroke:rgba(148,163,184,.26);stroke-width:1.4}
+.tk.mj{stroke:rgba(203,213,225,.55);stroke-width:2.2}
+.tk.lit{stroke:currentColor;opacity:.85}
+.gmark{stroke:#f8fafc;stroke-width:3.2;stroke-linecap:round}
+.gin{position:absolute;left:0;right:0;top:36%;display:flex;flex-direction:column;align-items:center;text-align:center}
+.gin .gv{font-size:40px;font-weight:700;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.gin .gv small{font-size:17px;font-weight:600;color:var(--c);margin-left:3px;letter-spacing:0}
+.gin .gs{margin-top:8px;font-size:15px;font-weight:600;color:var(--lm-soft);white-space:nowrap}
+.gbot{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:center;gap:10px}
+.glab{margin-top:8px;text-align:center;font-size:13.5px;font-weight:600;color:var(--lm-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.glab b{color:var(--lm-text);font-weight:650}
+.prnd{display:inline-flex;gap:7px;font:700 14px/1 var(--lm-mono);color:rgba(148,163,184,.38)}
+.prnd .on{color:#f8fafc;text-shadow:0 0 10px rgba(255,255,255,.5)}
+.lsign{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#f8fafc;border:4px solid #e11d48;color:#0b0f17;font:800 12.5px/1 var(--lm-font);letter-spacing:-.03em;box-shadow:0 2px 10px rgba(0,0,0,.45)}
+.lsign.over{animation:lm-pulse 1.1s ease-in-out infinite}
+.floor{position:absolute;left:-8%;width:116%;bottom:0;height:60%;pointer-events:none}
+.floor .grid path{fill:none;stroke:rgba(125,211,252,.3);stroke-width:1;vector-effect:non-scaling-stroke}
+.hero.day .floor .grid path{stroke:rgba(186,230,253,.36)}
+.look-cluster .fxbatt,.look-console .fxbatt{display:none}
+.look-cluster .car.plugged{margin-left:30px}
+.look-cluster .car::before{content:"";position:absolute;left:6%;right:6%;bottom:-10px;height:30px;border-radius:50%;background:radial-gradient(closest-side,rgba(125,211,252,.22),transparent);filter:blur(4px);z-index:-1}
+.look-cluster .qbtn{min-height:44px;padding:8px 16px 8px 14px;border-radius:12px;
+  background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.025));border:1px solid rgba(148,163,184,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 6px 14px -8px rgba(0,0,0,.8)}
+.look-cluster .qbtn::after{content:"";position:absolute;left:32%;right:32%;top:-1px;height:2px;border-radius:2px}
+.look-cluster .qbtn.on::after{background:var(--c);box-shadow:0 0 8px var(--c)}
+.look-cluster .qbtn:hover{border-color:var(--c);background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.04))}
+.look-cluster .qbtn.armed{border-color:var(--lm-amber);box-shadow:0 0 0 3px rgba(246,168,35,.18);animation:lm-armed 1s ease-in-out infinite}
+.look-cluster .strip{grid-template-columns:repeat(auto-fit,minmax(118px,1fr));border-radius:14px;overflow:hidden;background:rgba(0,0,0,.34);border:1px solid rgba(148,163,184,.13)}
+.look-cluster .cell{padding:11px 15px 12px;box-shadow:-1px 0 0 rgba(148,163,184,.11),0 -1px 0 rgba(148,163,184,.11)}
+.look-cluster .cell .ci{display:none}
+
+/* ---------- hero: car app / centre screen (look: console) ---------- */
+.look-console .hero{background:radial-gradient(46% 64% at 68% 50%,rgba(165,190,255,.15),transparent 72%),linear-gradient(180deg,#131c35,#0a1124)}
+.look-console .hero.day{background:radial-gradient(46% 64% at 68% 50%,rgba(205,222,255,.22),transparent 72%),linear-gradient(180deg,#22314f,#131c34)}
+.look-console .hero-ui{grid-template-columns:minmax(230px,.82fr) minmax(0,1.45fr);grid-template-areas:"top top" "left car" "quick quick" "strip strip"}
+.look-console .h-top .upd{display:none}
+.rbox{display:flex;flex-direction:column;gap:12px;min-width:0}
+.rbox .lbl{font-size:14px;font-weight:600;color:var(--lm-muted)}
+.rng{display:flex;align-items:baseline;gap:7px;margin-top:-6px;font-size:66px;font-weight:700;line-height:1;letter-spacing:-.035em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rng small{font-size:24px;font-weight:600;color:var(--lm-amber);letter-spacing:0}
+.batt{display:flex;align-items:center;gap:12px;min-width:0}
+.bwrap{position:relative;flex:1;min-width:0;max-width:240px;padding-right:7px}
+.bwrap::after{content:"";position:absolute;right:0;top:50%;width:5px;height:11px;margin-top:-5.5px;border-radius:0 3px 3px 0;background:rgba(148,163,184,.4)}
+.bseg{position:relative;height:24px;border-radius:6px;background:rgba(148,163,184,.17);overflow:hidden;
+  -webkit-mask:repeating-linear-gradient(90deg,#000 0 calc(10% - 3px),transparent calc(10% - 3px) 10%);mask:repeating-linear-gradient(90deg,#000 0 calc(10% - 3px),transparent calc(10% - 3px) 10%)}
+.bseg i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#f59e0b,#fcd34d)}
+.bseg i.on{background:linear-gradient(90deg,#10b981,#6ee7b7,#10b981);background-size:200% 100%;animation:lm-flowbg 2s linear infinite}
+.bseg i.low{background:linear-gradient(90deg,#e11d48,#fb7185)}
+.blim{position:absolute;top:-5px;bottom:-5px;width:3px;margin-left:-1.5px;background:#f8fafc;border-radius:2px;box-shadow:0 0 0 2px rgba(10,17,36,.85)}
+.batt b{font-size:22px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.batt b small{font-size:15px;color:var(--lm-muted);font-weight:600;margin-left:2px}
+.bnote{font-size:13.5px;color:var(--lm-muted);margin-top:-4px}
+.bnote b{color:var(--lm-text);font-weight:600}
+.schips{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+.schip{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;font-size:13.5px;font-weight:600;white-space:nowrap;
+  background:rgba(255,255,255,.06);border:1px solid rgba(148,163,184,.16);color:var(--lm-text)}
+.schip .ic{width:15px;height:15px;color:var(--c,var(--lm-amber))}
+.schip.hot{border-color:color-mix(in srgb,var(--c) 55%,transparent);background:color-mix(in srgb,var(--c) 12%,transparent)}
+.look-console .carzone{min-height:210px;padding:0 0 34px 40px}
+.look-console .carzone::before{content:"";position:absolute;left:2%;right:2%;bottom:10px;height:40%;border-radius:50%;background:radial-gradient(closest-side,rgba(185,205,255,.17),transparent);pointer-events:none}
+.look-console .car img,.look-console .car .carsvg{-webkit-box-reflect:below -2px linear-gradient(transparent 80%,rgba(255,255,255,.13))}
+.tpres{position:absolute;top:calc(100% + 10px);transform:translateX(-50%);display:inline-flex;gap:6px;align-items:baseline;padding:3px 10px;border-radius:999px;line-height:1.35;
+  background:rgba(9,15,33,.8);border:1px solid rgba(148,163,184,.22);font:600 13px var(--lm-mono);color:var(--lm-text);white-space:nowrap;z-index:2;cursor:pointer}
+.tpres small{font:500 11.5px var(--lm-font);color:var(--lm-muted)}
+.tpres .low{color:#fda4af}
+.tpres.bad{border-color:rgba(251,113,133,.65);background:rgba(60,12,24,.82)}
+.look-console .qbtn{flex-direction:column;gap:8px;width:96px;min-height:0;padding:0;background:none;border:0;font-size:13.5px;color:var(--lm-soft);text-align:center;line-height:1.25}
+.look-console .qbtn .qi{width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.07);border:1px solid rgba(148,163,184,.22);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 10px 20px -12px rgba(0,0,0,.8);transition:background .2s,border-color .2s}
+.look-console .qbtn .ic{width:24px;height:24px}
+.look-console .qbtn:hover .qi{border-color:var(--c);background:rgba(255,255,255,.1)}
+.look-console .qbtn.on .qi{border-color:var(--c);background:color-mix(in srgb,var(--c) 18%,transparent)}
+.look-console .qbtn.armed .qi{border-color:var(--lm-amber);box-shadow:0 0 0 4px rgba(246,168,35,.2);animation:lm-armed 1s ease-in-out infinite}
+.look-console .qbtn.armed .ql{color:var(--lm-amber-2)}
+.look-console .strip{grid-template-columns:repeat(auto-fit,minmax(156px,1fr));gap:8px}
+.look-console .cell{align-items:center;gap:11px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.045);border:1px solid rgba(148,163,184,.12)}
+.look-console .cell .ci{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;flex:none;color:var(--lm-amber-2);background:rgba(246,168,35,.12)}
+.look-console .cell .ci .ic{width:18px;height:18px}
+.look-console .cell .v{order:-1;font-family:var(--lm-font);font-size:18px;font-weight:700}
+.look-console .cell .l{font-weight:500}
 
 /* ---------- vehicle check ---------- */
 .summary{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;margin-bottom:12px;
@@ -829,14 +989,14 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .ctile .sq{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;flex:none;color:var(--c);background:color-mix(in srgb,var(--c) 16%,transparent)}
 .ctile .sq .ic{width:19px;height:19px}
 .ctile div{min-width:0}
-.ctile b{display:block;font-size:14.5px;font-weight:600;line-height:1.25}
-.ctile small{display:block;font-size:12.5px;color:var(--lm-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctile b{display:block;font-size:15px;font-weight:600;line-height:1.25}
+.ctile small{display:block;font-size:13px;color:var(--lm-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ctile.warn{border-color:rgba(246,168,35,.5);background:rgba(246,168,35,.07)}
 .ctile.bad{border-color:rgba(251,113,133,.5);background:rgba(251,113,133,.07)}
-.pill{font-size:11px;font-weight:700;letter-spacing:.08em;padding:4px 9px;border-radius:7px;color:var(--lm-green);background:rgba(52,211,153,.12);white-space:nowrap}
+.pill{font-size:11.5px;font-weight:700;letter-spacing:.08em;padding:4px 9px;border-radius:7px;color:var(--lm-green);background:rgba(52,211,153,.12);white-space:nowrap}
 .pill.warn{color:var(--lm-amber-2);background:rgba(246,168,35,.15)}
 .pill.bad{color:var(--lm-red);background:rgba(251,113,133,.14)}
-.foot{font-size:12px;color:var(--lm-dim);margin:12px 2px 0;line-height:1.45}
+.foot{font-size:13px;color:var(--lm-dim);margin:12px 2px 0;line-height:1.45}
 .btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:11px 14px;border-radius:13px;font-size:14.5px;font-weight:600;
   background:rgba(255,255,255,.04);border:1px solid var(--lm-line);transition:background .2s,border-color .2s}
@@ -866,7 +1026,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .chartbox text{font-family:var(--lm-font);font-size:12px;fill:var(--lm-muted)}
 .chartbox text.val{fill:var(--lm-text);font-weight:700;font-size:13px}
 .chartbox text.nowtxt{fill:#1a1206;font-weight:700;font-size:11px}
-.alegend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--lm-muted);margin-top:8px}
+.alegend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--lm-muted);margin-top:8px}
 .alegend span{display:inline-flex;align-items:center;gap:7px}
 .alegend i{width:14px;height:7px;border-radius:4px;background:var(--c)}
 
@@ -882,7 +1042,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .wrow .wv{text-align:right;min-width:0}
 .wrow .wv b{display:block;font-size:16px;font-weight:700;white-space:nowrap}
 .wrow .wv b small{font-size:12px;font-weight:500;color:var(--lm-muted);margin-left:3px}
-.wrow .wv span{display:block;font-size:12.5px;color:var(--lm-muted);white-space:nowrap}
+.wrow .wv span{display:block;font-size:13px;color:var(--lm-muted);white-space:nowrap}
 .wrow.idle .wv b{color:var(--lm-muted)}
 
 /* ---------- charging ---------- */
@@ -900,14 +1060,14 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .bbar .f.on{background:linear-gradient(90deg,#10b981,#6ee7b7,#10b981);background-size:200% 100%;animation:lm-flowbg 2s linear infinite;box-shadow:0 0 18px -4px rgba(52,211,153,.8)}
 .bbar .tg{position:absolute;top:3px;bottom:3px;border-radius:0 8px 8px 0;background:repeating-linear-gradient(135deg,rgba(246,168,35,.4) 0 5px,rgba(246,168,35,.12) 5px 10px)}
 .bbar .lim{position:absolute;top:-7px;bottom:-7px;width:3px;margin-left:-1.5px;border-radius:2px;background:#eef2fa;box-shadow:0 0 0 2px rgba(13,20,36,.9)}
-.bbar .lim b{position:absolute;top:calc(100% + 5px);left:50%;transform:translateX(-50%);font-size:12.5px;font-weight:600;color:var(--lm-soft);white-space:nowrap}
+.bbar .lim b{position:absolute;top:calc(100% + 5px);left:50%;transform:translateX(-50%);font-size:13px;font-weight:600;color:var(--lm-soft);white-space:nowrap}
 .bbar .lim.edge-r b{left:auto;right:-2px;transform:none}
 .bbar .lim.edge-l b{left:-2px;transform:none}
 .cinfo{font-size:13.5px;color:var(--lm-muted);line-height:1.5;margin:-8px 0 14px}
 .cinfo b{color:var(--lm-text);font-weight:600}
 .lrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:15px;background:rgba(255,255,255,.035);border:1px solid var(--lm-line-2)}
 .lrow.busy{opacity:.6;pointer-events:none}
-.lrow small{display:block;font-size:12.5px;color:var(--lm-muted)}
+.lrow small{display:block;font-size:13px;color:var(--lm-muted)}
 .lrow b{display:inline-block;font-size:22px;font-weight:700;margin-top:2px}
 .lrow b.pending{color:var(--lm-amber-2)}
 .lrow .was{font-size:13px;color:var(--lm-muted);margin-left:8px}
@@ -926,7 +1086,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .aq .t{flex:1;min-width:0}
 .aq .t b{font-size:15px;font-weight:700}
 .aq .t b span{color:var(--lm-muted);font-weight:500}
-.aq .t small{display:block;font-size:12.5px;color:var(--lm-muted);margin-top:2px}
+.aq .t small{display:block;font-size:13px;color:var(--lm-muted);margin-top:2px}
 .scale{position:relative;height:7px;border-radius:5px;margin-top:10px;background:linear-gradient(90deg,#34d399,#a3e635 30%,#facc15 50%,#fb923c 70%,#f43f5e 85%,#a855f7)}
 .scale i{position:absolute;top:-5px;width:4px;height:17px;border-radius:2px;background:#fff;box-shadow:0 0 0 2px rgba(8,13,28,.85);transform:translateX(-50%)}
 .split{margin-top:18px;font-size:13px;color:var(--lm-muted)}
@@ -938,31 +1098,31 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .health{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid var(--lm-line-2)}
 .health .sq{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;color:#f472b6;background:rgba(244,114,182,.14)}
 .health b{display:block;font-size:15px;font-weight:600}
-.health small{display:block;font-size:12.5px;color:var(--lm-muted);margin-top:2px}
+.health small{display:block;font-size:13px;color:var(--lm-muted);margin-top:2px}
 .health .big2{font-size:24px;font-weight:700}
 
 /* ---------- trips ---------- */
 .tsum{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
 .tgroup+.tgroup{margin-top:16px}
 .tgh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:0 4px 8px;font-size:14px;font-weight:650;color:var(--lm-soft)}
-.tgh span{font-size:12.5px;font-weight:500;color:var(--lm-muted);white-space:nowrap}
+.tgh span{font-size:13px;font-weight:500;color:var(--lm-muted);white-space:nowrap}
 .trip{display:grid;grid-template-columns:minmax(52px,max-content) minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;padding:11px 13px;border-radius:14px;text-align:left;
   background:rgba(255,255,255,.03);border:1px solid var(--lm-line-2);transition:background .2s,border-color .2s}
 .trip+.trip{margin-top:6px}
 button.trip:hover{background:rgba(255,255,255,.06)}
 .trip .tt b{display:block;font-size:15px;font-weight:650;white-space:nowrap}
-.trip .tt small{display:block;font-size:12.5px;color:var(--lm-muted);margin-top:2px;white-space:nowrap}
+.trip .tt small{display:block;font-size:13px;color:var(--lm-muted);margin-top:2px;white-space:nowrap}
 .trip .td{min-width:0}
 .trip .td b{display:block;font-size:18px;font-weight:700;white-space:nowrap}
-.trip .td b small{font-size:12.5px;font-weight:500;color:var(--lm-muted);margin-left:3px}
-.trip .td>span{display:block;font-size:12.5px;color:var(--lm-muted);margin-top:3px;line-height:1.35}
+.trip .td b small{font-size:13px;font-weight:500;color:var(--lm-muted);margin-left:3px}
+.trip .td>span{display:block;font-size:13px;color:var(--lm-muted);margin-top:3px;line-height:1.35}
 .trip .tcx{text-align:right}
 .trip .tcx small{display:block;font-size:11px;color:var(--lm-muted);margin-top:4px;white-space:nowrap}
 .trip.sel{border-color:rgba(246,168,35,.6);background:rgba(246,168,35,.08);box-shadow:inset 3px 0 0 var(--lm-amber)}
 .trip.live{border-color:rgba(56,189,248,.5);background:linear-gradient(90deg,rgba(56,189,248,.12),rgba(56,189,248,.02))}
 .trip.live .tt small{color:#7dd3fc}
 .cons{display:inline-block;padding:4px 9px;border-radius:8px;font-size:13.5px;color:#0b1020;font-weight:700;white-space:nowrap}
-.vs{display:inline-block;margin-left:7px;padding:2px 7px;border-radius:6px;font-size:11.5px;font-weight:700;vertical-align:2px}
+.vs{display:inline-block;margin-left:7px;padding:2px 7px;border-radius:6px;font-size:12px;font-weight:700;vertical-align:2px}
 .vs.good{color:#34d399;background:rgba(52,211,153,.14)}
 .vs.bad{color:#fb923c;background:rgba(251,146,60,.14)}
 .more{display:block;width:100%;margin-top:12px;padding:11px;border-radius:13px;font-size:14px;font-weight:600;color:var(--lm-amber-2);background:rgba(246,168,35,.08);border:1px solid rgba(246,168,35,.32)}
@@ -973,20 +1133,20 @@ button.trip:hover{background:rgba(255,255,255,.06)}
 .tdh .when{text-align:right}
 .tdh .when b{display:block;font-size:15.5px;font-weight:650}
 .tdh .when span{display:block;font-size:13.5px;color:var(--lm-muted);margin-top:2px}
-.livebadge{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#7dd3fc}
+.livebadge{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#7dd3fc}
 .spd{margin-top:16px}
 .spd .sh{display:flex;justify-content:space-between;gap:10px;font-size:14px;font-weight:600;color:var(--lm-soft);margin-bottom:10px}
 .spd .sh span{font-weight:500;font-size:13px;color:var(--lm-muted)}
 .spdbox{position:relative;height:140px}
 .spdbox svg{position:absolute;left:36px;right:0;top:0;width:calc(100% - 36px);height:calc(100% - 22px);overflow:visible}
-.spdbox .yl{position:absolute;left:0;width:30px;text-align:right;font-size:11.5px;color:var(--lm-muted);transform:translateY(-50%)}
+.spdbox .yl{position:absolute;left:0;width:30px;text-align:right;font-size:12px;color:var(--lm-muted);transform:translateY(-50%)}
 .spdbox .yl.lim{color:#fda4af;font-weight:600}
-.spdbox .xl{position:absolute;left:36px;right:0;bottom:0;display:flex;justify-content:space-between;font-size:11.5px;color:var(--lm-muted)}
+.spdbox .xl{position:absolute;left:36px;right:0;bottom:0;display:flex;justify-content:space-between;font-size:12px;color:var(--lm-muted)}
 
 /* ---------- tires ---------- */
 .tgrid{display:grid;grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr);grid-template-areas:"fl car fr" "rl car rr";gap:10px 12px;align-items:center}
 .tyre{padding:12px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid var(--lm-line-2);min-width:0}
-.tyre small{display:block;font-size:12.5px;color:var(--lm-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tyre small{display:block;font-size:13px;color:var(--lm-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tyre b{display:block;font-size:24px;font-weight:700;margin-top:3px;color:var(--c,var(--lm-text))}
 .tyre b span{font-size:13px;font-weight:500;color:var(--lm-muted);margin-left:3px}
 .tyre em{display:block;font-style:normal;font-size:12px;font-weight:600;color:var(--c);margin-top:2px}
@@ -1003,7 +1163,7 @@ button.trip:hover{background:rgba(255,255,255,.06)}
 .mrow+.mrow{margin-top:7px}
 .mrow .sq{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 15%,transparent)}
 .mrow b{display:block;font-size:14.5px;font-weight:600;line-height:1.3}
-.mrow small{display:block;font-size:12.5px;color:var(--lm-muted);margin-top:2px}
+.mrow small{display:block;font-size:13px;color:var(--lm-muted);margin-top:2px}
 .mbar{height:5px;border-radius:4px;background:rgba(148,163,184,.12);margin-top:7px;overflow:hidden}
 .mbar i{display:block;height:100%;border-radius:4px}
 .mdone{min-height:38px;padding:8px 12px;border-radius:11px;font-size:13px;font-weight:600;color:var(--lm-soft);background:rgba(255,255,255,.04);border:1px solid var(--lm-line)}
@@ -1014,7 +1174,7 @@ button.trip:hover{background:rgba(255,255,255,.06)}
 .irow+.irow{margin-top:7px}
 .irow .sq{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 15%,transparent)}
 .irow b{display:block;font-size:14.5px;font-weight:600}
-.irow small{display:block;font-size:12.5px;color:var(--lm-muted);margin-top:2px}
+.irow small{display:block;font-size:13px;color:var(--lm-muted);margin-top:2px}
 .irow .mono{font-size:16px;font-weight:600;white-space:nowrap}
 .temps{margin-top:16px}
 .temps small.h{display:block;font-size:13px;font-weight:600;color:var(--lm-soft);margin-bottom:10px}
@@ -1032,9 +1192,9 @@ button.trip:hover{background:rgba(255,255,255,.06)}
 .tile:active{transform:scale(.98)}
 .tile .sq{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;color:var(--c,var(--lm-soft));background:color-mix(in srgb,var(--c,#94a3b8) 16%,transparent)}
 .tile .sq .ic{width:20px;height:20px}
-.tile .tl{font-size:14.5px;font-weight:600;line-height:1.25}
+.tile .tl{font-size:15px;font-weight:600;line-height:1.25}
 .tile .tx{display:flex;flex-direction:column;gap:3px;min-width:0}
-.tile .ts{font-size:12.5px;color:var(--lm-muted);line-height:1.3}
+.tile .ts{font-size:13px;color:var(--lm-muted);line-height:1.3}
 .tile.on{border-color:rgba(246,168,35,.45);background:linear-gradient(180deg,rgba(246,168,35,.12),rgba(246,168,35,.03))}
 .tile.on .ts{color:var(--lm-amber-2)}
 .tile.busy .sq .ic{animation:lm-spin 1s linear infinite}
@@ -1063,16 +1223,34 @@ button.trip:hover{background:rgba(255,255,255,.06)}
   .maintenance{grid-column:span 2;grid-row:span 2}
 }
 @container lmcard (max-width:640px){
-  .hero{min-height:0}
-  .hero-ui{grid-template-columns:minmax(0,1fr);grid-template-areas:"info" "car" "strip";padding:18px 16px 14px}
-  .chip{display:none}
-  .hero .refresh{top:16px;right:16px;padding:7px 12px}
-  .name{font-size:24px;padding-right:110px}
-  .big{font-size:80px}
-  .carzone{min-height:120px;padding:4px 0 10px 34px}
+  .hero-ui{padding:16px 14px 16px;gap:12px}
+  .idb h2{font-size:20px}
+  .h-top .refresh{padding:7px 12px}
+  .carzone{min-height:130px;padding-left:34px}
   .car img{max-height:170px}
+  .look-cluster .hero-ui{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"top top" "left right" "car car" "quick quick" "strip strip"}
+  .look-cluster .idb{flex:1 1 0}
+  .look-cluster .h-top .upd{display:none}
+  .tells{order:3;flex:1 1 100%;justify-content:space-between}
+  .gin .gv{font-size:34px}
+  .gin .gv small{font-size:14px}
+  .gin .gs{font-size:13.5px;margin-top:6px}
+  .glab{font-size:13px}
+  .lsign{width:30px;height:30px;border-width:3.5px;font-size:12px}
+  .prnd{font-size:13px;gap:5px}
+  .look-cluster .quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .look-cluster .strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .look-cluster .cell:last-child:nth-child(odd){grid-column:1/-1}
+  .look-cluster .cell{padding:10px 11px}
+  .look-console .hero-ui{grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "left" "car" "quick" "strip"}
+  .rng{font-size:54px}
+  .look-console .carzone{min-height:150px}
+  .look-console .quick{flex-wrap:nowrap;gap:6px;justify-content:space-around}
+  .look-console .qbtn{width:76px;font-size:13px}
+  .look-console .qbtn .qi{width:54px;height:54px}
+  .look-console .strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cell .v{font-size:16.5px}
   .mapbox{height:260px}
-  .quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
   .fxpin b{font-size:10px;padding:2px 6px}
   .panel{padding:16px}
   .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -1081,14 +1259,12 @@ button.trip:hover{background:rgba(255,255,255,.06)}
   .tile .tl{display:block;font-size:14px}
   .tile .tx{display:block;min-width:0}
   .tile .ts{display:block;margin-top:2px;font-size:12px}
-  .strip{grid-template-columns:repeat(3,minmax(0,1fr));padding:12px}
-  .cell .l{letter-spacing:.04em;font-size:10.5px}
   .mrow{padding:11px 12px}
   .mside{flex-direction:column;align-items:flex-end;gap:7px}
   .mrow .sq{width:32px;height:32px}
   .wstats{grid-template-columns:repeat(2,minmax(0,1fr))}
   .wrow{grid-template-columns:48px minmax(0,1fr) 86px;gap:10px;padding:7px 8px}
-  .tab{flex-direction:column;gap:4px;min-height:54px;padding:7px 4px;font-size:12.5px}
+  .tab{flex-direction:column;gap:4px;min-height:54px;padding:7px 4px;font-size:13px}
   .soc{font-size:50px}
   .tdh .dist{font-size:34px}
 }
@@ -1096,14 +1272,6 @@ button.trip:hover{background:rgba(255,255,255,.06)}
   .ctiles{grid-template-columns:minmax(0,1fr)}
   .trip{gap:10px;padding:10px 11px}
 }
-.quick{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
-.qbtn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:8px 14px;border-radius:999px;font:600 13.5px var(--lm-font);color:var(--lm-text);
-  background:rgba(9,15,33,.55);border:1px solid rgba(148,163,184,.22);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);cursor:pointer;transition:background .2s,border-color .2s}
-.qbtn .ic{width:16px;height:16px;color:var(--c)}
-.qbtn:hover{background:rgba(255,255,255,.07);border-color:var(--c)}
-.qbtn.on{border-color:var(--c)}
-.qbtn.armed{border-color:var(--lm-amber);box-shadow:0 0 0 3px rgba(246,168,35,.18);animation:lm-armed 1s ease-in-out infinite}
-.qbtn.busy{opacity:.55;pointer-events:none}
 .carbox{position:relative;display:inline-block;max-width:100%;line-height:0}
 .carbox.svgcar{width:100%}
 .fxaura{position:absolute;left:24%;right:30%;top:6%;height:46%;border-radius:50%;filter:blur(14px);opacity:.8;pointer-events:none;mix-blend-mode:screen;animation:lm-pulse 3s ease-in-out infinite}
@@ -1185,6 +1353,10 @@ class LeapmotorCard extends HTMLElement {
         { name: "device_id", selector: { device: { filter: { integration: "leapmotor" } } } },
         { name: "name", selector: { text: {} } },
         { name: "sections", selector: { select: { multiple: true, mode: "list", options: sectionOptions } } },
+        { name: "look", selector: { select: { mode: "dropdown", options: [
+          { value: "cluster", label: "Driver display (gauges around the car)" },
+          { value: "console", label: "Car app (range, battery bar, round buttons)" },
+        ] } } },
         {
           type: "grid", name: "", schema: [
             { name: "scene", selector: { select: { mode: "dropdown", options: [
@@ -1211,7 +1383,7 @@ class LeapmotorCard extends HTMLElement {
         { name: "entity_prefix", selector: { text: {} } },
       ],
       computeLabel: (s) => ({
-        device_id: "Vehicle", name: "Title (optional)", sections: "Sections", scene: "Scene",
+        device_id: "Vehicle", name: "Title (optional)", sections: "Sections", look: "Look", scene: "Display brightness (day / night)",
         language: "Language", confirm_actions: "Tap twice to confirm remote actions",
         backdrop: "Dark backdrop", image_flip: "Mirror the car picture", quick_actions: "Quick buttons under the battery", entity_prefix: "Entity prefix (optional, e.g. c10)",
         tabs: "Pages with tabs (Overview, Trips, Charging, Vehicle)", page: "First page",
@@ -1225,7 +1397,7 @@ class LeapmotorCard extends HTMLElement {
       ? ALL_SECTIONS.filter((s) => config.sections.includes(s))
       : ALL_SECTIONS;
     this._config = {
-      scene: "auto", language: "auto", confirm_actions: true, backdrop: true, show_image: true, image_flip: false, quick_actions: true,
+      look: LOOKS[0], scene: "auto", language: "auto", confirm_actions: true, backdrop: true, show_image: true, image_flip: false, quick_actions: true,
       tabs: true, ...config, sections,
     };
     this._page = null;
@@ -1481,7 +1653,7 @@ class LeapmotorCard extends HTMLElement {
       const msg = esc(this._tr("notFound"));
       if (this._sigs.__empty !== msg) {
         this._sigs = { __empty: msg };
-        this.shadowRoot.innerHTML = `<style>${STYLE}</style><div class="lm backdrop"><section class="panel"><div class="empty">${icon("car")}<br>${msg}</div></section></div>`;
+        this.shadowRoot.innerHTML = `<style>${STYLE}</style><div class="lm look-${this._look} backdrop"><section class="panel"><div class="empty">${icon("car")}<br>${msg}</div></section></div>`;
       }
       return;
     }
@@ -1497,6 +1669,10 @@ class LeapmotorCard extends HTMLElement {
   _pages() {
     return PAGES.map((p) => ({ ...p, sections: p.sections.filter((s) => this._config.sections.includes(s)) }))
       .filter((p) => p.sections.length);
+  }
+
+  get _look() {
+    return LOOKS.includes(this._config.look) ? this._config.look : LOOKS[0];
   }
 
   get _tabbed() {
@@ -1516,7 +1692,9 @@ class LeapmotorCard extends HTMLElement {
     const tabbed = this._tabbed;
     const sticky = tabbed && this._config.sticky_tabs;
     const markup = {
-      hero: `<section class="panel hero" id="hero"><div class="scene" id="scene"></div><div class="hero-ui" id="heroui"><div class="contents" id="hchips"></div><div class="info" id="hinfo"></div><div class="carzone" id="hcar"></div><div class="stripwrap" id="hstrip"></div></div></section>`,
+      hero: `<section class="panel hero" id="hero"><div class="stage" id="scene"></div><div class="hero-ui" id="heroui">` +
+        `<div class="h-top" id="htop"></div><div class="h-left" id="hleft"></div><div class="carzone" id="hcar"></div>` +
+        `<div class="h-right" id="hright"></div><div class="h-quick" id="hquick"></div><div class="stripwrap" id="hstrip"></div></div></section>`,
       check: `<section class="panel check" id="check"></section>`,
       controls: `<section class="panel controls" id="controls"></section>`,
       map: `<section class="panel map" id="map"><div id="maphead"></div><div class="mapbox" id="mapbox"></div><div id="mapfoot"></div></section>`,
@@ -1531,7 +1709,7 @@ class LeapmotorCard extends HTMLElement {
     };
     const body = pages.map((p) =>
       `<div class="page pg-${p.id}" id="page-${p.id}" role="${tabbed ? "tabpanel" : "region"}"${tabbed && p.id !== this._page ? " hidden" : ""}>${p.sections.map((s) => markup[s]).join("")}</div>`).join("");
-    const cls = ["lm", this._config.backdrop ? "backdrop" : "", tabbed ? "tabbed" : "", sticky ? "sticky" : ""].filter(Boolean).join(" ");
+    const cls = ["lm", `look-${this._look}`, this._config.backdrop ? "backdrop" : "", tabbed ? "tabbed" : "", sticky ? "sticky" : ""].filter(Boolean).join(" ");
     this.shadowRoot.innerHTML = `<style>${STYLE}</style><div class="${cls}" id="root">` +
       `${tabbed ? `<nav class="tabs${sticky ? " sticky" : ""}" id="tabs" role="tablist"></nav>` : ""}${body}</div>`;
     this._sigs = {};
@@ -1669,19 +1847,21 @@ class LeapmotorCard extends HTMLElement {
 
   /* ----- hero ----- */
 
+  /** Day or night display, like the car's own screens (option `scene`). */
   _renderScene() {
-    const scene = this.shadowRoot.getElementById("scene");
-    if (!scene) return;
+    const hero = this.shadowRoot.getElementById("hero");
+    if (!hero) return;
     const mode = this._sceneMode();
     if (this._sigs.__scene === mode) return;
     this._sigs.__scene = mode;
-    scene.innerHTML = sceneSvg(mode);
+    hero.classList.toggle("day", mode === "day");
+    hero.classList.toggle("night", mode !== "day");
   }
 
   _heroSig() {
     return [
       this._sig(["battery", "batteryPrecise", "range", "lock", "isCharging", "isPlugged", "connection", "isDriving", "speed", "gear",
-        "interior", "outdoor", "odometer", "chargeLimit", "avg", "lastUpdate", "tracker", "picture", "remaining", "vehicleState", "fuel"]),
+        "interior", "outdoor", "odometer", "chargeLimit", "avg", "lastUpdate", "tracker", "picture", "remaining", "vehicleState", "fuel", "power", "finish"]),
       this._sig(DOORS.map(([k]) => k)), this._sig(WINDOWS), this._sig(["trunk"]),
       this._sig(["speeding", "speedLimit", "speedLimitOn", "climateOn", "climateMode", "climateSwitch", "sentry"]), this._sig(TIRES.map(([k]) => k)),
       this._sceneMode(), Math.floor(Date.now() / MIN), JSON.stringify(this._armed), JSON.stringify(this._busy),
@@ -1689,125 +1869,255 @@ class LeapmotorCard extends HTMLElement {
     ].join("#");
   }
 
-  _heroHtml() {
-    const t = (k, v) => this._tr(k, v);
-    const now = new Date();
+  /** Values both hero looks show. */
+  _heroData() {
     const precise = this._v("batteryPrecise");
     const soc = precise ?? this._v("battery");
-    const socTxt = soc == null ? "—" : precise != null ? this._num(precise, 1) : this._num(soc, 0);
     const lock = this._s("lock");
-    const locked = lock ? lock.state === "locked" : null;
-    const { charging, plugged } = this._chargeState();
+    const { charging, plugged, finished } = this._chargeState();
     const driving = this._on("isDriving") === true || this._s("vehicleState")?.state === "driving";
-    const rangeV = this._v("range");
-    const rangeU = this._unit("range", "km");
-    const issues = this._issues();
-
-    const dateStr = (() => {
-      try {
-        const s = new Intl.DateTimeFormat(this._lang, { weekday: "long", day: "numeric", month: "long" }).format(now);
-        return s.charAt(0).toUpperCase() + s.slice(1);
-      } catch (_e) { return now.toDateString(); }
-    })();
-    const loc = this._location();
-
-    const stateBits = [];
-    if (locked != null) stateBits.push(locked ? t("locked") : t("unlocked"));
-    stateBits.push(charging ? t("charging") : driving ? t("driving") : t("parked"));
-    const stateIcon = charging ? "bolt" : locked === false ? "unlock" : "lock";
-
-    const meta = [];
-    const limit = this._v("chargeLimit");
-    if (limit != null) {
-      const [pre, post = ""] = esc(t("limitWord", { x: "\u0001" })).split("\u0001");
-      meta.push(`<span>${icon("arrowUp")} ${pre}<b>${this._num(limit)} %</b>${post}</span>`);
-    }
-    if (rangeV != null) meta.push(`<span>${esc(t("rangeWord", { x: `${this._num(rangeV)} ${rangeU}` }))}</span>`);
-    const upd = this._ts("lastUpdate");
-    if (upd) meta.push(`<span>${esc(t("updated", { x: this._ago(upd) }))}</span>`);
-
-    // Floating chips
-    const chips = [];
-    if (rangeV != null) chips.push(`<div class="chip a"><span class="dot"></span>${esc(t("range"))} ${this._num(rangeV)} ${esc(rangeU)} ${icon("route")}</div>`);
-    const inside = this._v("interior") ?? this._v("outdoor");
-    if (inside != null) {
-      const label = this._v("interior") != null ? t("insideChip") : t("outside");
-      chips.push(`<div class="chip b clickable" data-more="${this._v("interior") != null ? "interior" : "outdoor"}"><span class="dot" style="--c:var(--lm-sky)"></span>${esc(label)} ${this._num(inside, 1)} °C</div>`);
-    }
-    let cText, cColor = "var(--lm-green)", cPulse = "";
-    if (charging) {
-      const rem = this._v("remaining");
-      cText = rem != null ? `${t("charging")} · ${this._dur(rem)}` : `${t("charging")} · ${this._num(this._v("power"), 1)} kW`;
-      cPulse = " pulse";
-    } else if (driving && this._on("speeding") === true && this._v("speed") != null) {
-      cText = t("tooFast", { x: `${this._num(this._v("speed"))} ${this._unit("speed", "km/h")}` });
-      cColor = "var(--lm-red)";
-      cPulse = " pulse";
-    } else if (driving) {
-      const spd = this._v("speed");
-      cText = spd != null ? `${t("driving")} · ${this._num(spd)} ${this._unit("speed", "km/h")}` : t("driving");
-      cColor = "var(--lm-sky)";
-    } else if (issues.length) {
-      cText = issues[0];
-      cColor = "var(--lm-red)";
-    } else {
-      cText = t("secureChip");
-    }
-    chips.push(`<div class="chip c"><span class="dot${cPulse}" style="--c:${cColor}"></span>${esc(cText)}</div>`);
-
-    // Metric strip
-    const cells = [];
-    const cell = (label, value, unit, key) => {
-      if (value == null) return;
-      cells.push(`<div class="cell${key ? " clickable" : ""}"${key ? ` data-more="${key}"` : ""}><div class="l">${esc(label)}</div><div class="v">${value}<small>${esc(unit)}</small></div></div>`);
+    const gear = String(this._s("gear")?.state || "").toUpperCase();
+    return {
+      soc, socTxt: soc == null ? "—" : precise != null ? this._num(precise, 1) : this._num(soc, 0),
+      locked: lock ? lock.state === "locked" : null,
+      charging, plugged, finished, driving,
+      gear: GEARS.includes(gear) ? gear : driving ? "D" : "P",
+      range: this._v("range"), rangeU: this._unit("range", "km"),
+      limit: this._v("chargeLimit"),
+      upd: this._ts("lastUpdate"),
+      loc: this._location(),
+      speed: this._v("speed"), speedU: this._unit("speed", "km/h"),
+      speedLimit: this._speedLimit(),
+      speeding: this._on("speeding") === true,
+      night: this._sceneMode() === "night",
     };
-    const out = this._v("outdoor");
-    cell(t("outside"), out != null ? this._num(out, 1) : null, "°C", "outdoor");
-    const inn = this._v("interior");
-    cell(t("interior"), inn != null ? this._num(inn, 1) : null, "°C", "interior");
-    const odo = this._v("odometer");
-    cell(t("odometer"), odo != null ? this._num(odo) : null, this._unit("odometer", "km"), "odometer");
-    cell(t("chargeLimit"), limit != null ? this._num(limit) : null, "%", "chargeLimit");
-    const fuel = this._v("fuel");
-    if (fuel != null) cell(t("fuel"), this._num(fuel), "%", "fuel");
-    const spd = this._v("speed");
-    if (spd != null) cell(t("speed"), this._num(spd), this._unit("speed", "km/h"), "speed");
-    else if (this._s("gear")) cell(t("gear"), esc(this._s("gear").state), "", "gear");
-    const speedLimit = this._speedLimit();
-    if (speedLimit) cell(t("speedLimit"), this._num(speedLimit.kmh), "km/h", speedLimit.source === "vehicle" ? "speedLimit" : "speeding");
-    const avg = this._v("avg");
-    cell(t("consumption"), avg != null ? this._num(avg, 1) : null, "kWh/100", "avg");
-    if (upd) {
-      const mins = (Date.now() - upd) / MIN;
-      cell(t("lastUpdate"), mins < 60 ? this._num(Math.max(0, Math.round(mins))) : mins < 1440 ? this._num(mins / 60, 1) : this._num(mins / 1440, 1),
-        mins < 60 ? "min" : mins < 1440 ? "h" : "d", "lastUpdate");
-    }
+  }
 
-    // Car
-    const night = this._sceneMode() === "night";
+  _heroHtml() {
+    const d = this._heroData();
+    return this._look === "console" ? this._heroConsole(d) : this._heroCluster(d);
+  }
+
+  /** A translated string whose {x} is filled with markup. */
+  _trHtml(key, html) {
+    const [pre, post = ""] = esc(this._tr(key, { x: "\u0001" })).split("\u0001");
+    return `${pre}${html}${post}`;
+  }
+
+  _refreshHtml() {
+    return this._ids.refreshBtn
+      ? `<button class="btn-amber refresh${this._busy.refresh ? " spin" : ""}" data-act="refresh">${icon("refresh")}${esc(this._tr("refresh"))}</button>`
+      : "";
+  }
+
+  _idHtml(sub) {
+    return `<div class="idb"><h2>${esc(this._vehicleName())}</h2>${sub ? `<div class="sub">${sub}</div>` : ""}</div>`;
+  }
+
+  /** The car (official render or drawing) with its state overlays, wallbox and cable. */
+  _heroCarHtml(d, { tireTags = false, floor = false } = {}) {
     const picUrl = this._carPicture();
     const carArt = picUrl
       ? `<img src="${esc(picUrl)}" alt="${esc(this._vehicleName())}"${this._config.image_flip ? ' class="flip"' : ""}>`
-      : carSvg(night);
-    const carInner = `<div class="carbox${picUrl ? "" : " svgcar"}">${carArt}${this._carFx({ charging, plugged, night, driving, locked })}</div>`;
-    const ledColor = charging ? "#34d399" : "#f6a823";
-    const plug = plugged
-      ? `<div class="wallbox" style="--c:${ledColor}"><i></i></div><svg class="cable${charging ? "" : " idle"}" style="--c:${ledColor}" viewBox="0 0 100 96" preserveAspectRatio="none"><path d="M8 50C14 98 70 102 96 30" vector-effect="non-scaling-stroke"/></svg>`
+      : carSvg(d.night);
+    const fx = this._carFx({ charging: d.charging, plugged: d.plugged, night: d.night, driving: d.driving, locked: d.locked }, { tirePins: !tireTags });
+    const carInner = `<div class="carbox${picUrl ? "" : " svgcar"}">${carArt}${fx}${tireTags ? this._tireTagsHtml() : ""}</div>`;
+    const led = d.charging ? "#34d399" : "#f6a823";
+    const plug = d.plugged
+      ? `<div class="wallbox" style="--c:${led}"><i></i></div><svg class="cable${d.charging ? "" : " idle"}" style="--c:${led}" viewBox="0 0 100 96" preserveAspectRatio="none"><path d="M8 50C14 98 70 102 96 30" vector-effect="non-scaling-stroke"/></svg>`
       : "";
+    return `${floor ? floorSvg() : ""}<div class="car${d.charging ? " charging" : ""}${d.plugged ? " plugged" : ""}">${plug}${carInner}</div>`;
+  }
 
+  /** Pressures at the wheels (left · right per axle); the car faces right. */
+  _tireTagsHtml() {
+    const one = (v) => v == null ? "—" : `<span${v < TIRE_LOW_BAR ? ' class="low"' : ""}>${this._num(v, 1)}</span>`;
+    const tag = (x, l, r) => {
+      const a = this._v(l), b = this._v(r);
+      if (a == null && b == null) return "";
+      const bad = [a, b].some((v) => v != null && v < TIRE_LOW_BAR);
+      return `<span class="tpres${bad ? " bad" : ""}" style="left:${x}%" data-more="${l}">${one(a)}<small>·</small>${one(b)}<small>bar</small></span>`;
+    };
+    return tag(25, "tireRL", "tireRR") + tag(76, "tireFL", "tireFR");
+  }
+
+  /** Read-outs under the car: [label, value, unit, entity key, icon]. */
+  _cellsHtml(cells) {
+    const out = cells.filter((c) => c && c[1] != null).map(([label, value, unit, key, ic]) =>
+      `<div class="cell${key ? " clickable" : ""}"${key ? ` data-more="${key}"` : ""}><span class="ci">${icon(ic)}</span>` +
+      `<div class="cx"><div class="l">${esc(label)}</div><div class="v">${value}${unit ? `<small>${esc(unit)}</small>` : ""}</div></div></div>`);
+    return out.length ? `<div class="strip">${out.join("")}</div>` : "";
+  }
+
+  _commonCells() {
+    const t = (k) => this._tr(k);
+    const odo = this._v("odometer");
+    const today = this._v("todayDistance");
+    const avg = this._v("avg");
+    const out = this._v("outdoor");
+    const inn = this._v("interior");
+    const fuel = this._v("fuel");
+    return [
+      [t("odometer"), odo != null ? this._num(odo) : null, this._unit("odometer", "km"), "odometer", "road"],
+      [t("todayL"), today != null ? this._num(today, 1) : null, this._unit("todayDistance", "km"), "todayDistance", "route"],
+      fuel != null ? [t("fuel"), this._num(fuel), "%", "fuel", "fuel"] : null,
+      [t("consumption"), avg != null ? this._num(avg, 1) : null, "kWh/100", "avg", "leaf"],
+      [t("outside"), out != null ? this._num(out, 1) : null, "°C", "outdoor", "thermo"],
+      [t("interior"), inn != null ? this._num(inn, 1) : null, "°C", "interior", "fan"],
+    ];
+  }
+
+  /**
+   * Warning lights as in the instrument cluster: dark when there is nothing to
+   * report, lit in green (active), blue (info), amber (look) or red (problem).
+   */
+  _telltalesHtml(d) {
+    const t = (k, v) => this._tr(k, v);
+    const out = [];
+    const add = (ic, c, title, more, pulse = false) => {
+      if (!more || !this._ids[more]) return;
+      out.push(`<button class="tell${c ? " on" : ""}${pulse ? " pulse" : ""}"${c ? ` style="--c:${c}"` : ""} data-more="${more}" title="${esc(title)}" aria-label="${esc(title)}">${icon(ic)}</button>`);
+    };
+    if (d.locked != null) add(d.locked ? "lock" : "unlock", d.locked ? OK_C : WARN_C, d.locked ? t("locked") : t("unlocked"), "lock");
+    const doors = DOORS.filter(([k]) => this._s(k));
+    const openD = doors.filter(([k]) => this._on(k));
+    if (doors.length) {
+      add("door", openD.length ? WARN_C : null,
+        openD.length ? t("doorsOpen", { n: openD.length === 1 ? t(openD[0][1]) : openD.length }) : t("doorsClosed"), (openD[0] || doors[0])[0]);
+    }
+    if (this._s("trunk")) add("trunk", this._on("trunk") ? WARN_C : null, this._on("trunk") ? t("trunkOpen") : t("trunkClosed"), "trunk");
+    const wins = WINDOWS.filter((k) => this._s(k));
+    const openW = wins.filter((k) => this._on(k));
+    if (wins.length) add("window", openW.length ? WARN_C : null, openW.length ? t("windowsOpen", { n: openW.length }) : t("windowsClosed"), openW[0] || wins[0]);
+    const tires = this._tireRange();
+    if (tires) {
+      const low = tires.lo < TIRE_LOW_BAR;
+      add("tire", low ? BAD_C : null, `${low ? t("tiresWarn") : t("tiresOkShort")} · ${tires.text}`, TIRES[0][0], low);
+    }
+    const plugKey = ["connection", "isPlugged", "isCharging"].find((k) => this._ids[k]);
+    add("plug", d.charging ? OK_C : d.plugged ? "#38bdf8" : null,
+      d.charging ? t("charging") : d.finished ? t("finished") : d.plugged ? t("pluggedIn") : t("unplugged"), plugKey, d.charging);
+    const climKey = ["climateOn", "climateSwitch"].find((k) => this._ids[k]);
+    const clim = this._on("climateOn") === true || this._s("climateSwitch")?.state === "on";
+    add("fan", clim ? "#38bdf8" : null, `${t("climate")} · ${clim ? t("on") : t("off")}`, climKey);
+    const sentry = this._s("sentry")?.state === "on";
+    add("cctv", sentry ? "#f472b6" : null, `${t("sentry")} · ${sentry ? t("on") : t("off")}`, "sentry", sentry);
+    return out.length ? `<div class="tells" role="group">${out.join("")}</div>` : "";
+  }
+
+  /* Driver display: battery gauge | car on the floor | speed or charging gauge. */
+  _heroCluster(d) {
+    const t = (k, v) => this._tr(k, v);
+    const socC = d.charging ? OK_C : d.soc != null && d.soc < 20 ? BAD_C : WARN_C;
+    const left = `
+      <div class="gauge clickable" data-more="battery" style="--c:${socC}">
+        ${gaugeSvg({ frac: (d.soc ?? 0) / 100, color: socC, mark: d.limit != null ? d.limit / 100 : null, flow: d.charging })}
+        <div class="gin"><div class="gv">${d.socTxt}<small>%</small></div>${d.range != null ? `<div class="gs">${this._num(d.range)} ${esc(d.rangeU)}</div>` : ""}</div>
+      </div>
+      <div class="glab">${esc(t("tabBattery"))}${d.limit != null ? ` · ${this._trHtml("limitWord", `<b>${this._num(d.limit)} %</b>`)}` : ""}</div>`;
+
+    let right;
+    if (d.charging) {
+      const p = this._v("power");
+      const max = p == null || p <= 11.5 ? 11 : p <= 22.5 ? 22 : 150;
+      const rem = this._v("remaining");
+      const fin = this._ts("finish");
+      right = `
+        <div class="gauge clickable" data-more="power" style="--c:${OK_C}">
+          ${gaugeSvg({ frac: (p ?? 0) / max, color: OK_C, flow: true })}
+          <div class="gin"><div class="gv">${p != null ? this._num(p, 1) : "—"}<small>kW</small></div>${rem != null ? `<div class="gs">${esc(t("left", { x: this._dur(rem) }))}</div>` : ""}</div>
+          ${fin ? `<div class="gbot"><span class="glab">${esc(t("doneAt", { x: this._time(new Date(fin)) }))}</span></div>` : ""}
+        </div>
+        <div class="glab">${esc(t("chargingTitle"))}</div>`;
+    } else {
+      const lim = d.speedLimit?.kmh;
+      const spd = d.speed ?? 0;
+      const max = Math.max(160, lim ? Math.ceil((lim * 1.4) / 20) * 20 : 0);
+      const over = d.driving && (d.speeding || (lim && spd > lim));
+      const c = over ? BAD_C : "#38bdf8";
+      const sign = lim ? `<span class="lsign${over ? " over" : ""} clickable" data-more="${d.speedLimit.source === "vehicle" ? "speedLimit" : "speeding"}" title="${esc(t("speedLimit"))}">${this._num(lim)}</span>` : "";
+      const prnd = `<span class="prnd">${GEARS.map((g) => `<b${g === d.gear ? ' class="on"' : ""}>${g}</b>`).join("")}</span>`;
+      const center = d.driving
+        ? `<div class="gv">${this._num(spd)}<small>${esc(d.speedU)}</small></div>`
+        : `<div class="gv">${d.gear}</div>`;
+      right = `
+        <div class="gauge clickable" data-more="${this._ids.speed ? "speed" : "gear"}" style="--c:${c}">
+          ${gaugeSvg({ frac: d.driving ? spd / max : 0, color: c, mark: lim ? lim / max : null })}
+          <div class="gin">${center}</div>
+          <div class="gbot">${d.driving ? prnd : ""}${sign}</div>
+        </div>
+        <div class="glab">${esc(over ? t("tooFast", { x: `${this._num(spd)} ${d.speedU}` }) : d.driving ? t("speed") : t("parked"))}</div>`;
+    }
+
+    const sub = d.loc ? `${icon("pin")}${esc(d.loc)}` : "";
+    const cells = this._commonCells();
     return {
-      hchips: chips.join("") + (this._ids.refreshBtn
-        ? `<button class="btn-amber refresh${this._busy.refresh ? " spin" : ""}" data-act="refresh">${icon("refresh")}${esc(t("refresh"))}</button>`
-        : ""),
-      hinfo: `
-        <div class="eyebrow"><span class="dot"></span>${esc(t("now"))} · ${esc(this._time(now))}</div>
-        <h2 class="name">${esc(this._vehicleName())}</h2>
-        <div class="sub">${esc(dateStr)}${loc ? ` · ${icon("pin")}${esc(loc)}` : ""}</div>
-        <div class="big clickable" data-more="battery">${socTxt}<span class="u">%</span></div>
-        <div class="state">${icon(stateIcon)}${esc(stateBits.join(" · "))}</div>
-        <div class="metaline">${meta.join("")}</div>${this._quickHtml()}`,
-      hcar: `<div class="car${charging ? " charging" : ""}">${plug}${carInner}</div>`,
-      hstrip: cells.length ? `<div class="strip">${cells.slice(0, 7).join("")}</div>` : "",
+      htop: this._idHtml(sub) + this._telltalesHtml(d) +
+        (d.upd ? `<span class="upd">${esc(t("updated", { x: this._ago(d.upd) }))}</span>` : "") + this._refreshHtml(),
+      hleft: left,
+      hcar: this._heroCarHtml(d, { floor: true }),
+      hright: right,
+      hquick: this._quickHtml(),
+      hstrip: this._cellsHtml(cells),
+    };
+  }
+
+  /* Car app: range and a battery bar, the car on a studio floor, round buttons. */
+  _heroConsole(d) {
+    const t = (k, v) => this._tr(k, v);
+    const fill = d.charging ? "on" : d.soc != null && d.soc < 20 ? "low" : "";
+    const chips = [];
+    const chip = (ic, text, c, more, hot = false) =>
+      chips.push(`<span class="schip${hot ? " hot" : ""}${more ? " clickable" : ""}" style="--c:${c}"${more ? ` data-more="${more}"` : ""}>${icon(ic)}${esc(text)}</span>`);
+    if (d.locked != null) chip(d.locked ? "lock" : "unlock", d.locked ? t("locked") : t("unlocked"), d.locked ? OK_C : WARN_C, "lock", !d.locked);
+    if (d.charging) {
+      const rem = this._v("remaining");
+      chip("bolt", rem != null ? `${t("charging")} · ${this._dur(rem)}` : `${t("charging")} · ${this._num(this._v("power"), 1)} kW`, OK_C, "power", true);
+    } else if (d.driving && d.speeding && d.speed != null) {
+      chip("gauge", t("tooFast", { x: `${this._num(d.speed)} ${d.speedU}` }), BAD_C, "speeding", true);
+    } else if (d.driving) {
+      chip("gauge", d.speed != null ? `${t("driving")} · ${this._num(d.speed)} ${d.speedU}` : t("driving"), "#38bdf8", "speed", true);
+    } else if (d.plugged) {
+      chip("plug", d.finished ? t("finished") : t("pluggedIn"), "#38bdf8", ["connection", "isPlugged"].find((k) => this._ids[k]));
+    } else {
+      chip("parked", t("parked"), "#94a3b8", this._ids.vehicleState ? "vehicleState" : null);
+    }
+    const other = this._issues().filter((x) => x !== t("unlocked"));
+    if (other.length) chip("alert", other.length > 1 ? `${other[0]} +${other.length - 1}` : other[0], WARN_C, null, true);
+    const inside = this._v("interior");
+    const clim = this._on("climateOn") === true || this._s("climateSwitch")?.state === "on";
+    if (inside != null || clim) {
+      chip("thermo", `${t("insideChip")} ${inside != null ? `${this._num(inside, 1)} °C` : ""}${clim ? ` · ${t("climate")}` : ""}`.trim(), "#38bdf8", inside != null ? "interior" : "climateOn", clim);
+    }
+    if (d.driving && d.speedLimit) chip("sign", `${t("speedLimit")} ${this._num(d.speedLimit.kmh)} km/h`, BAD_C, d.speedLimit.source === "vehicle" ? "speedLimit" : "speeding");
+    if (this._s("sentry")?.state === "on") chip("cctv", t("sentryOn"), "#f472b6", "sentry", true);
+
+    const note = [];
+    if (d.limit != null) note.push(this._trHtml("limitWord", `<b>${this._num(d.limit)} %</b>`));
+    const fin = d.charging ? this._ts("finish") : null;
+    if (fin) note.push(esc(t("doneAt", { x: this._time(new Date(fin)) })));
+    const lim = d.limit != null ? `<span class="blim" style="left:calc((100% - 7px) * ${clamp(d.limit, 0, 100) / 100})"></span>` : "";
+    const left = `
+      <div class="rbox">
+        <div class="lbl">${esc(t("range"))}</div>
+        <div class="rng clickable" data-more="${this._ids.range ? "range" : "battery"}">${d.range != null ? this._num(d.range) : "—"}<small>${esc(d.rangeU)}</small></div>
+        <div class="batt clickable" data-more="battery">
+          <div class="bwrap"><div class="bseg"><i class="${fill}" style="width:${clamp(d.soc ?? 0, 0, 100)}%"></i></div>${lim}</div>
+          <b>${d.socTxt}<small>%</small></b>
+        </div>
+        ${note.length ? `<div class="bnote">${note.join(" · ")}</div>` : ""}
+        <div class="schips">${chips.join("")}</div>
+      </div>`;
+
+    const sub = [d.loc ? `${icon("pin")}${esc(d.loc)}` : "", d.upd ? esc(t("updated", { x: this._ago(d.upd) })) : ""].filter(Boolean).join(" · ");
+    const cells = this._commonCells().filter((c) => !c || c[3] !== "interior");
+    return {
+      htop: this._idHtml(sub) + this._refreshHtml(),
+      hleft: left,
+      hcar: this._heroCarHtml(d, { tireTags: true }),
+      hright: "",
+      hquick: this._quickHtml(),
+      hstrip: this._cellsHtml(cells),
     };
   }
 
@@ -2638,7 +2948,7 @@ class LeapmotorCard extends HTMLElement {
     ].filter((k) => defs[k]);
   }
 
-  /** Lock/unlock, quick heat, quick cool and windows as one row under the battery. */
+  /** Lock/unlock, quick heat, quick cool and windows as one row under the car. */
   _quickHtml() {
     const t = (k) => this._tr(k);
     const defs = this._controlDefs();
@@ -2647,7 +2957,8 @@ class LeapmotorCard extends HTMLElement {
     const buttons = keys.map((key) => {
       const d = defs[key];
       const armed = this._isArmed(key);
-      return `<button class="qbtn${d.on ? " on" : ""}${armed ? " armed" : ""}${this._busy[key] ? " busy" : ""}" style="--c:${d.color}" data-act="ctl" data-key="${key}">${icon(d.icon)}${esc(armed ? t("tapConfirm") : d.label)}</button>`;
+      return `<button class="qbtn${d.on ? " on" : ""}${armed ? " armed" : ""}${this._busy[key] ? " busy" : ""}" style="--c:${d.color}" data-act="ctl" data-key="${key}">` +
+        `<span class="qi">${icon(d.icon)}</span><span class="ql">${esc(armed ? t("tapConfirm") : d.label)}</span></button>`;
     });
     return `<div class="quick">${buttons.join("")}</div>`;
   }
@@ -2673,7 +2984,7 @@ class LeapmotorCard extends HTMLElement {
    * Positions assume the car faces right, as in the scene (mirror the picture
    * in the card options if it does not).
    */
-  _carFx({ charging, plugged, night, driving, locked }) {
+  _carFx({ charging, plugged, night, driving, locked }, { tirePins = true } = {}) {
     const t = (k, v) => this._tr(k, v);
     const fx = [];
     const pin = (x, y, label, cls = "") =>
@@ -2697,8 +3008,8 @@ class LeapmotorCard extends HTMLElement {
     if (["winFL", "winFR", "winRL", "winRR"].some((k) => this._on(k))) pin(50, 24, t("windows"));
     if (this._on("skylight")) pin(47, 6, t("sunroof"));
     const low = (k) => { const v = this._v(k); return v != null && v < TIRE_LOW_BAR; };
-    if (low("tireFL") || low("tireFR")) pin(76, 82, t("tireLowShort"), "bad");
-    if (low("tireRL") || low("tireRR")) pin(25, 82, t("tireLowShort"), "bad");
+    if (tirePins && (low("tireFL") || low("tireFR"))) pin(76, 82, t("tireLowShort"), "bad");
+    if (tirePins && (low("tireRL") || low("tireRR"))) pin(25, 82, t("tireLowShort"), "bad");
     const soc = this._v("battery");
     if (plugged && soc != null) fx.push(`<span class="fxbatt${charging ? " on" : ""}"><i style="width:${clamp(soc, 0, 100)}%"></i></span>`);
     return fx.join("");
@@ -3238,7 +3549,7 @@ class LeapmotorCard extends HTMLElement {
   }
 }
 
-// Artwork is exposed for the docs banner and previews.
+// Artwork is exposed for the docs banner and previews (the banner still uses the old sky scene).
 LeapmotorCard.art = { sceneSvg, carSvg };
 
 /* ------------------------------------------------------------------ */
@@ -3342,7 +3653,7 @@ if (!customElements.get("leapmotor-card")) {
   window.customCards.push({
     type: "leapmotor-card",
     name: "Leapmotor",
-    description: "Night-sky dashboard for your Leapmotor: overview with remote controls, trips with maps, charging and vehicle care.",
+    description: "Car-style dashboard for your Leapmotor: driver display or car-app look, remote controls, trips with maps, charging and vehicle care.",
     preview: true,
     documentationURL: "https://github.com/sabotin/leapmotor/blob/main/docs/card.md",
   });

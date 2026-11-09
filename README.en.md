@@ -13,7 +13,7 @@
 <p align="center">
   <b>Your Leapmotor, at home in Home Assistant.</b><br>
   Battery, charging, doors, windows, tires, a trip log, charging costs and remote control —<br>
-  plus a built-in night-sky dashboard that installs itself.
+  plus a built-in car-style dashboard that installs itself.
 </p>
 
 <p align="center">

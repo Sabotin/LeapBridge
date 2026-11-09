@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased — car-style dashboard
+
+- **No more weather-app hero:** the sky, moon, stars, trees, clock and date are
+  gone. The Overview car panel now looks like a car, in one of two looks (card
+  option `look`):
+  - `cluster` (default) — a **driver display**: battery gauge with range and
+    the charge limit, the car on a lit floor, a speed gauge with the speed
+    limit sign and P R N D (charging power and finish time while charging),
+    warning lights for lock, doors, trunk, windows, tires, cable, climate and
+    sentry, and a trip-computer strip.
+  - `console` — a **car-app screen**: range as the headline, a segmented
+    battery bar with the charge limit, status chips, tire pressures at the
+    wheels and round quick buttons.
+- `scene` now picks a day or night display instead of a day or night sky.
+- **More readable:** small text one size up, more contrast for secondary text,
+  no letter-spaced capitals in the metric strip and section headings.
+- The map-less trip drawing no longer has stars.
+
 ## Unreleased — card pages, trips page, readable panels
 
 - **Pages:** the card is split into **Overview** (car, vehicle check, remote
