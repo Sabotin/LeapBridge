@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/dashboard.png" alt="Leapmotor dashboard card" width="100%">
+  <img src="images/dashboard.png" alt="Leapmotor dashboard card, Overview page" width="100%">
 </p>
 
 # Leapmotor dashboard card
