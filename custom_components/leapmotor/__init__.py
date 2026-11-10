@@ -46,7 +46,7 @@ from .const import (
     STATIC_CERT_STORAGE_DIR,
     SUBENTRY_TYPE_VEHICLE,
 )
-from .coordinator import LeapmotorDataUpdateCoordinator
+from .coordinator import LeapmotorDataUpdateCoordinator, async_reload_after_share_accept
 from .leap_api import LeapmotorApiError
 from .entity_migration import async_remove_obsolete_entities
 from .lock import LOCK_ACTION, UNLOCK_ACTION
@@ -1078,27 +1078,39 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 raise HomeAssistantError("No Leapmotor config entry is loaded.")
             vin_tail = call.data.get("vin_tail")
             wanted = str(vin_tail or "").upper()
-            for entry_id, coordinator in domain_data.items():
+
+            def cached_match(coordinator) -> bool:
                 pending = (coordinator.data or {}).get("share_invitations") or []
-                if not any(
+                return any(
                     not wanted or wanted.endswith(str(item.get("vin_tail") or "").upper())
                     or str(item.get("vin_tail") or "").upper().endswith(wanted)
                     for item in pending
-                ):
-                    continue
+                )
+
+            # The account whose last poll showed the invitation answers it. When
+            # no poll has seen one yet (it may be minutes old), every account is
+            # asked: the client reads the waiting invitations again itself.
+            matched = [item for item in domain_data.items() if cached_match(item[1])]
+            candidates = matched[:1] or list(domain_data.items())
+            failure: LeapmotorApiError | None = None
+            for entry_id, coordinator in candidates:
                 try:
                     result = await hass.async_add_executor_job(
                         partial(coordinator.client.answer_share_invitation, vin_tail, accept=accept)
                     )
                 except LeapmotorApiError as exc:
-                    raise HomeAssistantError(str(exc)) from exc
+                    failure = exc
+                    continue
                 if accept:
-                    # The shared car needs its own entities: load the entry again.
-                    hass.async_create_task(hass.config_entries.async_reload(entry_id))
+                    # The shared car needs its own entities: load the entry
+                    # again, a moment later, when the cloud lists the car.
+                    async_reload_after_share_accept(hass, entry_id)
                 else:
                     await coordinator.async_manual_refresh()
                 return result if call.return_response else None
-            raise HomeAssistantError("No matching car-share invitation is waiting.")
+            raise HomeAssistantError(
+                str(failure) if failure else "No matching car-share invitation is waiting."
+            ) from failure
 
         return handler
 

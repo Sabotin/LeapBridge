@@ -10,8 +10,9 @@ import time
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
@@ -85,6 +86,26 @@ DEFAULT_HOME_RADIUS_M = 100.0
 MAX_PENDING_EVENTS = 20
 #: Extra tolerance on a zone radius for GPS jitter.
 ZONE_MARGIN_M = 50.0
+
+
+
+#: The cloud lists a newly accepted shared car a few seconds after the answer.
+SHARE_RELOAD_DELAY_SECONDS = 8
+
+
+@callback
+def async_reload_after_share_accept(hass: HomeAssistant, entry_id: str) -> None:
+    """Load the entry again once the accepted car had time to appear."""
+
+    @callback
+    def _reload(_now: Any = None) -> None:
+        if hass.config_entries.async_get_entry(entry_id) is not None:
+            hass.async_create_task(hass.config_entries.async_reload(entry_id))
+
+    if SHARE_RELOAD_DELAY_SECONDS <= 0:
+        _reload()
+    else:
+        async_call_later(hass, SHARE_RELOAD_DELAY_SECONDS, _reload)
 
 
 class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
