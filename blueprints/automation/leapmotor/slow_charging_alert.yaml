@@ -1,5 +1,5 @@
 blueprint:
-  name: Leapmotor — slow charging alert
+  name: "Leapmotor: slow charging alert"
   description: >-
     Tell you when the car charges clearly slower than it usually does at the
     same kind of place (for example a wallbox that fell back to one phase).

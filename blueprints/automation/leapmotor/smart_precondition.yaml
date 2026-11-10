@@ -1,5 +1,5 @@
 blueprint:
-  name: Leapmotor — pre-condition before your usual departure
+  name: "Leapmotor: pre-condition before your usual departure"
   description: >-
     Heat or cool the cabin shortly before the car usually leaves. The time is
     not set by hand: the integration learns from the trip log when the car

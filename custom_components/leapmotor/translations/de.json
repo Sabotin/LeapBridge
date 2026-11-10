@@ -36,7 +36,25 @@
           "eco_polling_enabled": "Eco-Polling im geparkten Zustand aktivieren",
           "eco_scan_interval": "Eco-Aktualisierungsintervall in Minuten",
           "abrp_enabled": "ABRP Live-Daten aktivieren",
-          "abrp_token": "ABRP Generic Token"
+          "abrp_token": "ABRP Generic Token",
+          "price_home_kwh": "Preis für Laden zu Hause pro kWh",
+          "price_public_ac_kwh": "Preis für öffentliches AC-Laden pro kWh",
+          "price_public_dc_kwh": "Preis für öffentliches DC-Schnellladen pro kWh",
+          "price_home_low_kwh": "Niedertarif zu Hause pro kWh",
+          "low_tariff_start": "Niedertarif beginnt",
+          "low_tariff_end": "Niedertarif endet",
+          "low_tariff_weekends": "Niedertarif am Wochenende ganztägig",
+          "show_sidebar_panel": "Leapmotor-Dashboard in der Seitenleiste anzeigen"
+        },
+        "data_description": {
+          "price_home_kwh": "Gilt für Ladevorgänge, die in deiner Zone „Zuhause“ beginnen. Bei 0 werden keine Kosten erfasst.",
+          "price_public_ac_kwh": "Gilt für AC-Ladevorgänge außerhalb von zu Hause.",
+          "price_public_dc_kwh": "Gilt für Ladevorgänge an einem DC-Schnelllader außerhalb von zu Hause.",
+          "price_home_low_kwh": "Optional. Mit einem Niedertarif wird das Laden zu Hause je nach Uhrzeit zwischen Niedertarif und normalem Preis aufgeteilt. Bei 0 gilt ein einziger Preis.",
+          "low_tariff_start": "Zum Beispiel 22:00.",
+          "low_tariff_end": "Zum Beispiel 06:00. Zeitfenster über Mitternacht sind möglich.",
+          "low_tariff_weekends": "Üblich bei Zweitarifmodellen wie dem slowenischen MT/VT.",
+          "show_sidebar_panel": "Fügt der Seitenleiste einen Leapmotor-Eintrag mit dem vollständigen Dashboard hinzu. Zum Ausblenden ausschalten."
         }
       },
       "certificates": {
@@ -96,7 +114,10 @@
       "missing_app_cert": "App-Zertifikat/Private-Key fehlen. Beide PEM-Werte einfügen oder app_cert.pem und app_key.pem unter /config/leapmotor ablegen.",
       "certificate_import_error": "Zertifikatsimport fehlgeschlagen. PEM-Zertifikat und Private-Key prüfen.",
       "share_accept_failed": "Die Einladung konnte nicht angenommen werden. Erneut versuchen oder in der Leapmotor-App annehmen.",
-      "share_not_ready": "Die Einladung wurde angenommen, aber das Auto ist noch nicht im Konto. Gleich noch einmal absenden."
+      "share_not_ready": "Die Einladung wurde angenommen, aber das Auto ist noch nicht im Konto. Gleich noch einmal absenden.",
+      "app_cert_invalid": "Die Zertifikatsdatei ist kein gültiges PEM-Zertifikat. Prüfen, ob app_cert.pem den vollständigen Block BEGIN/END CERTIFICATE enthält.",
+      "app_key_invalid": "Die Private-Key-Datei ist kein gültiger PEM-Private-Key. Prüfen, ob app_key.pem den vollständigen Block BEGIN/END PRIVATE KEY enthält und nicht verschlüsselt ist.",
+      "certificate_key_mismatch": "Zertifikat und Private-Key passen nicht zusammen. app_cert.pem und app_key.pem müssen das zusammengehörige Paar aus derselben Quelle sein."
     },
     "abort": {
       "already_configured": "Dieses Konto ist bereits eingerichtet.",
@@ -123,7 +144,29 @@
           "data": {
             "operation_password": "Fahrzeug-PIN (optional, für Steuerung)",
             "abrp_enabled": "ABRP-Livedaten aktivieren",
-            "abrp_token": "ABRP Generic Token"
+            "abrp_token": "ABRP Generic Token",
+            "battery_reference_kwh": "Nutzbare Akkukapazität (optional)",
+            "maintenance_severe_use": "Wartungsplan für erschwerte Bedingungen oder Stadtverkehr",
+            "preheat_temperature": "Temperatur beim Vorheizen",
+            "preheat_fan_speed": "Lüfterstufe beim Vorheizen",
+            "preheat_recirculate": "Vorheizen nur mit Umluft",
+            "precool_temperature": "Temperatur beim Vorkühlen",
+            "precool_fan_speed": "Lüfterstufe beim Vorkühlen",
+            "precool_recirculate": "Vorkühlen nur mit Umluft",
+            "precondition_cool_above": "Automatik: kühlen, wenn es wärmer ist als",
+            "speed_alert_kmh": "Tempowarnung (km/h)"
+          },
+          "data_description": {
+            "battery_reference_kwh": "Nutzbare Kapazität des neuen Akkus in kWh; sie gilt als 100 % für die Akkugesundheit. Bei 0 wird mit der besten bisher gemessenen Kapazität verglichen.",
+            "maintenance_severe_use": "Kürzere Intervalle bei häufigen Kurzstrecken, staubigen oder bergigen Straßen, Anhängerbetrieb oder Stop-and-go-Verkehr (C10 und T03).",
+            "preheat_temperature": "Temperatur für die Taste und die Aktion „Innenraum vorheizen“.",
+            "preheat_fan_speed": "1–7; 7 ist die höchste Stufe.",
+            "preheat_recirculate": "Nur die Innenraumluft erwärmen (keine Außenluft), damit es schneller warm wird.",
+            "precool_temperature": "Zieltemperatur der Klimaanlage; 18 °C ist der niedrigste Wert.",
+            "precool_fan_speed": "1–7; 7 ist die höchste Stufe.",
+            "precool_recirculate": "Nur die Innenraumluft kühlen, damit es schneller kühl wird.",
+            "precondition_cool_above": "Die Automatik-Taste kühlt ab dieser Außentemperatur und heizt darunter.",
+            "speed_alert_kmh": "Der Sensor „Zu schnell“ schaltet oberhalb dieser Geschwindigkeit ein. Bei 0 gilt das im Auto eingestellte Tempolimit, sofern es eingeschaltet ist."
           }
         },
         "reconfigure": {
@@ -132,7 +175,29 @@
           "data": {
             "operation_password": "Fahrzeug-PIN (optional, für Steuerung)",
             "abrp_enabled": "ABRP-Livedaten aktivieren",
-            "abrp_token": "ABRP Generic Token"
+            "abrp_token": "ABRP Generic Token",
+            "battery_reference_kwh": "Nutzbare Akkukapazität (optional)",
+            "maintenance_severe_use": "Wartungsplan für erschwerte Bedingungen oder Stadtverkehr",
+            "preheat_temperature": "Temperatur beim Vorheizen",
+            "preheat_fan_speed": "Lüfterstufe beim Vorheizen",
+            "preheat_recirculate": "Vorheizen nur mit Umluft",
+            "precool_temperature": "Temperatur beim Vorkühlen",
+            "precool_fan_speed": "Lüfterstufe beim Vorkühlen",
+            "precool_recirculate": "Vorkühlen nur mit Umluft",
+            "precondition_cool_above": "Automatik: kühlen, wenn es wärmer ist als",
+            "speed_alert_kmh": "Tempowarnung (km/h)"
+          },
+          "data_description": {
+            "battery_reference_kwh": "Nutzbare Kapazität des neuen Akkus in kWh; sie gilt als 100 % für die Akkugesundheit. Bei 0 wird mit der besten bisher gemessenen Kapazität verglichen.",
+            "maintenance_severe_use": "Kürzere Intervalle bei häufigen Kurzstrecken, staubigen oder bergigen Straßen, Anhängerbetrieb oder Stop-and-go-Verkehr (C10 und T03).",
+            "preheat_temperature": "Temperatur für die Taste und die Aktion „Innenraum vorheizen“.",
+            "preheat_fan_speed": "1–7; 7 ist die höchste Stufe.",
+            "preheat_recirculate": "Nur die Innenraumluft erwärmen (keine Außenluft), damit es schneller warm wird.",
+            "precool_temperature": "Zieltemperatur der Klimaanlage; 18 °C ist der niedrigste Wert.",
+            "precool_fan_speed": "1–7; 7 ist die höchste Stufe.",
+            "precool_recirculate": "Nur die Innenraumluft kühlen, damit es schneller kühl wird.",
+            "precondition_cool_above": "Die Automatik-Taste kühlt ab dieser Außentemperatur und heizt darunter.",
+            "speed_alert_kmh": "Der Sensor „Zu schnell“ schaltet oberhalb dieser Geschwindigkeit ein. Bei 0 gilt das im Auto eingestellte Tempolimit, sofern es eingeschaltet ist."
           }
         }
       },
@@ -353,22 +418,22 @@
         "name": "PTC-Leistungseinstellung"
       },
       "available_energy_kwh": {
-        "name": "Verfuegbare Energie"
+        "name": "Verfügbare Energie"
       },
       "outdoor_temp_c": {
         "name": "Aussentemperatur"
       },
       "climate_fan_volume": {
-        "name": "Klima Luefterstufe"
+        "name": "Klima Lüfterstufe"
       },
       "climate_fan_volume_setting": {
-        "name": "Klima Lueftereinstellung"
+        "name": "Klima Lüftereinstellung"
       },
       "climate_air_direction": {
         "name": "Klima-Luftrichtung (Rohcode)"
       },
       "climate_cooling_heating_mode": {
-        "name": "Klima Kuehl-/Heizmodus"
+        "name": "Klima Kühl-/Heizmodus"
       },
       "climate_min_single_temp_c": {
         "name": "Klima minimale Einzeltemperatur"
@@ -487,6 +552,48 @@
       },
       "remote_permissions": {
         "name": "Fernsteuerungsrechte"
+      },
+      "last_trip_distance_km": {
+        "name": "Strecke der letzten Fahrt"
+      },
+      "last_trip_consumption_kwh_100km": {
+        "name": "Verbrauch der letzten Fahrt"
+      },
+      "trips_today_distance_km": {
+        "name": "Strecke heute"
+      },
+      "trips_month_distance_km": {
+        "name": "Strecke diesen Monat"
+      },
+      "last_charge_session_energy_kwh": {
+        "name": "Energie des letzten Ladevorgangs"
+      },
+      "last_charge_session_cost": {
+        "name": "Kosten des letzten Ladevorgangs"
+      },
+      "charging_cost_month": {
+        "name": "Ladekosten diesen Monat"
+      },
+      "charged_energy_month_kwh": {
+        "name": "Geladene Energie diesen Monat"
+      },
+      "battery_health_percent": {
+        "name": "Akkugesundheit"
+      },
+      "next_maintenance": {
+        "name": "Nächste Wartung"
+      },
+      "driving_cost_month": {
+        "name": "Fahrkosten diesen Monat"
+      },
+      "driving_cost_per_100km": {
+        "name": "Fahrkosten pro 100 km"
+      },
+      "parked_drain_kwh_day": {
+        "name": "Standverlust des Akkus"
+      },
+      "energy_to_charge_limit_kwh": {
+        "name": "Energie bis zum Ladelimit"
       }
     },
     "binary_sensor": {
@@ -611,13 +718,13 @@
         "name": "Hotspot"
       },
       "windows_remote_supported": {
-        "name": "Fenster-Fernsteuerung unterstuetzt"
+        "name": "Fenster-Fernsteuerung unterstützt"
       },
       "door_control_allowed": {
-        "name": "Tuersteuerung erlaubt"
+        "name": "Türsteuerung erlaubt"
       },
       "is_driving": {
-        "name": "Faehrt"
+        "name": "Fährt"
       },
       "charge_recommended": {
         "name": "Laden empfohlen"
@@ -627,6 +734,18 @@
       },
       "next_day_range_sufficient": {
         "name": "Genug für den nächsten Tag"
+      },
+      "attention_needed": {
+        "name": "Bitte prüfen"
+      },
+      "tire_pressure_warning": {
+        "name": "Reifendruckwarnung"
+      },
+      "maintenance_due": {
+        "name": "Wartung fällig"
+      },
+      "speeding": {
+        "name": "Zu schnell"
       }
     },
     "image": {
@@ -679,6 +798,27 @@
       },
       "ac_off": {
         "name": "Klima ausschalten"
+      },
+      "start_charging": {
+        "name": "Laden starten"
+      },
+      "stop_charging": {
+        "name": "Laden stoppen"
+      },
+      "open_sunroof": {
+        "name": "Schiebedach öffnen"
+      },
+      "close_sunroof": {
+        "name": "Schiebedach schließen"
+      },
+      "preheat_cabin": {
+        "name": "Innenraum vorheizen"
+      },
+      "precool_cabin": {
+        "name": "Innenraum vorkühlen"
+      },
+      "precondition_cabin": {
+        "name": "Innenraum vorklimatisieren (Automatik)"
       }
     },
     "lock": {
@@ -716,13 +856,19 @@
         "name": "Ladeplanung"
       },
       "battery_preheat": {
-        "name": "Batterievorwaermung"
+        "name": "Batterievorwärmung"
       },
       "steering_wheel_heat": {
         "name": "Lenkradheizung"
       },
       "rearview_mirror_heat": {
         "name": "Spiegelheizung"
+      },
+      "sentry_mode": {
+        "name": "Wächtermodus"
+      },
+      "healthy_charging": {
+        "name": "Schonladen"
       }
     },
     "update": {
@@ -771,16 +917,41 @@
           "abrp_token": "ABRP Generic Token",
           "fuel_price_l": "Kraftstoffpreis pro Liter (Vergleich)",
           "fuel_l_100km": "Verbrauch des Vergleichsautos",
-          "grid_co2_g_kwh": "CO2 deines Stroms"
+          "grid_co2_g_kwh": "CO2 deines Stroms",
+          "price_home_kwh": "Preis für Laden zu Hause pro kWh",
+          "price_public_ac_kwh": "Preis für öffentliches AC-Laden pro kWh",
+          "price_public_dc_kwh": "Preis für öffentliches DC-Schnellladen pro kWh",
+          "price_home_low_kwh": "Niedertarif zu Hause pro kWh",
+          "low_tariff_start": "Niedertarif beginnt",
+          "low_tariff_end": "Niedertarif endet",
+          "low_tariff_weekends": "Niedertarif am Wochenende ganztägig",
+          "show_sidebar_panel": "Leapmotor-Dashboard in der Seitenleiste anzeigen",
+          "driving_scan_interval": "Aktualisierungsintervall während der Fahrt (Minuten)"
         },
         "data_description": {
           "eco_polling_enabled": "Das langsamere Eco-Intervall nur verwenden, wenn alle Fahrzeuge eindeutig verriegelt, geparkt und nicht angesteckt sind.",
           "eco_scan_interval": "Polling-Intervall im Eco-Modus. Es wird automatisch mindestens auf das normale Aktualisierungsintervall begrenzt.",
           "fuel_price_l": "Zeigt, was ein Verbrenner für dieselbe Strecke gekostet hätte. Bei 0 werden nur Liter und CO2 angezeigt.",
           "fuel_l_100km": "Kraftstoffverbrauch eines vergleichbaren Verbrenners pro 100 km.",
-          "grid_co2_g_kwh": "Gramm CO2 pro kWh deines Ladestroms. Für eigenen Solarstrom 0 eintragen."
+          "grid_co2_g_kwh": "Gramm CO2 pro kWh deines Ladestroms. Für eigenen Solarstrom 0 eintragen.",
+          "price_home_kwh": "Gilt für Ladevorgänge, die in deiner Zone „Zuhause“ beginnen. Bei 0 werden keine Kosten erfasst.",
+          "price_public_ac_kwh": "Gilt für AC-Ladevorgänge außerhalb von zu Hause.",
+          "price_public_dc_kwh": "Gilt für Ladevorgänge an einem DC-Schnelllader außerhalb von zu Hause.",
+          "price_home_low_kwh": "Optional. Mit einem Niedertarif wird das Laden zu Hause je nach Uhrzeit zwischen Niedertarif und normalem Preis aufgeteilt. Bei 0 gilt ein einziger Preis.",
+          "low_tariff_start": "Zum Beispiel 22:00.",
+          "low_tariff_end": "Zum Beispiel 06:00. Zeitfenster über Mitternacht sind möglich.",
+          "low_tariff_weekends": "Üblich bei Zweitarifmodellen wie dem slowenischen MT/VT.",
+          "show_sidebar_panel": "Fügt der Seitenleiste einen Leapmotor-Eintrag mit dem vollständigen Dashboard hinzu. Zum Ausblenden ausschalten.",
+          "driving_scan_interval": "So oft wird während der Fahrt abgefragt, damit Fahrtenkarte und Tempowarnung mehr Punkte erhalten. Nie seltener als das normale Intervall."
         }
       }
+    },
+    "error": {
+      "app_cert_invalid": "Die Zertifikatsdatei ist kein gültiges PEM-Zertifikat. Prüfen, ob app_cert.pem den vollständigen Block BEGIN/END CERTIFICATE enthält.",
+      "app_key_invalid": "Die Private-Key-Datei ist kein gültiger PEM-Private-Key. Prüfen, ob app_key.pem den vollständigen Block BEGIN/END PRIVATE KEY enthält und nicht verschlüsselt ist.",
+      "certificate_key_mismatch": "Zertifikat und Private-Key passen nicht zusammen. app_cert.pem und app_key.pem müssen das zusammengehörige Paar aus derselben Quelle sein.",
+      "certificate_import_error": "Zertifikatsimport fehlgeschlagen. PEM-Zertifikat und Private-Key prüfen.",
+      "missing_app_cert": "App-Zertifikat/Private-Key fehlen. Beide PEM-Werte einfügen oder app_cert.pem und app_key.pem unter /config/leapmotor ablegen."
     }
   },
   "services": {
@@ -797,8 +968,8 @@
           "description": "Zieltemperatur in Grad C, von 18 bis 32. Standard 26."
         },
         "fan_speed": {
-          "name": "Luefterstufe",
-          "description": "Luefterstufe von 1 bis 7. Standard 3."
+          "name": "Lüfterstufe",
+          "description": "Lüfterstufe von 1 bis 7. Standard 3."
         },
         "recirculate": {
           "name": "Umluft",
@@ -813,8 +984,8 @@
           "description": "Fahrzeugidentifikationsnummer. Erforderlich bei mehreren Fahrzeugen."
         },
         "entity_id": {
-          "name": "Entitaets-ID",
-          "description": "Optionale Leapmotor-Entitaet zur Ermittlung des Zielfahrzeugs."
+          "name": "Entitäts-ID",
+          "description": "Optionale Leapmotor-Entität zur Ermittlung des Zielfahrzeugs."
         }
       }
     },
@@ -877,6 +1048,144 @@
           "description": "Letzte Zeichen der FIN. Nur nötig, wenn mehrere Einladungen warten."
         }
       }
+    },
+    "log_maintenance": {
+      "name": "Wartung eintragen",
+      "description": "Trägt einen erledigten Service ein. Er ist der neue Ausgangspunkt für das nächste Fälligkeitsdatum und den nächsten Kilometerstand dieses Punkts.",
+      "fields": {
+        "service_type": {
+          "name": "Service",
+          "description": "Service-ID aus den Einträgen (items) des Sensors „Nächste Wartung“, z. B. tire_rotation."
+        },
+        "odometer_km": {
+          "name": "Kilometerstand",
+          "description": "Kilometerstand beim Service. Standard ist der aktuelle Stand."
+        },
+        "date": {
+          "name": "Datum",
+          "description": "Datum des Service. Standard ist heute."
+        },
+        "vin": {
+          "name": "FIN",
+          "description": "Ziel-FIN. Nötig, wenn mehrere Fahrzeuge eingerichtet sind."
+        },
+        "entity_id": {
+          "name": "Entitäts-ID",
+          "description": "Optionale Leapmotor-Entität zur Ermittlung des Zielfahrzeugs."
+        }
+      }
+    },
+    "reset_maintenance": {
+      "name": "Wartungseintrag zurücksetzen",
+      "description": "Verwirft einen eingetragenen Service; für den Punkt gilt dann wieder die Annahme „planmäßig“.",
+      "fields": {
+        "service_type": {
+          "name": "Service",
+          "description": "Service-ID, die zurückgesetzt wird."
+        },
+        "vin": {
+          "name": "FIN",
+          "description": "Ziel-FIN. Nötig, wenn mehrere Fahrzeuge eingerichtet sind."
+        },
+        "entity_id": {
+          "name": "Entitäts-ID",
+          "description": "Optionale Leapmotor-Entität zur Ermittlung des Zielfahrzeugs."
+        }
+      }
+    },
+    "charging_start": {
+      "name": "Laden starten",
+      "description": "Startet das Laden bei angestecktem Kabel. Fahrzeug-PIN erforderlich."
+    },
+    "charging_stop": {
+      "name": "Laden stoppen",
+      "description": "Stoppt das Laden bei angestecktem Kabel. Fahrzeug-PIN erforderlich."
+    },
+    "sunroof_open": {
+      "name": "Schiebedach öffnen",
+      "description": "Öffnet das Schiebedach. Fahrzeug-PIN erforderlich."
+    },
+    "sunroof_close": {
+      "name": "Schiebedach schließen",
+      "description": "Schließt das Schiebedach. Fahrzeug-PIN erforderlich."
+    },
+    "preheat_cabin": {
+      "name": "Innenraum vorheizen",
+      "description": "Heizt den Innenraum mit der Vorheiz-Voreinstellung des Fahrzeugs (Einstellungen → Fahrzeug). Felder überschreiben die Voreinstellung für diesen Aufruf. Fahrzeug-PIN erforderlich.",
+      "fields": {
+        "temperature": {
+          "name": "Temperatur",
+          "description": "18–32 °C."
+        },
+        "fan_speed": {
+          "name": "Lüfterstufe",
+          "description": "1–7."
+        },
+        "recirculate": {
+          "name": "Umluft",
+          "description": "Nur Innenraumluft."
+        },
+        "vin": {
+          "name": "FIN",
+          "description": "Ziel-FIN. Nötig, wenn mehrere Fahrzeuge eingerichtet sind."
+        },
+        "entity_id": {
+          "name": "Entitäts-ID",
+          "description": "Optionale Leapmotor-Entität zur Ermittlung des Zielfahrzeugs."
+        }
+      }
+    },
+    "precool_cabin": {
+      "name": "Innenraum vorkühlen",
+      "description": "Kühlt den Innenraum per Klimaanlage mit der Vorkühl-Voreinstellung des Fahrzeugs. Felder überschreiben die Voreinstellung für diesen Aufruf. Fahrzeug-PIN erforderlich.",
+      "fields": {
+        "temperature": {
+          "name": "Temperatur",
+          "description": "18–32 °C."
+        },
+        "fan_speed": {
+          "name": "Lüfterstufe",
+          "description": "1–7."
+        },
+        "recirculate": {
+          "name": "Umluft",
+          "description": "Nur Innenraumluft."
+        },
+        "vin": {
+          "name": "FIN",
+          "description": "Ziel-FIN. Nötig, wenn mehrere Fahrzeuge eingerichtet sind."
+        },
+        "entity_id": {
+          "name": "Entitäts-ID",
+          "description": "Optionale Leapmotor-Entität zur Ermittlung des Zielfahrzeugs."
+        }
+      }
+    },
+    "precondition_cabin": {
+      "name": "Innenraum vorklimatisieren (Automatik)",
+      "description": "Kühlt vor, wenn es draußen warm ist, sonst wird vorgeheizt. Felder überschreiben die gewählte Voreinstellung. Fahrzeug-PIN erforderlich.",
+      "fields": {
+        "temperature": {
+          "name": "Temperatur",
+          "description": "18–32 °C."
+        },
+        "fan_speed": {
+          "name": "Lüfterstufe",
+          "description": "1–7."
+        },
+        "recirculate": {
+          "name": "Umluft",
+          "description": "Nur Innenraumluft."
+        },
+        "vin": {
+          "name": "FIN",
+          "description": "Ziel-FIN. Nötig, wenn mehrere Fahrzeuge eingerichtet sind."
+        },
+        "entity_id": {
+          "name": "Entitäts-ID",
+          "description": "Optionale Leapmotor-Entität zur Ermittlung des Zielfahrzeugs."
+        }
+      }
     }
   },
   "issues": {
@@ -894,6 +1203,17 @@
           "share_accept_failed": "Die Einladung konnte nicht angenommen werden. Später erneut versuchen oder in der Leapmotor-App annehmen."
         }
       }
+    }
+  },
+  "exceptions": {
+    "remote_unconfirmed": {
+      "message": "Leapmotor hat den Befehl angenommen, das Ergebnis aber nicht bestätigt ({error}). Vor einem neuen Versuch das Auto prüfen."
+    },
+    "remote_cooldown": {
+      "message": "Vor dem nächsten Befehl {seconds} s warten; der vorige läuft möglicherweise noch."
+    },
+    "session_rejected": {
+      "message": "Leapmotor hat die Sitzung auch nach erneuter Anmeldung abgelehnt. Wenn die offizielle App mit demselben Konto angemeldet ist, Home Assistant ein eigenes (geteiltes) Konto geben."
     }
   }
 }

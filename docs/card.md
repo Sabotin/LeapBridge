@@ -5,7 +5,7 @@
 # Leapmotor dashboard card
 
 A dashboard for your Leapmotor in three themes, shipped inside the integration.
-Home Assistant loads it automatically once the integration is set up — there
+Home Assistant loads it automatically once the integration is set up. There
 is no Lovelace resource to add and nothing extra to install from HACS.
 
 ```yaml
@@ -48,19 +48,19 @@ The theme decides how the car panel on Overview looks and which surfaces the
 panels use. Everything else (pages, panels, buttons, double-tap confirm) is the
 same in all three.
 
-| `look: classic` (default) | `look: cluster` — driver display | `look: console` — car app |
+| `look: classic` | `look: cluster` (driver display) | `look: console` (car app, the default) |
 | --- | --- | --- |
 | <img src="images/looks/classic-wide.webp" alt="Classic theme with night sky"> | <img src="images/looks/cluster-wide.webp" alt="Driver display theme"> | <img src="images/looks/console-wide.webp" alt="Car app theme"> |
 | <img src="images/looks/classic-drive.webp" alt="Classic theme while driving"> | <img src="images/looks/cluster-drive.webp" alt="Driver display while driving"> | <img src="images/looks/console-drive.webp" alt="Car app while driving"> |
 | <img src="images/looks/classic-phone.webp" alt="Classic theme on a phone" width="260"> | <img src="images/looks/cluster-phone.webp" alt="Driver display on a phone" width="260"> | <img src="images/looks/console-phone.webp" alt="Car app on a phone" width="260"> |
 
-- **Classic** — the night or day sky with your car, the battery as a large
+- **Classic:** the night or day sky with your car, the battery as a large
   figure and floating chips.
-- **Driver display** — a battery gauge with range and the charge-limit mark,
+- **Driver display:** a battery gauge with range and the charge-limit mark,
   the car on a lit floor, a speed gauge with the speed-limit sign and
   P R N D (charging power and finish time while charging), warning lights and
   a trip-computer strip, on graphite panels.
-- **Car app** — range as the headline, a segmented battery bar, status chips,
+- **Car app:** range as the headline, a segmented battery bar, status chips,
   tire pressures at the wheels and round quick buttons.
 
 ## Settings
@@ -113,7 +113,7 @@ or pick just the parts you want with `sections` (see below).
 | `tabs` | `true` | Split the card into the Overview, Trips, Charging, Vehicle and Journey pages. `false` shows everything on one page. |
 | `page` | `overview` | The page the card opens on: `overview`, `trips`, `charging`, `vehicle`, `journey` or `settings`. |
 | `settings` | `true` | Show the **Settings** tab, where each user picks the theme, day or night, and language. Only on cards with tabs. |
-| `look` | `classic` | Default theme (see [Themes](#themes)): `classic` (night or day sky), `cluster` (driver display) or `console` (car app). Each user can change it in the Settings tab. |
+| `look` | `console` | Default theme (see [Themes](#themes)): `classic` (night or day sky), `cluster` (driver display) or `console` (car app). Each user can change it in the Settings tab. |
 | `scene` | `auto` | Day or night: the sky in Classic, the display brightness in the other themes. `auto` follows `sun.sun`, or force `night` / `day`. Each user can change it in the Settings tab. |
 | `language` | `auto` | `auto` follows your profile. Built in: `en`, `sl`, `de`. Each user can change it in the Settings tab. |
 | `confirm_actions` | `true` | Remote actions, logging a service and setting the charge limit need a second tap within 4 seconds. |
@@ -167,7 +167,7 @@ confirm_actions: false
 | **Vehicle check** | Overview | One glance answer: *All secure* or *Needs attention*, then a tile each for lock, doors, windows and sunroof, trunk, tires and data freshness (and the battery when it is below 20 %). Green is fine, amber needs a look, red is a problem. No buttons: unlock is in the hero, Find car in the remote control. |
 | **Outlook** | Overview | What the next day needs, learned from your own trips: *Enough battery* or *Plug in tonight* with the battery now and the battery needed, when the car usually leaves on that weekday and how reliable that is, the **real range** from your own consumption at the current temperature next to the car's figure, the next predicted departure, and **your usual week** with the typical distance and first departure of each weekday. Shows a short note while it is still learning. |
 | **Last 24 hours** (timeline) | Overview | A timeline of what happened: trips with distance and duration, charging with the percent gained, the cable plugged in and removed, and locking and unlocking. Read from Home Assistant's recorder. |
-| **Remote control** | Overview | Grouped into *Climate* (preheat, pre-cool and auto pre-condition with your presets, climate, quick heat/cool, defrost, steering wheel and mirror heating) and *Doors & security* (trunk, windows, sunroof, sunshade, sentry mode, find car) — only what your car supports. |
+| **Remote control** | Overview | Grouped into *Climate* (preheat, pre-cool and auto pre-condition with your presets, climate, quick heat/cool, defrost, steering wheel and mirror heating) and *Doors & security* (trunk, windows, sunroof, sunshade, sentry mode, find car). Only what your car supports is shown. |
 | **Trip details** | Trips | The selected trip (or the live one): distance, day, time and duration, the route on a dark map coloured by speed (blue below the limit, amber close to it, red above; without a limit: up to 50, 50–90, over 90 km/h), energy, consumption, battery used, average and top speed, minutes above the limit, cost and outside temperature, and a speed chart with the limit as a dashed line. Built from the device tracker and speed history in the recorder. |
 | **Trip log** | Trips | Today and this month (distance, trips, energy, cost), then the last 30 trips grouped by day with the day's total. Each trip shows start and end time, distance, duration, energy, battery used, colour-coded consumption and its **eco score**; the latest also how it compares with similar trips. Tap a trip to open it in the trip details. **CSV** downloads the whole stored trip log (up to 500 trips) for a spreadsheet or a driver's logbook. |
 | **Frequent routes** | Trips | The routes you drive most, named after your zones (Home → Work), each with the number of trips, typical distance, time, consumption and cost, the usual departure time and your best run. |
@@ -213,10 +213,10 @@ page (`?tabs=0`) or the sidebar panel (`?panel=1`).
 
 ## Troubleshooting
 
-- **"Custom element doesn't exist: leapmotor-card"** — refresh the browser
+- **"Custom element doesn't exist: leapmotor-card":** refresh the browser
   with cache bypass (Ctrl + F5 / ⌘ + Shift + R). In the companion app:
   *Settings → Companion app → Debugging → Reset frontend cache*.
-- **"No Leapmotor vehicle found"** — set `entity_prefix` to the part before
+- **"No Leapmotor vehicle found":** set `entity_prefix` to the part before
   `_battery` in your battery sensor's entity ID.
-- **Empty 24-hour chart** — the chart reads Home Assistant's recorder. Check
+- **Empty 24-hour chart:** the chart reads Home Assistant's recorder. Check
   that the Leapmotor battery sensor is not excluded from `recorder:`.

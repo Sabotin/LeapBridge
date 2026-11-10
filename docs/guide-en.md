@@ -7,7 +7,7 @@
 This guide takes you through installing the **Leapmotor** integration in Home
 Assistant, from the start to a working dashboard, and then covers every
 setting, service and known limitation. For a short overview see
-[README.en.md](../README.en.md). Slovenska navodila:
+[README.md](../README.md). Slovenska navodila:
 [navodila-sl.md](navodila-sl.md).
 
 > [!IMPORTANT]
@@ -192,8 +192,8 @@ and the language, saved for that user on every device. A dot on a tab means
 there is something to look at on that page. The card always opens on
 *Overview*; use `tabs: false` to get everything on one page.
 
-Three themes: **Classic** (night or day sky, the default), **Driver display**
-(gauges around the car) and **Car app** (range, battery bar, round buttons).
+Three themes: **Car app** (range, battery bar, round buttons, the default),
+**Classic** (night or day sky) and **Driver display** (gauges around the car).
 The car on the card is the official render of your model and colour from the
 Leapmotor cloud (the same picture as `image.<model>_vehicle_picture`). It shows
 open doors, trunk, windows and sunroof, low tires, unlocked, climate heating or
@@ -362,14 +362,14 @@ permissions.
 | `leapmotor.precondition_cabin` | 🔒 | Cool when warm outside, otherwise heat |
 | `leapmotor.charging_start` / `leapmotor.charging_stop` | 🔒 | Start or stop charging while plugged in |
 | `leapmotor.sunroof_open` / `leapmotor.sunroof_close` | 🔒 | Sunroof, on cars that report one |
-| `leapmotor.log_maintenance` | — | `service_type`, optional `odometer_km`, `date` |
-| `leapmotor.reset_maintenance` | — | Forget a logged service |
-| `leapmotor.send_destination` | — | `name`, `latitude`, `longitude`, optional `address` |
-| `leapmotor.export_diagnostics` | — | Write a redacted support JSON |
-| `leapmotor.get_trips` | — | Returns the stored trip log as response data (optional `limit`, up to 500) |
-| `leapmotor.get_charging_sessions` | — | Returns the recorded charging sessions and the ones the cloud keeps (optional `limit`) |
-| `leapmotor.refresh_cloud_data` | — | Read software, schedules, charging history and share invitations again now |
-| `leapmotor.accept_share_invitation` / `leapmotor.decline_share_invitation` | — | Answer a car-share invitation waiting for this account; optional `vin_tail` when several are waiting |
+| `leapmotor.log_maintenance` | no | `service_type`, optional `odometer_km`, `date` |
+| `leapmotor.reset_maintenance` | no | Forget a logged service |
+| `leapmotor.send_destination` | no | `name`, `latitude`, `longitude`, optional `address` |
+| `leapmotor.export_diagnostics` | no | Write a redacted support JSON |
+| `leapmotor.get_trips` | no | Returns the stored trip log as response data (optional `limit`, up to 500) |
+| `leapmotor.get_charging_sessions` | no | Returns the recorded charging sessions and the ones the cloud keeps (optional `limit`) |
+| `leapmotor.refresh_cloud_data` | no | Read software, schedules, charging history and share invitations again now |
+| `leapmotor.accept_share_invitation` / `leapmotor.decline_share_invitation` | no | Answer a car-share invitation waiting for this account; optional `vin_tail` when several are waiting |
 
 Sentry mode and healthy charging are switches. The commands for sentry mode,
 start/stop charging, healthy charging and the sunroof come from LeapConnect and
@@ -557,10 +557,12 @@ are not available for CN yet. See the upstream
 
 ## Updating
 
-- **HACS:** open Leapmotor in HACS → **⋮ → Update information** →
-  **Redownload** → restart. If the card still looks old, refresh the browser
-  (**Ctrl + F5**). HACS installs from the `main` branch (there are no
-  releases).
+- **HACS:** HACS installs the latest release (the first one is 0.7.5). A new
+  release appears in HACS and among the updates in Home Assistant's settings:
+  download it and restart. If you do not see it yet, open Leapmotor in HACS →
+  **⋮ → Update information**. If you installed before the first release,
+  choose **Redownload** once. If the card still looks old, refresh the browser
+  (**Ctrl + F5**).
 - **Manually:** repeat [step 1](#manually-step-by-step) (replace the folder)
   and restart. Your certificates in `/config/leapmotor/` stay untouched.
 

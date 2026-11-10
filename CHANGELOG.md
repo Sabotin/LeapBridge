@@ -1,12 +1,16 @@
 # Changelog
 
-## Unreleased — the car learns your routine, a Journey page, software and messages
+0.7.5 is the first published release. It contains every section marked 0.7.5
+below; from this release on, HACS installs releases instead of the latest
+commit.
+
+## 0.7.5: the car learns your routine, a Journey page, software and messages
 
 Everything that existed before works as before: the regular poll is unchanged,
 no remote command was added or altered, and every new cloud read is optional,
 cached and kept apart, so a failing read keeps its last value and never stops
-an update. The new reads also have a time limit — 20 seconds each and 45
-seconds for all of them in one update — so a slow cloud cannot hold the
+an update. The new reads also have a time limit (20 seconds each and 45
+seconds for all of them in one update), so a slow cloud cannot hold the
 regular update back. Card version 1.2.0.
 
 ### New from the Leapmotor cloud (read only)
@@ -15,7 +19,7 @@ regular update back. Card version 1.2.0.
   and an update entity (`update.<model>_software`) that shows when Leapmotor
   offers a new version, with the release notes in your language. Installing
   still happens in the car; Home Assistant only tells you. Owner accounts
-  only — a shared account is not allowed to read it.
+  only: a shared account is not allowed to read it.
 - **Messages:** the last 20 messages of the Leapmotor app (door left open,
   charging finished, service notes …) as the `messages` attribute of *Unread
   messages* and on the card.
@@ -27,7 +31,7 @@ regular update back. Card version 1.2.0.
   year, a little on each update, for the calendar on the new Journey page.
 - **Schedules:** *Next scheduled pre-conditioning* shows when the car's own
   climate, battery-heating or prepare-car schedule runs next.
-- **Remote permissions:** what the account is allowed to do with the car —
+- **Remote permissions:** what the account is allowed to do with the car,
   useful on shared accounts, where a missing permission explains a refused
   command.
 - **Shared cars:** when a car was shared with the account and the invitation is
@@ -43,7 +47,7 @@ regular update back. Card version 1.2.0.
   integration learns when the car usually leaves on each weekday, with a
   confidence. No calendar and no manual schedule.
 - **Outlook for the next day:** *Expected distance next day*, *Battery needed
-  next day*, *Enough for next day* and *Charge recommended* — a plug-in hint
+  next day*, *Enough for next day* and *Charge recommended*: a plug-in hint
   only on the evenings it is really needed.
 - **Real range:** the range worked out from your own consumption at the
   current outside temperature, next to the car's optimistic figure, plus the
@@ -61,7 +65,7 @@ regular update back. Card version 1.2.0.
   **Leapmotor → Configure**.
 - **Charging curve:** power over battery level for the session in progress and
   the last DC session, against your usual curve. *Slow charging* turns on when
-  an AC session is clearly slower than you usually get at that kind of place —
+  an AC session is clearly slower than you usually get at that kind of place,
   for example a wallbox that fell back to one phase.
 - **Journey:** distance this year, driving streak, longest trip and longest
   day, busiest month, lifetime average consumption, average daily distance,
@@ -85,12 +89,12 @@ regular update back. Card version 1.2.0.
 
 ### Ready-made automations
 
-- **Pre-condition before your usual departure** — heats or cools a few minutes
+- **Pre-condition before your usual departure:** heats or cools a few minutes
   before the learned departure, only when the prediction is reliable and the
   weather makes it worth it.
-- **Plug in for tomorrow** — an evening reminder only when the battery is not
+- **Plug in for tomorrow:** an evening reminder only when the battery is not
   enough for the next day's usual driving.
-- **Notify when something happens with the car** — pick the events you want.
+- **Notify when something happens with the car:** pick the events you want.
 - **Slow charging alert**.
 
 ### Dashboard card
@@ -110,6 +114,8 @@ regular update back. Card version 1.2.0.
   permissions, and the messages.
 - The tabs and the car panel show when an update is waiting or charging is
   slow. English, Slovenian and German throughout.
+- **Car app is now the default theme.** A theme you picked in the Settings
+  tab, or set with `look:` in the card configuration, stays as it is.
 
 ### Fixes
 
@@ -117,6 +123,16 @@ regular update back. Card version 1.2.0.
   side, the bottom or both) is gone, and the charging cable now ends at the
   car instead of beside it. The card measures where the car really is in the
   picture.
+- **Your own car from the first moment:** on opening the page the dashboard
+  sometimes showed its built-in drawing of a car for a few seconds, or until
+  *Refresh* was tapped, before the picture of your car appeared. The picture
+  is now remembered on the device and shown at once; Home Assistant serves its
+  saved copy immediately instead of downloading the picture package again
+  after every restart; a failed load is retried on its own; and while a
+  picture is still on its way, its place stays empty instead of showing
+  another car.
+- **German:** the integration's German translation is complete (176 names and
+  descriptions of settings, entities and actions were still in English).
 - **One part of the card can no longer take the rest down:** if a panel
   cannot be drawn, it says so and the other panels keep working.
 - **Home Assistant 2026.12:** entering a new password (re-login or
@@ -125,6 +141,14 @@ regular update back. Card version 1.2.0.
 - **Narrow phones:** panel titles with buttons wrap instead of being cut off,
   and tab labels and the driver-display gauges fit at 320 px.
 - Links point to the repository's current name, `Sabotin/LeapBridge`.
+
+### Documentation
+
+- The README is now in English first (`README.md`), with Slovenian
+  (`README.sl.md`) and German (`README.de.md`) versions and German
+  screenshots. The picture at the top shows the dashboard on a real car.
+- Releases: the Release workflow can create a release from the Actions tab
+  (*Run workflow*), with the version checked against the manifest.
 
 ### Deliberately left out
 
@@ -135,18 +159,18 @@ ships commands that are known to work.
 
 ### Checked with
 
-246 unit tests and 27 runtime tests on Home Assistant 2025.3.0, 2026.2 and
+246 unit tests and 28 runtime tests on Home Assistant 2025.3.0, 2026.2 and
 2026.11, and every card page in all three themes, three languages and six
 screen widths (1,200 renders). The new cloud reads are tested against the
 answer formats that leapmotor-api 0.6.0 reads, not against the real Leapmotor
 cloud: if the cloud answers differently, the affected entity stays unknown
 and everything else keeps working.
 
-## Unreleased — charging shows on the T03, green glow while charging
+## 0.7.5: charging shows on the T03, green glow while charging
 
 - **T03 charging is read from the measured current:** when the car stands in
   Park and about 1 kW or more flows into the battery, it is reported as
-  charging and plugged in — also when the car's own charge-state code says
+  charging and plugged in, also when the car's own charge-state code says
   "not charging" or the car is switched on while it charges. Until now either
   of those hid a real session and the card showed *Parked*. The charging and
   cable sensors, connection state, charging power, EVCC status and the
@@ -155,16 +179,16 @@ and everything else keeps working.
 - **Green glow while charging:** the car panel gets a green edge and the car a
   green outline over a brighter pool of light, in all three themes.
 
-## Unreleased — themes and a settings tab
+## 0.7.5: themes and a settings tab
 
 - **Three themes** for the card (option `look`):
-  - `classic` (default) — the night or day sky, as before.
-  - `cluster` — a **driver display**: battery gauge with range and the
+  - `classic` (default): the night or day sky, as before.
+  - `cluster`, a **driver display**: battery gauge with range and the
     charge-limit mark, the car on a lit floor, a speed gauge with the speed
     limit sign and P R N D (charging power and finish time while charging),
     warning lights for lock, doors, trunk, windows, tires, cable, climate and
     sentry, a trip-computer strip and graphite panels.
-  - `console` — a **car-app screen**: range as the headline, a segmented
+  - `console`, a **car-app screen**: range as the headline, a segmented
     battery bar with the charge limit, status chips, tire pressures at the
     wheels and round quick buttons.
 - **Settings tab** (gear): each user picks the theme, day or night, and the
@@ -187,7 +211,7 @@ and everything else keeps working.
   behaviour notes, debugging) moved to `docs/guide-en.md`, next to the
   Slovenian `docs/navodila-sl.md`.
 
-## Unreleased — card pages, trips page, readable panels
+## 0.7.5: card pages, trips page, readable panels
 
 - **Pages:** the card is split into **Overview** (car, vehicle check, remote
   control), **Trips**, **Charging** and **Vehicle**, with tabs at the top and
@@ -217,7 +241,7 @@ and everything else keeps working.
 - Hero metric labels wrap instead of being cut off (e.g. *Meja polnjenja*).
 - README screenshots show the new pages.
 
-## Unreleased — trip map, speed limit, live car picture, T03 charge limit
+## 0.7.5: trip map, speed limit, live car picture, T03 charge limit
 
 - **Trip map:** a new card section draws each trip on Home Assistant's map with
   dark tiles, coloured by speed against your limit. Tap a trip in the trip log
@@ -247,7 +271,7 @@ and everything else keeps working.
 - Charge-limit errors now use the same clear, translated messages as the
   buttons.
 
-## Unreleased — remote commands survive an expired session
+## 0.7.5: remote commands survive an expired session
 
 - **Fix:** *Preheat cabin* (and every other remote command) failed with
   *remote control result failed: Token is invalid*. An expired session is now
@@ -264,7 +288,7 @@ and everything else keeps working.
 - Clearer, translated messages (English and Slovenian) for an unconfirmed
   command, the cooldown and a session the cloud keeps rejecting.
 
-## Unreleased — plug-and-play sidebar dashboard
+## 0.7.5: plug-and-play sidebar dashboard
 
 - After setup a **Leapmotor** sidebar entry shows the full dashboard, one per
   vehicle, with a menu button on phones. It is on by default and can be
@@ -272,10 +296,10 @@ and everything else keeps working.
 - Slovenian README with Slovenian screenshots; the English README moved to
   `README.en.md`.
 
-## Unreleased — stages 2 and 3 of the LeapConnect port, plus extras
+## 0.7.5: stages 2 and 3 of the LeapConnect port, plus extras
 
 - **Cabin preheat, pre-cool and auto pre-condition:** one-tap buttons and
-  services using the app's climate command (170) with per-vehicle presets —
+  services using the app's climate command (170) with per-vehicle presets:
   preheat 22 °C, pre-cool 18 °C with A/C, fan 7 and recirculation by default;
   auto picks heat or cool from the outside temperature. Works on the T03.
 - **Vehicle PIN** is prefilled with the factory PIN 0000 in setup and for new
@@ -295,7 +319,7 @@ and everything else keeps working.
 - Card: Maintenance and Insights panels, climate preset and new control tiles,
   "vs usual" on trips, charge-to-limit estimate.
 
-## Unreleased — stage 1 of the LeapConnect port
+## 0.7.5: stage 1 of the LeapConnect port
 
 - **Licence:** the project is now GNU AGPL-3.0, because it includes code
   ported from LeapConnect. The original MIT notice of leapmotor-ha is kept in
@@ -314,7 +338,7 @@ and everything else keeps working.
 - Setup and options validate the certificate pair and say which file is wrong.
 - Dashboard card: new Trip log panel, charging costs and battery health.
 
-## Unreleased — sabotin/leapmotor redesign
+## 0.7.5: sabotin/leapmotor redesign
 
 - New built-in dashboard card (`type: custom:leapmotor-card`), served and
   auto-loaded by the integration: night/day hero scene with the owned car's

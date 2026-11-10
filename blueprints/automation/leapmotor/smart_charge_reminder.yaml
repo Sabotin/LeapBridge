@@ -1,5 +1,5 @@
 blueprint:
-  name: Leapmotor — plug in for tomorrow
+  name: "Leapmotor: plug in for tomorrow"
   description: >-
     In the evening, tell you to plug in only when the battery is not enough
     for what the car usually drives the next day. The integration learns the

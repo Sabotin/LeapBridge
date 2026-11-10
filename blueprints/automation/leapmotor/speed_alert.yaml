@@ -1,5 +1,5 @@
 blueprint:
-  name: Leapmotor — speeding alert
+  name: "Leapmotor: speeding alert"
   description: >-
     Notify when the car drives faster than the speed alert set in the vehicle
     settings, or than the speed limit switched on in the car. Speed is checked

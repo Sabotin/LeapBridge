@@ -21,7 +21,7 @@ od začetka do delujoče nadzorne plošče. Za angleška navodila glej
 | --- | --- |
 | **Home Assistant 2025.3 ali novejši** | Starejše različice ne podpirajo nastavitev vozila. |
 | **E-pošta in geslo računa Leapmotor** | Tvoji podatki za prijavo. |
-| **Certifikat aplikacije:** `app_cert.pem` in `app_key.pem` | Dve datoteki, potrebni za prijavo na evropski strežnik. Nista del tega repozitorija — glej [spodaj](#o-certifikatu-app_certpem-in-app_keypem). |
+| **Certifikat aplikacije:** `app_cert.pem` in `app_key.pem` | Dve datoteki, potrebni za prijavo na evropski strežnik. Nista del tega repozitorija, glej [spodaj](#o-certifikatu-app_certpem-in-app_keypem). |
 | **PIN vozila** *(neobvezno)* | Potreben samo za daljinsko upravljanje (zaklepanje, klima …). |
 
 > [!TIP]
@@ -35,10 +35,10 @@ od začetka do delujoče nadzorne plošče. Za angleška navodila glej
 
 Za prijavo na evropski strežnik Leapmotor sta potrebni dve datoteki:
 
-- **`app_cert.pem`** — certifikat aplikacije,
-- **`app_key.pem`** — pripadajoči zasebni ključ.
+- **`app_cert.pem`:** certifikat aplikacije,
+- **`app_key.pem`:** pripadajoči zasebni ključ.
 
-To **nista** tvoje uporabniško ime in geslo in nista osebna podatka vozila — sta
+To **nista** tvoje uporabniško ime in geslo in nista osebna podatka vozila, ampak sta
 gradivo na ravni aplikacije. Zaradi tega **nista vključena v ta repozitorij** in
 ju integracija ne more ustvariti ali prenesti sama. Vsak uporabnik mora datoteki
 priskrbeti sam.
@@ -116,9 +116,9 @@ Ta mapa je zunaj `custom_components`, zato je posodobitve nikoli ne izbrišejo.
 ## 4. Nastavitev integracije
 
 1. **Nastavitve → Naprave in storitve → + Dodaj integracijo → Leapmotor**.
-2. **Certifikati** — naloži ali prilepi `app_cert.pem` in `app_key.pem`.
+2. **Certifikati:** naloži ali prilepi `app_cert.pem` in `app_key.pem`.
    (Ta korak se preskoči, če sta datoteki že v `/config/leapmotor/`.)
-3. **Račun** — e-pošta, geslo, neobvezni PIN vozila in interval posodabljanja.
+3. **Račun:** e-pošta, geslo, neobvezni PIN vozila in interval posodabljanja.
 4. Končano. Vozilo se pojavi kot naprava z vsemi entitetami.
 
 > [!NOTE]
@@ -147,18 +147,18 @@ type: custom:leapmotor-card
 
 Kartica ima pet strani z zavihki na vrhu:
 
-- **Pregled** — avto z baterijo in hitrimi gumbi, napoved za naslednji dan
+- **Pregled:** avto z baterijo in hitrimi gumbi, napoved za naslednji dan
   (priključiti ali ne, običajni odhod, dejanski doseg), pregled vozila,
   časovnica zadnjih 24 ur in daljinsko upravljanje (*Klima* ter *Vrata in
   varnost*),
-- **Vožnje** — podrobnosti izbrane vožnje (zemljevid s predvajanjem, poraba,
+- **Vožnje:** podrobnosti izbrane vožnje (zemljevid s predvajanjem, poraba,
   hitrost, strošek, eko ocena), dnevnik voženj po dnevih z izvozom v CSV,
   zadnjih 7 dni in pogoste poti,
-- **Polnjenje** — polnjenje z mejo polnjenja in ukazi za polnjenje, zadnjih
+- **Polnjenje:** polnjenje z mejo polnjenja in ukazi za polnjenje, zadnjih
   24 ur, baterija in poraba, polnilna krivulja in zgodovina polnjenj,
-- **Vozilo** — vzdrževanje, pnevmatike, vpogledi, programska oprema avta in
+- **Vozilo:** vzdrževanje, pnevmatike, vpogledi, programska oprema avta in
   sporočila,
-- **Pot** — leto voženj na koledarju, seštevki in rekordi, primerjava z
+- **Pot:** leto voženj na koledarju, seštevki in rekordi, primerjava z
   bencinskim avtom, laboratorij dosega in dosežki.
 
 Pika na zavihku pove, da je na tisti strani nekaj za pogledati. Kartica se
@@ -178,15 +178,15 @@ računom). Če polje izbrišeš, ostane vozilo samo za branje.
 
 V nadzorni plošči in kot gumbi v Home Assistantu:
 
-- **Predgrej kabino** — privzeto 22 °C, ventilator 7, samo kroženje zraka.
-- **Ohladi kabino** — klima, najnižja temperatura 18 °C, ventilator 7.
-- **Pripravi kabino (samodejno)** — hladi, ko je zunaj topleje od nastavljene
+- **Predgrej kabino:** privzeto 22 °C, ventilator 7, samo kroženje zraka.
+- **Ohladi kabino:** klima, najnižja temperatura 18 °C, ventilator 7.
+- **Pripravi kabino (samodejno):** hladi, ko je zunaj topleje od nastavljene
   meje (privzeto 20 °C), sicer greje.
 
 Temperature, moč ventilatorja, kroženje in mejo za samodejni način nastaviš pri
 vozilu (*Nastavitve → Naprave in storitve → Leapmotor →* vozilo pod računom →
 *Nastavi*). Za vsakodnevno uporabo uvozi načrt **Pre-condition before
-departure** (glej README) in izberi uro in dneve — ali načrt **Pre-condition
+departure** (glej README) in izberi uro in dneve, ali pa načrt **Pre-condition
 before your usual departure**, ki se ure nauči iz tvojih voženj.
 
 ## Vzdrževanje
@@ -245,7 +245,7 @@ dovolj, senzorji ostanejo *neznani* in ne ugibajo.
   30). Brez cene goriva se litri in CO₂ vseeno prikažejo.
 - **Polnilna krivulja in počasno polnjenje:** moč polnjenja glede na stanje
   baterije. Senzor *Počasno polnjenje* se vklopi, ko AC polnjenje po desetih
-  minutah ostane pod 70 % moči, ki jo na takem mestu običajno dobiš — na
+  minutah ostane pod 70 % moči, ki jo na takem mestu običajno dobiš, na
   primer, ko polnilnica preklopi na eno fazo. Potrebuje tri prejšnja
   polnjenja; DC polnjenj ne ocenjuje.
 - **Pot in dosežki:** prevoženo letos, zaporedni dnevi vožnje, najdaljša
@@ -276,7 +276,7 @@ Ti podatki se berejo iz Leapmotorjevega oblaka redkeje kot stanje vozila
   koledar na strani *Pot*. Prebere se postopoma, v prvih nekaj posodobitvah.
 - **Urniki in dovoljenja:** *Naslednja načrtovana priprava kabine* pokaže,
   kdaj se bo sprožil urnik, nastavljen v avtu. *Dovoljenja za daljinsko
-  upravljanje* povedo, kaj sme račun početi z avtom — uporabno pri deljenem
+  upravljanje* povedo, kaj sme račun početi z avtom, kar je uporabno pri deljenem
   računu, kjer manjkajoče dovoljenje pojasni zavrnjen ukaz.
 - **Deljen avto:** če je bil avto deljen z računom in povabilo še ni
   sprejeto, ti ga namestitev ponudi v sprejem, namesto da se konča brez
@@ -315,12 +315,12 @@ Ti podatki se berejo iz Leapmotorjevega oblaka redkeje kot stanje vozila
 | --- | --- |
 | HACS ne namesti | Repozitorij dodaj kot vrsto **Integration**, nato znova zaženi. |
 | Napaka certifikata ali prijave | Naloži/prilepi obe datoteki PEM ali ju shrani kot `/config/leapmotor/app_cert.pem` in `app_key.pem`. |
-| *Certifikat in ključ se ne ujemata* | Datoteki nista par iz istega vira — priskrbi ujemajoč se par. |
+| *Certifikat in ključ se ne ujemata* | Datoteki nista par iz istega vira. Priskrbi ujemajoč se par. |
 | Prijava `code 21` / napačen račun ali geslo | Če isti podatki delujejo v uradni aplikaciji: popolnoma se odjavi, enkrat spremeni/ponastavi geslo v aplikaciji in poskusi znova. |
 | Aplikacija te odjavlja | Uporabi drugi račun z deljenim vozilom. |
 | Zastarele ali napačne vrednosti | Pritisni **Osveži podatke**, preveri **Zadnja osvežitev**, nato zaženi `leapmotor.export_diagnostics`. |
 | Daljinsko upravljanje ne deluje | Nastavi PIN vozila; preveri dovoljenja računa in deljenega vozila. |
-| *Token is invalid* ali *Leapmotor je zavrnil prijavo* | Integracija se sama znova prijavi in ukaz ponovi. Če se napaka ponavlja, si najbrž v uradni aplikaciji prijavljen z istim računom — uporabi drugi račun z deljenim vozilom. |
+| *Token is invalid* ali *Leapmotor je zavrnil prijavo* | Integracija se sama znova prijavi in ukaz ponovi. Če se napaka ponavlja, si najbrž v uradni aplikaciji prijavljen z istim računom. Uporabi drugi račun z deljenim vozilom. |
 | *Leapmotor je ukaz sprejel, izida pa ni potrdil* | Ukaz je verjetno že prišel do avta. Počakaj nekaj sekund in preveri stanje, preden ga pošlješ znova. |
 | Kartice ni mogoče najti | Osveži brskalnik (Ctrl + F5) ali ponastavi predpomnilnik vmesnika v aplikaciji. |
 | Na tablici ali telefonu ni zavihkov ali zavihka Nastavitve | Aplikacija še uporablja staro različico nadzorne plošče. V aplikaciji: *Nastavitve → Aplikacija → Razhroščevanje → Ponastavi predpomnilnik vmesnika*, nato jo znova odpri. V brskalniku: Ctrl + F5. |
@@ -345,9 +345,12 @@ certifikatov. Za javne prijave napak raje uporabi `leapmotor.export_diagnostics`
 
 ## Posodabljanje
 
-- **HACS:** v HACS odpri Leapmotor → **⋮ → Posodobi informacije** (*Update
-  information*) → **Prenesi znova** (*Redownload*) → znova zaženi. Če je
-  kartica še stara, osveži brskalnik (**Ctrl + F5**).
+- **HACS:** HACS namesti zadnjo izdajo (prva je 0.7.5). Nova izdaja se pokaže
+  v HACS in med posodobitvami v nastavitvah Home Assistanta: prenesi jo in
+  znova zaženi. Če je še ne vidiš, v HACS odpri Leapmotor → **⋮ → Posodobi
+  informacije** (*Update information*). Če si integracijo namestil pred prvo
+  izdajo, enkrat izberi **Prenesi znova** (*Redownload*). Če je kartica še
+  stara, osveži brskalnik (**Ctrl + F5**).
 - **Ročno:** ponovi [1. korak](#1-namestitev-integracije) (zamenjaj mapo) in
   znova zaženi. Tvoja certifikata v `/config/leapmotor/` ostaneta nedotaknjena.
 

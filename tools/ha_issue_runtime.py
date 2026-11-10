@@ -885,6 +885,77 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
                          "1.04.01")
         coordinator.cancel_scheduled_followup_refreshes()
 
+    async def test_vehicle_picture_is_served_from_the_saved_copy_at_once(self):
+        import io
+        import threading
+        import zipfile
+
+        def package(image: bytes) -> bytes:
+            buffer = io.BytesIO()
+            with zipfile.ZipFile(buffer, "w") as archive:
+                archive.writestr("android/xxhdpi/carpic_for_tripsum.png", image)
+            return buffer.getvalue()
+
+        original = self.api.normalize_vehicle
+
+        def with_picture(*args, **kwargs):
+            result = original(*args, **kwargs)
+            result["media"] = {**(result.get("media") or {}), "car_picture_key": "private-picture-key",
+                               "car_picture_key_present": True}
+            return result
+
+        with patch.object(self.api, "normalize_vehicle", side_effect=with_picture):
+            await self.load_entry()
+        registry = entity_registry.async_get(self.hass)
+        entity_id = registry.async_get_entity_id("image", "leapmotor", f"{VIN}_vehicle_picture_pkg")
+        self.assertIsNotNone(entity_id)
+        state = self.hass.states.get(entity_id)
+        # The dashboard can tell that the picture is unchanged, without the key itself.
+        self.assertRegex(state.attributes["picture_id"], r"^[0-9a-f]{12}$")
+        self.assertNotIn("private-picture-key", json.dumps(dict(state.attributes), default=str))
+        entity = self.hass.data["entity_components"]["image"].get_entity(entity_id)
+
+        # Nothing saved and the cloud does not answer: no picture, as before.
+        self.client.download_car_picture_package = Mock(side_effect=RuntimeError("offline"))
+        self.assertIsNone(await entity.async_image())
+        entity._download_retry_after = 0.0
+        entity._cache_refresh_attempted = False
+
+        # A saved copy is returned without waiting for the download.
+        cache_path = entity._cache_path("private-picture-key")
+        cache_path.write_bytes(b"saved-picture")
+        release = threading.Event()
+
+        def slow_download(picture_key):
+            release.wait(10)
+            return package(b"new-picture")
+
+        self.client.download_car_picture_package = Mock(side_effect=slow_download)
+        before = entity.image_last_updated
+        self.assertEqual(await asyncio.wait_for(entity.async_image(), 2), b"saved-picture")
+        self.assertFalse(release.is_set())
+        # The refresh finishes behind it and a changed picture is announced.
+        release.set()
+        await self.hass.async_block_till_done(wait_background_tasks=True)
+        self.client.download_car_picture_package.assert_called_once_with(picture_key="private-picture-key")
+        self.assertEqual(await entity.async_image(), b"new-picture")
+        self.assertGreater(entity.image_last_updated, before)
+        self.assertEqual(cache_path.read_bytes(), b"new-picture")
+        # It is refreshed once, not with every request.
+        await entity.async_image()
+        await self.hass.async_block_till_done(wait_background_tasks=True)
+        self.client.download_car_picture_package.assert_called_once()
+
+        # A failed refresh keeps the saved copy.
+        entity._cached_image = None
+        entity._cache_refresh_attempted = False
+        self.client.download_car_picture_package = Mock(side_effect=RuntimeError("offline"))
+        self.assertEqual(await entity.async_image(), b"new-picture")
+        await self.hass.async_block_till_done(wait_background_tasks=True)
+        self.assertEqual(await entity.async_image(), b"new-picture")
+        self.client.download_car_picture_package.assert_called_once()
+        self.hass.data["leapmotor"][next(iter(self.hass.data["leapmotor"]))].cancel_scheduled_followup_refreshes()
+
     async def test_shared_car_gets_no_software_entities(self):
         vehicle = self.api.Vehicle(VIN, "private-car-123456", "T03", "Private Owner", True)
         self.client._find_vehicle_by_vin.return_value = vehicle
