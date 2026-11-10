@@ -10,9 +10,12 @@ import hashlib
 import hmac
 import json
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
+import types
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from urllib.parse import quote, urlencode
 
 from test_status_path_fallback import api
@@ -55,6 +58,7 @@ class FakeCloud:
         self.calls = []
         self.answers = {}
         self.fail = {}
+        self.timeouts = {}
 
     def count(self, path):
         return sum(1 for item in self.calls if item[0] == path)
@@ -62,8 +66,9 @@ class FakeCloud:
     def last(self, path):
         return [item for item in self.calls if item[0] == path][-1]
 
-    def post(self, *, path, headers, data, cert):
+    def post(self, *, path, headers, data, cert, timeout=None):
         self.calls.append((path, dict(headers), data))
+        self.timeouts.setdefault(path, set()).add(timeout)
         if path in self.fail:
             code, message = self.fail[path]
             return {"status_code": 200,
@@ -227,6 +232,46 @@ class SigningTests(unittest.TestCase):
         self.assertEqual(self.cloud.count(CHARGING), api.CHARGING_HISTORY_MAX_PAGES)
 
 
+class TransportTests(unittest.TestCase):
+    """The time limit of a request: only when asked for, and a hang is an API error."""
+
+    def setUp(self):
+        self.transport = api.CurlTransport("https://cloud.invalid")
+        self.module = sys.modules[api.CurlTransport.__module__]
+        self.seen = {}
+
+    def run_curl(self, **kwargs):
+        def fake_run(cmd, **options):
+            self.seen.update(cmd=cmd, options=options)
+            return types.SimpleNamespace(returncode=0, stderr="")
+
+        with patch.object(self.module.subprocess, "run", fake_run):
+            return self.transport.post(path="/x", headers={"a": "b"}, data="k=v",
+                                       cert=("cert.pem", "key.pem"), **kwargs)
+
+    def test_without_a_limit_the_request_is_sent_as_before(self):
+        self.run_curl()
+        self.assertNotIn("--max-time", self.seen["cmd"])
+        self.assertNotIn("--connect-timeout", self.seen["cmd"])
+        self.assertIsNone(self.seen["options"]["timeout"])
+        self.assertEqual(self.seen["cmd"][-2:], ["--data", "k=v"])
+
+    def test_a_limit_reaches_curl_and_the_process(self):
+        self.run_curl(timeout=20)
+        cmd = self.seen["cmd"]
+        self.assertEqual(cmd[cmd.index("--max-time") + 1], "20")
+        self.assertEqual(cmd[cmd.index("--connect-timeout") + 1], "10")
+        self.assertEqual(self.seen["options"]["timeout"], 25)
+
+    def test_a_hanging_request_becomes_an_api_error(self):
+        def hang(cmd, **options):
+            raise subprocess.TimeoutExpired(cmd, options["timeout"])
+
+        with patch.object(self.module.subprocess, "run", hang):
+            with self.assertRaises(api.LeapmotorApiError):
+                self.transport.post(path="/x", headers={}, data="", cert=("c", "k"), timeout=3)
+
+
 class ExtrasTests(unittest.TestCase):
     """Throttling and failure isolation of the extra reads during a poll."""
 
@@ -335,6 +380,83 @@ class ExtrasTests(unittest.TestCase):
         self.assertEqual(self.cloud.count(APPOINTMENT), len(api.SCHEDULE_COMMANDS))
         due, _ = self.client._extras[("software", VIN)]
         self.assertGreater(due - api.time.monotonic(), api.EXTRA_DENIED_SECONDS - 60)
+
+    def test_only_the_optional_reads_carry_a_time_limit(self):
+        self.poll()
+        limit = api.OPTIONAL_READ_TIMEOUT_SECONDS
+        for path in (SOFTWARE, CHARGING, APPOINTMENT, INVITES):
+            self.assertEqual(self.cloud.timeouts[path], {limit}, path)
+        # What every poll already read is sent exactly as before.
+        for path in (UNREAD, MESSAGES):
+            self.assertEqual(self.cloud.timeouts[path], {None}, path)
+        self.assertIsNone(self.client._request_timeout)
+        self.assertIsNone(self.client._extras_deadline)
+
+    def test_a_failing_optional_read_does_not_leave_the_time_limit_behind(self):
+        self.cloud.fail[SOFTWARE] = (500, "Service unavailable")
+        self.cloud.answers[CHARGING] = "nonsense"
+        with self.assertLogs("custom_components.leapmotor.api", level="WARNING") as logs:
+            self.poll()
+        self.assertEqual(len(logs.records), 1)
+        self.assertIsNone(self.client._request_timeout)
+        self.assertIsNone(self.client._extras_deadline)
+        # The same odd answer is not reported again and again.
+        self.client.invalidate_extras()
+        with self.assertNoLogs("custom_components.leapmotor.api", level="WARNING"):
+            self.poll()
+
+    def test_every_status_is_read_before_any_optional_data(self):
+        second = api.Vehicle("SYNTHETIC-VIN-654321", "synthetic-car-2", "B10", "Owner", False)
+        order = []
+        self.client.get_vehicle_list = Mock(return_value=[self.owner, second])
+        self.client.get_vehicle_status = Mock(
+            side_effect=lambda car: order.append("status") or {"data": {"signal": {"1204": 60}}})
+        post = self.cloud.post
+
+        def recording(**kwargs):
+            if kwargs["path"] in (SOFTWARE, CHARGING, APPOINTMENT, INVITES):
+                order.append("optional")
+            return post(**kwargs)
+
+        self.cloud.post = recording
+        data = self.poll()
+        self.assertEqual(order[:2], ["status", "status"])
+        self.assertNotIn("status", order[2:])
+        self.assertIn("optional", order[2:])
+        self.assertEqual(set(data["vehicles"]), {VIN, "SYNTHETIC-VIN-654321"})
+        for car in data["vehicles"].values():
+            self.assertIn("software", car)
+            self.assertIn("schedules", car)
+
+    def test_a_poll_spends_limited_time_on_optional_reads(self):
+        budget = api.EXTRAS_BUDGET_SECONDS
+        self.addCleanup(setattr, api, "EXTRAS_BUDGET_SECONDS", budget)
+        api.EXTRAS_BUDGET_SECONDS = -1  # the time is already used up
+        car = self.poll()["vehicles"][VIN]
+        self.assertEqual(car["status"]["battery_percent"], 60)
+        for path in (SOFTWARE, CHARGING, APPOINTMENT, INVITES):
+            self.assertEqual(self.cloud.count(path), 0, path)
+        self.assertEqual(car["software"], api.software_unavailable("unavailable"))
+        self.assertIsNone(car["cloud_charging"]["sessions"])
+        # Nothing was marked as failed: the next poll asks straight away.
+        api.EXTRAS_BUDGET_SECONDS = budget
+        car = self.poll()["vehicles"][VIN]
+        self.assertEqual(car["software"]["latest_version"], "1.04.01")
+        self.assertEqual(self.cloud.count(SOFTWARE), 1)
+
+    def test_a_json_answer_that_is_not_an_object_is_an_api_error(self):
+        for body in ("[1, 2]", '"text"', "12", "null"):
+            with self.assertRaises(api.LeapmotorApiError, msg=body):
+                self.client._parse_api_body(200, body, "software info")
+
+    def test_unread_count_survives_a_failed_message_list(self):
+        self.cloud.fail[MESSAGES] = (500, "Service unavailable")
+        result = self.client._fetch_account_notifications()
+        self.assertEqual(result["unread_count"], 1)
+        self.assertEqual(result["messages"], [])
+        self.assertIsNone(result["last_message_title"])
+        self.cloud.fail[UNREAD] = (500, "Service unavailable")
+        self.assertIsNone(self.client._fetch_account_notifications()["unread_count"])
 
     def test_shared_cars_never_ask_for_the_software_version(self):
         shared = api.Vehicle(VIN, "synthetic-car", "T03", "Owner", True)

@@ -75,7 +75,9 @@ MAX_PLACES = 8
 
 # --- Battery forecast ---------------------------------------------------------
 FORECAST_MIN_SAMPLES = 6
-FORECAST_MIN_SPAN_DAYS = 60
+#: Half a year at least: over a shorter time the seasons (a cold battery holds
+#: less) would read as wear.
+FORECAST_MIN_SPAN_DAYS = 180
 FORECAST_MAX_SAMPLES = 200
 
 # --- Savings ------------------------------------------------------------------
@@ -291,6 +293,14 @@ def learn_habits(
     while cursor < today:
         occurrences[cursor.weekday()] += 1
         cursor += timedelta(days=1)
+    # Departure times come from the trip log only, which can be younger than
+    # the cloud's daily history: their share is counted over its own days.
+    trip_span_start = _habit_span_start(trips, {}, today, tz)
+    trip_occurrences = [0] * 7
+    cursor = max(span_start, trip_span_start)
+    while cursor < today:
+        trip_occurrences[cursor.weekday()] += 1
+        cursor += timedelta(days=1)
 
     departures: list[list[tuple[date, int, float]]] = [[] for _ in range(7)]
     considered = 0
@@ -308,15 +318,16 @@ def learn_habits(
     weekdays: list[dict[str, Any]] = []
     for weekday in range(7):
         seen = occurrences[weekday]
+        trip_seen = trip_occurrences[weekday]
         habits: list[dict[str, Any]] = []
         remaining = list(departures[weekday])
-        while seen >= HABIT_MIN_SAMPLES and remaining and len(habits) < MAX_HABITS_PER_DAY:
+        while trip_seen >= HABIT_MIN_SAMPLES and remaining and len(habits) < MAX_HABITS_PER_DAY:
             best_start, best_dates = 0, set()
             for start_min in range(0, 1440, HABIT_BIN_MIN):
                 dates = {d for d, m, _ in remaining if start_min <= m < start_min + HABIT_WINDOW_MIN}
                 if len(dates) > len(best_dates):
                     best_start, best_dates = start_min, dates
-            share = len(best_dates) / seen
+            share = len(best_dates) / trip_seen
             if len(best_dates) < HABIT_MIN_SAMPLES or share < HABIT_MIN_SHARE:
                 break
             inside = [
@@ -1066,6 +1077,13 @@ def journey(
     year_energy = [v[1] for _, v in this_year if v[1] is not None]
     day_of_year = today.timetuple().tm_yday
     days_in_year = 366 if (today.year % 4 == 0 and (today.year % 100 or today.year % 400 == 0)) else 365
+    # The rest of the year at the pace of the days that are known this year
+    # (the history may begin later than 1 January).
+    projected_km = None
+    if this_year and year_km > 0:
+        known_span = (today - min(d for d, _ in this_year)).days + 1
+        if known_span >= 14:
+            projected_km = round(year_km + year_km / known_span * (days_in_year - day_of_year))
     tracked_km = sum(v[0] for v in known.values())
     tracked_energy = [v[1] for v in known.values() if v[1] is not None]
     history = vehicle.get("history") or {}
@@ -1097,9 +1115,7 @@ def journey(
             "year": today.year,
             "km": round(year_km, 1),
             "kwh": round(sum(year_energy), 1) if year_energy else None,
-            "projected_km": (
-                round(year_km / day_of_year * days_in_year) if day_of_year >= 14 and year_km > 0 else None
-            ),
+            "projected_km": projected_km,
         },
         "records": {
             "longest_day": (
@@ -1138,6 +1154,7 @@ ACHIEVEMENT_TIERS: dict[str, tuple[float, float, float]] = {
     "anniversary": (30, 180, 365),
 }
 _LOWER_IS_BETTER = {"frost"}
+BADGE_QUIET_SECONDS = 24 * 3600
 
 
 def achievements(
@@ -1169,6 +1186,16 @@ def achievements(
     }
     stored: dict[str, Any] = extra.setdefault("badges", {})
     first_run = not extra.get("badges_seeded")
+    if first_run:
+        extra["badges_since"] = now_ts
+    # Levels found while the older history is still being read back are not
+    # news: stay quiet until that is done (or a day has passed).
+    since = _num(extra.get("badges_since"))
+    backfilling = (
+        not (extra.get("backfill") or {}).get("done")
+        and since is not None and now_ts - since < BADGE_QUIET_SECONDS
+    )
+    quiet = first_run or backfilling
     badges: list[dict[str, Any]] = []
     unlocked: list[dict[str, Any]] = []
     for badge_id, tiers in ACHIEVEMENT_TIERS.items():
@@ -1193,7 +1220,7 @@ def achievements(
         if level > previous:
             record = {"level": level, "at": _iso(now_ts)}
             stored[badge_id] = record
-            if not first_run:
+            if not quiet:
                 unlocked.append({"id": badge_id, "level": level, "value": value})
         badges.append(
             {
@@ -1501,12 +1528,24 @@ def compute(
     journey_data = journey(days, life, vehicle, today=today)
     month = summary.get("month") or {}
     totals = journey_data["totals"]
+    status = vehicle.get("status") or {}
+    # A range extender burns fuel itself: a comparison with a petrol car would be wrong.
+    burns_fuel = status.get("fuel_level_percent") is not None or status.get("fuel_range_km") is not None
+    lifetime_km = _num(totals.get("odometer_km"))
+    lifetime_kwh = _num(totals.get("lifetime_energy_kwh"))
+    # The cloud's lifetime energy has no unit rule per model: use it only when
+    # it gives a consumption a car can have.
+    if not (
+        lifetime_km and lifetime_kwh
+        and MIN_CONSUMPTION <= lifetime_kwh / lifetime_km * 100 <= MAX_CONSUMPTION
+    ):
+        lifetime_kwh = None
     savings_data = savings(
-        month_km=_num(month.get("distance_km")),
+        month_km=None if burns_fuel else _num(month.get("distance_km")),
         month_kwh=_num(month.get("energy_kwh")),
         month_cost=_num(month.get("cost")),
-        lifetime_km=totals.get("odometer_km"),
-        lifetime_kwh=totals.get("lifetime_energy_kwh"),
+        lifetime_km=None if burns_fuel else lifetime_km,
+        lifetime_kwh=lifetime_kwh,
         avg_price=avg_price,
         fuel_price=_num(fuel.get("price")),
         fuel_l_100km=_num(fuel.get("l_100km")),

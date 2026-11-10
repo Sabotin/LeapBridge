@@ -250,7 +250,7 @@ const STRINGS = {
 
 /* Texts of the insights, journey, charging-history, software and inbox panels. */
 Object.assign(STRINGS.en, {
-  pageJourney: "Journey",
+  pageJourney: "Journey", sectionFailed: "This part cannot be shown right now.", schedOnce: "once", rlNowPlain: "with the battery as it is now",
   weekTitle: "Your usual week",
   outlookTitle: "Outlook", olTomorrow: "Tomorrow", olToday: "Today",
   olLeaves: "Usually leaves at {t}", olLeavesSub: "on {p} % of your {d}s · learned from your trips",
@@ -307,7 +307,7 @@ Object.assign(STRINGS.en, {
   fcTitle: "Capacity trend", fcStable: "stable", fcSub: "{x} % per year · {n} full charges", fc90: "90 % around {d}",
 });
 Object.assign(STRINGS.sl, {
-  pageJourney: "Pot",
+  pageJourney: "Pot", sectionFailed: "Tega dela trenutno ni mogoče prikazati.", schedOnce: "enkrat", rlNowPlain: "s trenutno baterijo",
   weekTitle: "Tvoj običajni teden",
   outlookTitle: "Napoved", olTomorrow: "Jutri", olToday: "Danes",
   olLeaves: "Običajno odpelje ob {t}", olLeavesSub: "{p} % dni ({d}) · naučeno iz tvojih voženj",
@@ -364,7 +364,7 @@ Object.assign(STRINGS.sl, {
   fcTitle: "Trend kapacitete", fcStable: "stabilno", fcSub: "{x} % na leto · {n} polnih polnjenj", fc90: "90 % okoli {d}",
 });
 Object.assign(STRINGS.de, {
-  pageJourney: "Reise",
+  pageJourney: "Reise", sectionFailed: "Dieser Teil kann gerade nicht angezeigt werden.", schedOnce: "einmalig", rlNowPlain: "mit dem aktuellen Akkustand",
   weekTitle: "Deine übliche Woche",
   outlookTitle: "Ausblick", olTomorrow: "Morgen", olToday: "Heute",
   olLeaves: "Fährt meist um {t} los", olLeavesSub: "an {p} % der Tage ({d}) · aus deinen Fahrten gelernt",
@@ -726,6 +726,8 @@ const icon = (name, cls = "") =>
 const esc = (value) =>
   String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+/** A list attribute as a list of objects, whatever arrived. */
+const objs = (value) => (Array.isArray(value) ? value.filter((item) => item && typeof item === "object") : []);
 const f1 = (n) => (Math.round(n * 10) / 10).toString();
 const MIN = 60 * 1000;
 const HOUR = 60 * MIN;
@@ -1036,14 +1038,22 @@ async function trimCarPicture(img, flip) {
   ctx.drawImage(img, 0, 0, w, h);
   const data = ctx.getImageData(0, 0, w, h).data; // throws for a picture from another site
   const alpha = (x, y) => data[(y * w + x) * 4 + 3];
-  const cols = new Uint32Array(w);
+  let cols = new Uint32Array(w);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (alpha(x, y) > 40) cols[x]++;
-  const cx = longestRun(cols);
+  let cx = longestRun(cols);
   if (!cx) return null;
   const rows = new Uint32Array(h);
   for (let y = 0; y < h; y++) for (let x = cx[0]; x < cx[1]; x++) if (alpha(x, y) > 40) rows[y]++;
   const cy = longestRun(rows);
   if (!cy) return null;
+  // A line across the picture has a pixel in every column: count the columns again inside the car's own rows.
+  const inner = new Uint32Array(w);
+  for (let y = cy[0]; y < cy[1]; y++) for (let x = 0; x < w; x++) if (alpha(x, y) > 40) inner[x]++;
+  const ix = longestRun(inner);
+  if (ix) {
+    cols = inner;
+    cx = ix;
+  }
 
   // A little air around the car, never reaching into other content (the hairline).
   const pad = (counts, run, size) => {
@@ -2103,6 +2113,7 @@ class LeapmotorCard extends HTMLElement {
     this._tlLimit = 7;
     this._lab = null;
     this._replay = null;
+    this._failed = new Set();
   }
 
   /* ----- Lovelace API ----- */
@@ -2224,6 +2235,10 @@ class LeapmotorCard extends HTMLElement {
 
   disconnectedCallback() {
     this._stopReplay();
+    // The cut car picture stays in memory until it is released; it is made again when the card returns.
+    if (this._pic?.cut && this._pic.shown) URL.revokeObjectURL(this._pic.shown);
+    this._pic = null;
+    if (this._sigs) this._sigs.hero = null;
     clearInterval(this._tick);
     window.removeEventListener("leapmotor-card-prefs", this._onPrefs);
     if (this._ro) this._ro.disconnect();
@@ -2598,7 +2613,25 @@ class LeapmotorCard extends HTMLElement {
     }
   }
 
+  /**
+   * Draw one section. Unexpected data in one of them must not stop the
+   * others or leave that section blank from then on.
+   */
   _renderSection(name, force = false) {
+    try {
+      this._drawSection(name, force);
+    } catch (err) {
+      delete this._sigs[name]; // try again with the next update
+      if (!this._failed.has(name)) {
+        this._failed.add(name);
+        console.error(`leapmotor-card: could not draw "${name}"`, err);
+      }
+      const target = name === "hero" || name === "map" ? null : this.shadowRoot?.getElementById(name);
+      if (target && !target.childElementCount) target.innerHTML = `<div class="empty">${esc(this._tr("sectionFailed"))}</div>`;
+    }
+  }
+
+  _drawSection(name, force = false) {
     const map = {
       hero: () => { this._renderScene(force); return this._heroSig(); },
       check: () => this._checkSig(),
@@ -2607,7 +2640,7 @@ class LeapmotorCard extends HTMLElement {
       charging: () => this._sig(["battery", "chargeLimit", "chargeLimitSet", "isCharging", "isPlugged", "connection", "finish", "remaining", "power", "current", "voltage", "lastCharge", "range", "lastSession", "lastSessionCost", "monthCost", "monthEnergy", "toLimit",
         "chargeSchedule", "preheat", "healthyCharging", "startChargeBtn", "stopChargeBtn", "unlockCharger"])
         + Math.floor(Date.now() / MIN) + `|${this._limitPending ?? ""}|${JSON.stringify(this._armed)}|${JSON.stringify(this._busy)}`,
-      energy: () => this._sig(["avg", "lwDriving", "lwClimate", "lwOther", "health"]),
+      energy: () => this._sig(["avg", "lwDriving", "lwClimate", "lwOther", "health", "capacityTrend"]),
       trips: () => this._sig(["lastTrip", "todayDistance", "monthDistance", "tripConsumption", "driveCost"]) + Math.floor(Date.now() / MIN) + `|${this._tripKey(this._mapSelected())}|${this._tripLimit}`,
       map: () => this._mapSig(),
       maintenance: () => this._sig(["nextMaintenance", "maintenanceDue"]) + JSON.stringify(this._armed) + JSON.stringify(this._busy),
@@ -2623,7 +2656,7 @@ class LeapmotorCard extends HTMLElement {
       inbox: () => this._sig(["inbox"]) + `|${this._inboxLimit}|${Math.floor(Date.now() / (10 * MIN))}`,
       calendar: () => this._sig(["yearDistance"]),
       records: () => this._sig(["yearDistance", "fuelSavingsTotal", "fuelSavings", "co2Total", "co2Month", "fuelAvoided", "lifetimeConsumption"]),
-      rangelab: () => this._sig(["realRange", "outdoor", "battery", "avg", "lifetimeConsumption", "availableEnergy"]),
+      rangelab: () => this._sig(["realRange", "outdoor", "battery", "batteryPrecise", "avg", "lifetimeConsumption", "availableEnergy", "lastTrip"]),
       badges: () => this._sig(["achievements"]),
       settings: () => `${JSON.stringify(this._prefs || {})}|${this._prefsWhere || ""}|${this._look}|${this._config.look}|${this._config.language}|${this._config.scene}`,
     };
@@ -2670,6 +2703,18 @@ class LeapmotorCard extends HTMLElement {
       for (const [id, part] of Object.entries(this._mapHtml())) this._patch(id, part);
       this._syncMap();
       return;
+    }
+    if (name === "rangelab") {
+      // New data must not replace a slider the user is holding: refresh what the sliders produce.
+      const out = target.querySelector("#rlout");
+      if (out && !this._labFull && target.dataset.lang === this._lang && this._labResult()) {
+        out.innerHTML = this._labOutHtml();
+        const chart = target.querySelector("#rlchart");
+        if (chart) chart.innerHTML = this._labChartHtml();
+        return;
+      }
+      this._labFull = false;
+      target.dataset.lang = this._lang;
     }
     target.innerHTML = html[name]();
     if (name === "chart" && !this._chartSize.w) this._measureChart();
@@ -3123,9 +3168,13 @@ class LeapmotorCard extends HTMLElement {
     const url = custom || (pic && !["unavailable", "unknown"].includes(pic.state) ? pic.attributes?.entity_picture : null);
     const p = this._pic || (this._pic = { shown: null, pending: null, key: null, pendingKey: null, attach: null, cut: false });
     if (!url) {
+      if (p.cut && p.shown) URL.revokeObjectURL(p.shown);
       p.shown = null;
+      p.cut = false;
       p.key = null;
       p.attach = null;
+      p.pending = null;
+      p.pendingKey = null;
       return null;
     }
     // The picture itself only changes with the entity's state; the address
@@ -3861,7 +3910,7 @@ class LeapmotorCard extends HTMLElement {
       const max = Math.max(...bands.map((b) => b.consumption_kwh_100km));
       temps = `<div class="temps"><small class="h">${esc(t("tempTitle"))}</small>${bands.map((b) => {
         const color = rampColor(EFFICIENCY_STOPS, clamp((b.consumption_kwh_100km - 10) / 20, 0, 1));
-        return `<div class="trow2"><span>${labels[b.band] || b.band}</span><div class="b"><i style="width:${Math.round(b.consumption_kwh_100km / max * 100)}%;background:${color}"></i></div><span class="mono">${this._num(b.consumption_kwh_100km, 1)}</span></div>`;
+        return `<div class="trow2"><span>${esc(labels[b.band] || b.band)}</span><div class="b"><i style="width:${Math.round(b.consumption_kwh_100km / max * 100)}%;background:${color}"></i></div><span class="mono">${this._num(b.consumption_kwh_100km, 1)}</span></div>`;
       }).join("")}</div>`;
     }
     const head = this._head(t("insightsTitle"), "spark");
@@ -4595,7 +4644,8 @@ class LeapmotorCard extends HTMLElement {
   /** Weekday name for Monday = 0 … Sunday = 6. */
   _weekday(index, style = "long") {
     // 1 January 2024 was a Monday.
-    const date = new Date(Date.UTC(2024, 0, 1 + ((Number(index) % 7) + 7) % 7, 12));
+    if (index == null || !Number.isFinite(Number(index))) return "—";
+    const date = new Date(Date.UTC(2024, 0, 1 + ((Math.trunc(Number(index)) % 7) + 7) % 7, 12));
     try {
       return new Intl.DateTimeFormat(this._lang, { weekday: style, timeZone: "UTC" }).format(date);
     } catch (_e) {
@@ -4645,6 +4695,8 @@ class LeapmotorCard extends HTMLElement {
       `<div class="otile${st ? ` ${st}` : ""}${more && this._ids[more] ? " clickable" : ""}"${more && this._ids[more] ? ` data-more="${more}"` : ""}>` +
       `<span class="sq">${icon(ic)}</span><div><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</div>${big}</div>`);
     const n = (v) => this._num(v);
+    // The expected distance is the state of the sensor, not one of its attributes.
+    const expected = o.expected_km ?? this._v("nextDay");
     if (known) {
       const need = o.needed_soc;
       const socSub = o.soc == null ? "" : need != null
@@ -4662,8 +4714,8 @@ class LeapmotorCard extends HTMLElement {
       } else if (o.drive_probability != null && o.drive_probability < 0.3) {
         tile("", "parked", t("olNoDeparture"), t("olNoDepartureSub", { d: dayName }), "nextDeparture");
       }
-      if (o.expected_km != null) {
-        tile("", "route", t("olNeeds", { km: n(o.expected_km) }),
+      if (expected != null) {
+        tile("", "route", t("olNeeds", { km: n(expected) }),
           o.expected_kwh != null && need != null ? t("olNeedsSub", { e: this._num(o.expected_kwh, 1), p: n(need) }) : "", "nextDay");
       }
     }
@@ -4673,7 +4725,7 @@ class LeapmotorCard extends HTMLElement {
       tile("", "gauge", t("realRange"), [car, basis].filter(Boolean).join(" · "), "realRange",
         `<span class="obig">${n(real)}<small>km</small></span>`);
     }
-    const learned = known && (o.departure?.time || o.expected_km != null || (o.drive_probability != null && o.drive_probability < 0.3));
+    const learned = known && (o.departure?.time || expected != null || (o.drive_probability != null && o.drive_probability < 0.3));
     const meta = known
       ? `<span class="meta">${esc(o.is_today ? t("olToday") : t("olTomorrow"))} · ${esc(this._weekday(o.weekday))}</span>` : "";
     const next = this._ts("nextDeparture");
@@ -4686,13 +4738,13 @@ class LeapmotorCard extends HTMLElement {
 
   /** What each weekday usually looks like: distance and first departure. */
   _weekPatternHtml(target) {
-    const days = this._a("nextDeparture", "weekdays");
-    if (!Array.isArray(days) || days.length !== 7 || !days.some((d) => d.typical_km != null || (d.departures || []).length)) return "";
+    const days = objs(this._a("nextDeparture", "weekdays"));
+    if (days.length !== 7 || !days.some((d) => d.typical_km != null || objs(d.departures).length)) return "";
     const top = Math.max(1, ...days.map((d) => d.typical_km || 0));
     const today = (new Date().getDay() + 6) % 7;
     const cols = days.map((d, index) => {
       const km = d.typical_km;
-      const first = (d.departures || [])[0];
+      const first = objs(d.departures)[0];
       const cls = `${index === target ? " target" : ""}${index === today ? " today" : ""}${km ? "" : " idle"}`;
       return `<div class="wkd${cls}"><small>${esc(this._weekday(index, "short").replace(".", ""))}</small>` +
         `<div class="wkb"><i style="height:${km ? Math.max(8, (km / top) * 100) : 0}%"></i></div>` +
@@ -4787,9 +4839,9 @@ class LeapmotorCard extends HTMLElement {
 
   _routesHtml() {
     const t = (k, v) => this._tr(k, v);
-    const routes = this._a("routes", "routes");
+    const routes = objs(this._a("routes", "routes"));
     const head = this._head(t("rtTitle"), "route");
-    if (!Array.isArray(routes) || !routes.length) return `${head}<div class="empty">${esc(t("rtEmpty"))}</div>`;
+    if (!routes.length) return `${head}<div class="empty">${esc(t("rtEmpty"))}</div>`;
     const currency = this._currency();
     const cards = routes.map((r) => {
       const stat = (value, unit) => (value == null ? "" : `<div><b>${value}</b><small>${esc(unit)}</small></div>`);
@@ -4801,7 +4853,7 @@ class LeapmotorCard extends HTMLElement {
         r.best_consumption_kwh_100km != null && cons != null && r.best_consumption_kwh_100km < cons ? t("rtBest", { x: `${this._num(r.best_consumption_kwh_100km, 1)} kWh/100 km` }) : "",
       ].filter(Boolean).join(" · ");
       return `<div class="rcard"><div class="rname">${icon(r.from?.home || r.to?.home ? "pin" : "route")}<b>${esc(this._placeName(r.from))}</b><i>→</i><b>${esc(this._placeName(r.to))}</b>` +
-        `<span class="pill">${esc(t("rtTrips", { n: r.trips }))}</span></div>` +
+        `${r.trips != null ? `<span class="pill">${esc(t("rtTrips", { n: this._num(r.trips) }))}</span>` : ""}</div>` +
         `<div class="rstats">${stat(this._num(r.distance_km, 1), "km")}${stat(r.duration_min != null ? this._num(r.duration_min) : null, "min")}` +
         `${cons != null ? `<div><b style="color:${color}">${this._num(cons, 1)}</b><small>kWh/100 km</small></div>` : ""}` +
         `${r.cost != null ? `<div><b>${esc(this._money(r.cost, currency))}</b><small>${esc(t("cost"))}</small></div>` : ""}</div>` +
@@ -4815,10 +4867,12 @@ class LeapmotorCard extends HTMLElement {
   _curveHtml() {
     const t = (k, v) => this._tr(k, v);
     const a = this._s("curve")?.attributes || {};
-    const live = !!a.current?.points?.length;
+    // [battery %, kW] pairs; anything else is left out.
+    const pairs = (value) => (Array.isArray(value) ? value.filter((pt) => Array.isArray(pt) && Number.isFinite(pt[0]) && Number.isFinite(pt[1])) : []);
+    const live = pairs(a.current?.points).length > 0;
     const shown = live ? a.current : a.last;
-    const points = shown?.points || [];
-    const usual = Array.isArray(a.usual) ? a.usual : [];
+    const points = pairs(shown?.points);
+    const usual = pairs(a.usual);
     const peak = points.length ? Math.max(...points.map((pt) => pt[1])) : null;
     const head = this._head(t("cvTitle"), "gauge",
       peak != null ? `<span class="cchip" style="--c:${live ? OK_C : "#94a3b8"}">${esc(t("cvPeak", { x: this._num(peak, peak >= 100 ? 0 : 1) }))}</span>` : "");
@@ -4863,7 +4917,7 @@ class LeapmotorCard extends HTMLElement {
     const t = (k, v) => this._tr(k, v);
     const s = this._s("cloudCharging");
     const a = s?.attributes || {};
-    const sessions = Array.isArray(a.sessions) ? a.sessions : [];
+    const sessions = objs(a.sessions);
     const head = this._head(t("chTitle"), "plug",
       a.window_days ? `<span class="meta">${esc(t("chMeta", { n: a.window_days }))}</span>` : "");
     if (!sessions.length) return `${head}<div class="empty">${esc(t("chEmpty"))}</div>`;
@@ -4883,7 +4937,7 @@ class LeapmotorCard extends HTMLElement {
       const bits = [item.duration_min != null ? this._dur(item.duration_min) : null,
         item.avg_power_kw != null ? `${this._num(item.avg_power_kw, 1)} kW` : null, where || null].filter(Boolean);
       const dc = item.type === "dc";
-      return `<div class="chrow"><div class="sd"><b>${esc(this._date(start))}</b><small>${esc(this._time(start))}</small></div>` +
+      return `<div class="chrow"><div class="sd"><b>${esc(this._date(start))}</b><small>${isFinite(start) ? esc(this._time(start)) : ""}</small></div>` +
         `<div class="sm"><b>${item.energy_kwh != null ? this._num(item.energy_kwh, 1) : "—"}<small>kWh</small></b><span>${esc(bits.join(" · "))}</span></div>` +
         `<div class="sx">${item.type ? `<span class="pill${dc ? " dc" : ""}">${dc ? "DC" : "AC"}</span>` : ""}${item.cost != null ? `<small>${esc(this._money(item.cost, currency))}</small>` : ""}</div></div>`;
     });
@@ -4919,13 +4973,16 @@ class LeapmotorCard extends HTMLElement {
     }
     // Climate schedules read back from the car.
     const schedules = this._a("nextSchedule", "schedules") || {};
-    const entries = [...(schedules.climate || []), ...(schedules.prepare_car || [])];
+    const entries = [...objs(schedules.climate), ...objs(schedules.prepare_car)];
     if (this._s("nextSchedule")) {
       const next = this._ts("nextSchedule");
       const dayList = (days) => {
-        if (!days || !days.length || days.length === 7) return t("schedDaily");
+        const list = Array.isArray(days) ? days.filter((d) => Number.isFinite(Number(d))) : [];
+        // An entry without days runs once.
+        if (!list.length) return t("schedOnce");
+        if (list.length === 7) return t("schedDaily");
         // The app counts Sunday as 0.
-        return days.map((d) => this._weekday((d + 6) % 7, "short").replace(".", "")).join(" ");
+        return list.map((d) => this._weekday((Number(d) + 6) % 7, "short").replace(".", "")).join(" ");
       };
       const rows = entries.map((e) => {
         const what = e.kind === "climate"
@@ -4953,7 +5010,7 @@ class LeapmotorCard extends HTMLElement {
   _inboxHtml() {
     const t = (k, v) => this._tr(k, v);
     const s = this._s("inbox");
-    const messages = Array.isArray(s?.attributes?.messages) ? s.attributes.messages : [];
+    const messages = objs(s?.attributes?.messages);
     const unread = this._v("inbox");
     const head = this._head(t("ibTitle"), "mail",
       unread ? `<span class="cchip clickable" data-more="inbox" style="--c:${WARN_C}">${esc(t("ibUnread", { n: this._num(unread) }))}</span>` : "");
@@ -5025,7 +5082,7 @@ class LeapmotorCard extends HTMLElement {
     const cap = Math.max(10, sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.9))] : 10);
     const legend = `<div class="callegend"><span>${esc(t("calLess"))}</span>${[0, 1, 2, 3, 4].map((l) => `<i class="c${l}"></i>`).join("")}<span>${esc(t("calMore"))}</span></div>`;
     // Months: one bar per month, the current one highlighted.
-    const months = Array.isArray(a.months) ? a.months : [];
+    const months = objs(a.months);
     let bars = "";
     if (months.some((m) => m.km > 0)) {
       const top = Math.max(1, ...months.map((m) => m.km || 0));
@@ -5114,8 +5171,9 @@ class LeapmotorCard extends HTMLElement {
 
   _badgesHtml() {
     const t = (k, v) => this._tr(k, v);
-    const badges = this._a("achievements", "badges");
-    if (!Array.isArray(badges) || !badges.length) return `${this._head(t("bdTitle"), "medal")}<div class="empty">${esc(t("recNone"))}</div>`;
+    // Only badges this card has a name for.
+    const badges = objs(this._a("achievements", "badges")).filter((b) => STRINGS.en[`bd_${b.id}`]);
+    if (!badges.length) return `${this._head(t("bdTitle"), "medal")}<div class="empty">${esc(t("recNone"))}</div>`;
     const levels = this._t.bdLevels || STRINGS.en.bdLevels;
     const colors = ["#64748b", "#d08a4e", "#cbd5e1", "#fbbf24"];
     const earned = badges.filter((b) => b.level > 0).length;
@@ -5151,13 +5209,14 @@ class LeapmotorCard extends HTMLElement {
     const own = Number(ra.consumption_kwh_100km) || this._v("lifetimeConsumption") || this._v("avg");
     if (!own || own <= 0) return null;
     // The driver's average belongs to their usual pace: the mean speed of recent trips.
-    const trips = (this._a("lastTrip", "recent_trips") || []).filter((x) => x.avg_speed_kmh > 0 && x.distance_km > 0);
+    const trips = objs(this._a("lastTrip", "recent_trips")).filter((x) => x.avg_speed_kmh > 0 && x.distance_km > 0);
     const km = trips.reduce((sum, x) => sum + x.distance_km, 0);
     const pace = km > 0 ? clamp(trips.reduce((sum, x) => sum + x.avg_speed_kmh * x.distance_km, 0) / km, 30, 90) : 55;
     const outside = this._v("outdoor");
     const soc = this._v("batteryPrecise") ?? this._v("battery");
     let energy = Number(ra.energy_kwh) || this._v("availableEnergy");
-    let capacity = ra.full_km ? (ra.full_km * own) / 100 : null;
+    if (!(energy > 0)) energy = null;
+    let capacity = ra.full_km > 0 ? (ra.full_km * own) / 100 : null;
     if (!capacity && energy && soc && soc >= 20) capacity = (energy / soc) * 100;
     if (!energy && capacity && soc != null) energy = (capacity * soc) / 100;
     return { own, pace, outside: outside ?? 15, soc, energy: energy || null, capacity: capacity || null };
@@ -5166,7 +5225,7 @@ class LeapmotorCard extends HTMLElement {
   _labResult() {
     const base = this._labBase();
     if (!base) return null;
-    const lab = this._lab || (this._lab = { speed: 90, temp: Math.round(base.outside), climate: true });
+    const lab = this._lab || (this._lab = { speed: 90, temp: clamp(Math.round(base.outside), -15, 35), climate: true });
     const factor = base.own / this._labModel(base.pace, base.outside, true);
     const cons = factor * this._labModel(lab.speed, lab.temp, lab.climate);
     return { cons, now: base.energy ? (base.energy / cons) * 100 : null, full: base.capacity ? (base.capacity / cons) * 100 : null, soc: base.soc };
@@ -5178,7 +5237,7 @@ class LeapmotorCard extends HTMLElement {
     if (!r) return "";
     const shown = r.now ?? r.full;
     return `<div class="rlbig">${shown != null ? this._num(shown) : "—"}<small>km</small></div>` +
-      `<div class="rlsub">${esc(r.now != null && r.soc != null ? t("rlNow", { p: this._num(r.soc) }) : t("rlFull"))}` +
+      `<div class="rlsub">${esc(r.now == null ? t("rlFull") : r.soc != null ? t("rlNow", { p: this._num(r.soc) }) : t("rlNowPlain"))}` +
       `${r.now != null && r.full != null ? ` · <b>${this._num(r.full)} km</b> ${esc(t("rlFull"))}` : ""}</div>` +
       `<div class="rlcons"><b>${this._num(r.cons, 1)}</b> kWh/100 km</div>`;
   }
@@ -5271,9 +5330,12 @@ class LeapmotorCard extends HTMLElement {
 
   _replayHtml(tr) {
     if (!tr || tr.state !== "ok" || tr.points.length < 3) return "";
+    // Drawn from the replay in progress, so a refresh of this panel does not reset the controls.
+    const state = this._replay && this._replay.key === tr.key ? this._replay : null;
     const label = esc(this._tr("replay"));
-    return `<div class="replay"><button type="button" class="rpb" data-act="replay" aria-label="${label}">${icon("play")}<span>${label}</span></button>` +
-      `<input type="range" class="rps" min="0" max="1000" step="1" value="0" data-replay="1" aria-label="${label}"><span class="rpi" id="rpinfo"></span></div>`;
+    const action = esc(this._tr(state?.playing ? "replayPause" : "replay"));
+    return `<div class="replay"><button type="button" class="rpb" data-act="replay" aria-label="${action}">${icon(state?.playing ? "pause" : "play")}<span>${action}</span></button>` +
+      `<input type="range" class="rps" min="0" max="1000" step="1" value="${Math.round(clamp(state?.share || 0, 0, 1) * 1000)}" data-replay="1" aria-label="${label}"><span class="rpi" id="rpinfo"></span></div>`;
   }
 
   _toggleReplay() {
@@ -5289,7 +5351,8 @@ class LeapmotorCard extends HTMLElement {
       state.last = 0;
       const frame = (now) => {
         if (!state.playing || this._replay !== state) return;
-        if (state.last) state.share = Math.min(1, state.share + (now - state.last) / 12000);
+        // At most a tenth of a second per frame: a tab that was in the background does not jump to the end.
+        if (state.last) state.share = Math.min(1, state.share + Math.min(now - state.last, 100) / 12000);
         state.last = now;
         this._applyReplay(tr, state.share);
         if (state.share >= 1) {
@@ -5427,7 +5490,6 @@ class LeapmotorCard extends HTMLElement {
       link.click();
       link.remove();
       setTimeout(() => URL.revokeObjectURL(link.href), 60 * 1000);
-      this._lastCsv = lines.join("\r\n");
       this._toast(this._tr("exported", { n: trips.length }));
     } catch (err) {
       this._toast(this._tr("failed", { x: err?.message || String(err) }));
@@ -5500,6 +5562,7 @@ class LeapmotorCard extends HTMLElement {
     if (act === "labclimate") {
       if (!this._lab) return;
       this._lab.climate = !this._lab.climate;
+      this._labFull = true; // the button itself changes
       this._sigs.rangelab = null;
       this._renderSection("rangelab");
       return;

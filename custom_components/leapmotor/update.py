@@ -58,6 +58,8 @@ class LeapmotorSoftwareUpdate(
     _attr_device_class = UpdateDeviceClass.FIRMWARE
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_supported_features = UpdateEntityFeature.RELEASE_NOTES
+    # Release notes can be long; the dashboard reads them, the recorder does not need them.
+    _unrecorded_attributes = frozenset({"notes"})
 
     def __init__(self, coordinator: LeapmotorDataUpdateCoordinator, vin: str) -> None:
         super().__init__(coordinator)

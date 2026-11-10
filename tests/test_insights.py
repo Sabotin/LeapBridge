@@ -222,6 +222,21 @@ class HabitTests(unittest.TestCase):
         self.assertEqual(habits["weekdays"][0]["days_seen"], 8)
         self.assertEqual(habits["weekdays"][0]["departures"], [])
 
+    def test_a_young_trip_log_is_not_diluted_by_older_cloud_days(self) -> None:
+        # Three weeks of trips, but the cloud's daily history covers eight weeks.
+        trips = commute(weeks=3, jitter=False)
+        days = {(TODAY - timedelta(days=offset)).isoformat(): [46.0 if (TODAY - timedelta(days=offset)).weekday() < 5 else 0.0, 7.0]
+                for offset in range(1, 57)}
+        habits = ins.learn_habits(trips, days, now_ts=NOW.timestamp(), tz=TZ)
+        monday = habits["weekdays"][0]
+        self.assertEqual(monday["days_seen"], 8)
+        self.assertEqual([d["time"] for d in monday["departures"]], ["07:20", "16:10"])
+        self.assertEqual(monday["departures"][0]["samples"], 3)
+        self.assertEqual(monday["departures"][0]["confidence"], 1.0)
+        # The distance pattern still uses all eight weeks.
+        self.assertEqual(monday["typical_km"], 46.0)
+        self.assertEqual(habits["next_departure"]["time"], "07:20")
+
     def test_short_hops_do_not_count(self) -> None:
         trips = [trip(TODAY - timedelta(days=7 * w), 7, 20, km=0.4) for w in range(1, 9)]
         self.assertEqual(self.habits(trips)["weekdays"][0]["departures"], [])
@@ -453,6 +468,9 @@ class ForecastTests(unittest.TestCase):
     def test_not_enough_data(self) -> None:
         self.assertIsNone(ins.battery_forecast({}, 64.0, today=TODAY))
         self.assertIsNone(ins.battery_forecast(self.samples(days=40), 64.0, today=TODAY))
+        # Less than half a year: a winter would read as wear.
+        self.assertIsNone(ins.battery_forecast(self.samples(days=170, per_year=-12.0), 64.0, today=TODAY))
+        self.assertIsNotNone(ins.battery_forecast(self.samples(days=190), 64.0, today=TODAY))
         self.assertIsNone(ins.battery_forecast(self.samples(step=100), 64.0, today=TODAY))
         self.assertIsNone(ins.battery_forecast(self.samples(), None, today=TODAY))
         self.assertIsNone(ins.battery_forecast({"bad": 3, "2026-01-01": "x"}, 64.0, today=TODAY))
@@ -557,6 +575,17 @@ class JourneyTests(unittest.TestCase):
         self.assertEqual(result["year"]["year"], 2026)
         self.assertGreater(result["year"]["projected_km"], result["year"]["km"])
 
+    def test_projection_uses_the_days_that_are_known(self) -> None:
+        # History begins 70 days ago, not on 1 January.
+        days = {(TODAY - timedelta(days=offset)).isoformat(): [30.0, 5.0] for offset in range(70)}
+        year = ins.journey(days, {}, vehicle(), today=TODAY)["year"]
+        self.assertEqual(year["km"], 2100.0)
+        left = (date(2026, 12, 31) - TODAY).days
+        self.assertEqual(year["projected_km"], 2100 + 30 * left)
+        # Less than two weeks of history: no projection yet.
+        few = {(TODAY - timedelta(days=offset)).isoformat(): [30.0, 5.0] for offset in range(10)}
+        self.assertIsNone(ins.journey(few, {}, vehicle(), today=TODAY)["year"]["projected_km"])
+
     def test_empty_history(self) -> None:
         result = ins.journey({}, {}, {}, today=TODAY)
         self.assertTrue(all(v == -1 for v in result["calendar"]["km"]))
@@ -609,8 +638,27 @@ class AchievementTests(unittest.TestCase):
         self.assertIsNone(by_id["low_tariff"]["reached_at"])
         self.assertIsNotNone(by_id["distance"]["reached_at"])
 
-    def test_a_new_level_is_reported_once_and_never_lost(self) -> None:
+    def test_levels_found_while_old_history_arrives_are_not_news(self) -> None:
         extra: dict = {}
+        self.run_badges(extra)
+        # The cloud's older days are still being read back: a longer "longest day" is old driving.
+        badges, unlocked = self.run_badges(extra, odometer=50_100, coldest=-11.0)
+        self.assertEqual(unlocked, [])
+        self.assertEqual({b["id"]: b["level"] for b in badges}["distance"], 3)
+        # Once that is done, a new level is reported.
+        extra["backfill"] = {"done": True}
+        _, unlocked = self.run_badges(extra, odometer=50_100, coldest=-11.0, eco_avg=95)
+        self.assertEqual([(u["id"], u["level"]) for u in unlocked], [("eco_driver", 3)])
+
+    def test_the_quiet_time_ends_after_a_day_even_without_the_old_history(self) -> None:
+        extra: dict = {}
+        self.run_badges(extra)
+        extra["badges_since"] = NOW.timestamp() - ins.BADGE_QUIET_SECONDS - 60
+        _, unlocked = self.run_badges(extra, odometer=50_100)
+        self.assertEqual([(u["id"], u["level"]) for u in unlocked], [("distance", 3)])
+
+    def test_a_new_level_is_reported_once_and_never_lost(self) -> None:
+        extra: dict = {"backfill": {"done": True}}
         self.run_badges(extra)
         _, unlocked = self.run_badges(extra, odometer=50_100, coldest=-11.0)
         self.assertEqual({(u["id"], u["level"]) for u in unlocked}, {("distance", 3), ("frost", 3)})
@@ -847,6 +895,34 @@ class ComputeTests(unittest.TestCase):
         self.assertEqual(len(finished), 1)
         self.assertEqual((finished[0]["from"], finished[0]["to"]), ("Work", "Home"))
         self.assertEqual(finished[0]["cost"], 0.74)
+
+    def run_compute(self, car):
+        summary = {"avg_price_kwh": 0.2, "month": {"distance_km": 230.0, "energy_kwh": 36.8, "cost": 7.36}}
+        return ins.compute(trips=[], sessions=[], buffer=[], full_charge={}, summary=summary,
+                           vehicle=car, extra={}, now_ts=NOW.timestamp(), tz=TZ, fuel={"price": 1.5})
+
+    def test_an_unbelievable_lifetime_energy_is_not_used(self) -> None:
+        normal = self.run_compute(vehicle())["savings"]["lifetime"]
+        self.assertEqual(normal["ev_cost"], 580.0)
+        self.assertGreater(normal["co2_saved_kg"], 0)
+        # The same total in Wh (as some models report daily energy) would give absurd figures.
+        car = vehicle()
+        car["history"]["total_energy_kwh"] = 2_900_000.0
+        life = self.run_compute(car)["savings"]["lifetime"]
+        self.assertEqual(life["fuel_litres"], normal["fuel_litres"])
+        self.assertIsNone(life["ev_cost"])
+        self.assertIsNone(life["saved"])
+        self.assertIsNone(life["co2_saved_kg"])
+
+    def test_a_range_extender_is_not_compared_with_a_petrol_car(self) -> None:
+        car = vehicle()
+        car["status"]["fuel_level_percent"] = 62
+        savings = self.run_compute(car)["savings"]
+        self.assertIsNone(savings["month"])
+        self.assertIsNone(savings["lifetime"])
+        result = self.run_compute(car)
+        co2 = {b["id"]: b for b in result["achievements"]}["co2"]
+        self.assertEqual(co2["level"], 0)
 
     def test_nothing_known_yet(self) -> None:
         extra: dict = {}

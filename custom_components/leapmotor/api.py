@@ -132,6 +132,10 @@ CHARGING_HISTORY_MAX_PAGES = 2
 SCHEDULES_TTL_SECONDS = 1800
 SHARE_INVITATIONS_TTL_SECONDS = 6 * 3600
 #: After a failed extra read, wait this long before asking again.
+#: The optional reads are made with a time limit, and one poll spends at most
+#: this long on them; what is left waits for the next poll.
+OPTIONAL_READ_TIMEOUT_SECONDS = 20
+EXTRAS_BUDGET_SECONDS = 45
 EXTRA_RETRY_SECONDS = 900
 #: The cloud said this account may not read it: ask again once a day.
 EXTRA_DENIED_SECONDS = 24 * 3600
@@ -198,6 +202,9 @@ class LeapmotorApiClient:
         self.status_path_resolver = VehicleStatusPathResolver()
         #: Slow-changing extra reads: (kind, key) -> (next refresh, value).
         self._extras: dict[tuple[str, str], tuple[float, Any]] = {}
+        self._request_timeout: float | None = None
+        self._extras_deadline: float | None = None
+        self._extras_warned: set[str] = set()
         #: Language for software release notes; the app language when unset.
         self.notes_language: str | None = None
         #: Pending car-share invitations, with the fields needed to answer them.
@@ -906,16 +913,6 @@ class LeapmotorApiClient:
         }
         notifications = self._fetch_account_notifications()
         messages = notifications.pop("messages", []) if isinstance(notifications, dict) else []
-        self.share_invitations = self._cached_extra(
-            "share_invitations",
-            "account",
-            self._get_share_invitations,
-            ttl=SHARE_INVITATIONS_TTL_SECONDS,
-            fallback=[],
-        )
-        result["share_invitations"] = [
-            public_invitation(invitation) for invitation in self.share_invitations
-        ]
         for vehicle in vehicles:
             status = self.get_vehicle_status(vehicle)
             mileage = self._fetch_optional_read(
@@ -967,8 +964,25 @@ class LeapmotorApiClient:
                 ),
                 "messages": messages_for_vin(messages, vehicle.vin),
             }
-            vehicle_data.update(self._fetch_vehicle_extras(vehicle))
             result["vehicles"][vehicle.vin] = vehicle_data
+        # Optional, slow-changing data comes last, with a time limit: it can
+        # neither fail nor hold up the status of any car.
+        self._extras_deadline = time.monotonic() + EXTRAS_BUDGET_SECONDS
+        try:
+            self.share_invitations = self._cached_extra(
+                "share_invitations",
+                "account",
+                self._get_share_invitations,
+                ttl=SHARE_INVITATIONS_TTL_SECONDS,
+                fallback=[],
+            )
+            result["share_invitations"] = [
+                public_invitation(invitation) for invitation in self.share_invitations
+            ]
+            for vehicle in vehicles:
+                result["vehicles"][vehicle.vin].update(self._fetch_vehicle_extras(vehicle))
+        finally:
+            self._extras_deadline = None
         return result
 
     def _cached_extra(
@@ -992,6 +1006,11 @@ class LeapmotorApiClient:
         slot = self._extras.get((kind, key))
         if slot is not None and now < slot[0]:
             return slot[1]
+        if self._extras_deadline is not None and now > self._extras_deadline:
+            # This poll has used its time for optional data: ask again on the next one.
+            return slot[1] if slot is not None else fallback
+        previous_timeout = self._request_timeout
+        self._request_timeout = OPTIONAL_READ_TIMEOUT_SECONDS
         try:
             value = fetcher()
         except LeapmotorApiError as exc:
@@ -1004,12 +1023,15 @@ class LeapmotorApiClient:
             self._extras[(kind, key)] = (now + EXTRA_RETRY_SECONDS, value)
             return value
         except Exception:  # noqa: BLE001 - optional data must never break polling
-            _LOGGER.warning(
-                "Leapmotor optional read for %s returned unexpected data", kind, exc_info=True
-            )
+            # Said once per kind of data; the read is tried again every quarter of an hour.
+            log = _LOGGER.debug if kind in self._extras_warned else _LOGGER.warning
+            self._extras_warned.add(kind)
+            log("Leapmotor optional read for %s returned unexpected data", kind, exc_info=True)
             value = slot[1] if slot is not None else fallback
             self._extras[(kind, key)] = (now + EXTRA_RETRY_SECONDS, value)
             return value
+        finally:
+            self._request_timeout = previous_timeout
         self._extras[(kind, key)] = (now + ttl, value)
         return value
 
@@ -1107,7 +1129,10 @@ class LeapmotorApiClient:
             )
             body = self._parse_api_body(resp["status_code"], resp["body"], "unread count")
             unread = self._extract_unread_count(body.get("data"))
-
+        except LeapmotorApiError as exc:
+            _LOGGER.debug("Leapmotor notification fetch failed: %s", exc)
+            return empty
+        try:
             list_headers = self._build_message_list_headers(page_size=INBOX_PAGE_SIZE)
             list_headers.update(self._auth_headers(content_type="application/x-www-form-urlencoded"))
             resp = self._post_with_curl(
@@ -1126,8 +1151,9 @@ class LeapmotorApiClient:
                 "messages": normalize_messages(messages),
             }
         except LeapmotorApiError as exc:
-            _LOGGER.debug("Leapmotor notification fetch failed: %s", exc)
-            return empty
+            _LOGGER.debug("Leapmotor message list fetch failed: %s", exc)
+            # The count was read: keep it even when the list is not available.
+            return {**empty, "unread_count": unread}
 
     @staticmethod
     def _extract_unread_count(data: Any) -> int | None:
@@ -1595,6 +1621,8 @@ class LeapmotorApiClient:
         with self._api_lock:
             if not self.token:
                 return None
+            previous_timeout = self._request_timeout
+            self._request_timeout = OPTIONAL_READ_TIMEOUT_SECONDS
             try:
                 vehicle = next(
                     (item for item in self.get_vehicle_list() if item.vin == vin), None
@@ -1622,6 +1650,8 @@ class LeapmotorApiClient:
                     "Leapmotor daily history returned unexpected data", exc_info=True
                 )
                 return None
+            finally:
+                self._request_timeout = previous_timeout
 
     def _get_appointment_controls(
         self, vin: str, cmd_id: str, label: str
@@ -2558,6 +2588,9 @@ class LeapmotorApiClient:
         except ValueError as exc:
             self._record_api_result(label, status_code=status_code, code=None, message="non_json")
             raise LeapmotorApiError(f"{label} returned non-JSON response: {body[:200]}") from exc
+        if not isinstance(data, dict):
+            self._record_api_result(label, status_code=status_code, code=None, message="not_an_object")
+            raise LeapmotorApiError(f"{label} returned an unexpected response: {body[:200]}")
         self._record_api_result(
             label,
             status_code=status_code,
@@ -2610,6 +2643,12 @@ class LeapmotorApiClient:
     ) -> dict[str, Any]:
         """Send a POST with the configured API transport."""
         try:
+            if self._request_timeout is not None:
+                # Only the optional reads set a limit; everything else is sent as before.
+                return self.transport.post(
+                    path=path, headers=headers, data=data, cert=cert,
+                    timeout=self._request_timeout,
+                )
             return self.transport.post(path=path, headers=headers, data=data, cert=cert)
         except LeapmotorApiError as exc:
             self._record_api_result(

@@ -248,6 +248,25 @@ class ScheduleTests(unittest.TestCase):
         now = datetime(2026, 3, 28, 12, 0, tzinfo=TZ)
         self.assertEqual(ce.next_schedule_run(once, now)["at"], "2026-03-29T06:30:00+02:00")
         self.assertIsNone(ce.next_schedule_run([], now))
+        # A one-off with a date runs on that date, not at the next such time.
+        tz = now.tzinfo
+        evening = datetime(2026, 11, 10, 20, 0, tzinfo=tz)
+        dated = ce.normalize_schedule(
+            [{"on": "1", "start_time": "2026-11-20 07:10:00", "days": [], "set_id": "d"}], "climate")
+        self.assertEqual(dated[0]["date"], "2026-11-20")
+        self.assertEqual(dated[0]["time"], "07:10")
+        self.assertEqual(ce.next_schedule_run(dated, evening)["at"], "2026-11-20T07:10:00+01:00")
+        # Once its date has passed it never runs again, even if the cloud still lists it as on.
+        past = ce.normalize_schedule(
+            [{"on": "1", "start_time": "2026-10-01 07:10:00", "set_id": "p"}], "climate")
+        self.assertIsNone(ce.next_schedule_run(past, evening))
+        # A weekly entry ignores the date it was created with.
+        weekly = ce.normalize_schedule(
+            [{"on": "1", "start_time": "2026-10-01 07:10:00", "days": [3], "set_id": "w"}], "climate")
+        self.assertEqual(ce.next_schedule_run(weekly, evening)["at"], "2026-11-11T07:10:00+01:00")
+        self.assertEqual(ce.next_schedule_run(dated + weekly + past, evening)["id"], "w")
+        self.assertIsNone(ce.normalize_schedule([{"start_time": "07:10"}], "climate")[0]["date"])
+        self.assertIsNone(ce.normalize_schedule([{"start_time": "2026-13-45 07:10:00"}], "climate")[0]["date"])
         self.assertIsNone(ce.next_schedule_run([{"enabled": False, "time": "06:30"}], now))
 
 
