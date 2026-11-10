@@ -64,7 +64,7 @@
 4. Odpri **Nastavitve → Naprave in storitve → Dodaj integracijo → Leapmotor**.
 5. Naloži oba certifikata in vnesi podatke računa. Po končani namestitvi se v stranski vrstici pojavi Leapmotor.
 
-**Posodobitev:** HACS namesti zadnjo različico z veje `main`. Za preverjanje nove različice odpri Leapmotor v HACS in izberi **⋮ → Posodobi informacije** (*Update information*), nato **Prenesi znova** (*Redownload*) in znova zaženi Home Assistant. Če je kartica še vedno stara, osveži brskalnik s **Ctrl + F5**.
+**Posodobitev:** HACS namesti zadnjo izdajo (prva je 0.7.5). Ko izide nova izdaja, se posodobitev pokaže v HACS in med posodobitvami v nastavitvah Home Assistanta; prenesi jo in znova zaženi Home Assistant. Če je še ne vidiš, odpri Leapmotor v HACS in izberi **⋮ → Posodobi informacije** (*Update information*). Če si integracijo namestil pred prvo izdajo, enkrat izberi **Prenesi znova** (*Redownload*) in znova zaženi Home Assistant. Če je kartica še vedno stara, osveži brskalnik s **Ctrl + F5**.
 
 Ročna namestitev in podrobnejša navodila: **[navodila v slovenščini](docs/navodila-sl.md)**.
 

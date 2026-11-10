@@ -345,9 +345,12 @@ certifikatov. Za javne prijave napak raje uporabi `leapmotor.export_diagnostics`
 
 ## Posodabljanje
 
-- **HACS:** v HACS odpri Leapmotor → **⋮ → Posodobi informacije** (*Update
-  information*) → **Prenesi znova** (*Redownload*) → znova zaženi. Če je
-  kartica še stara, osveži brskalnik (**Ctrl + F5**).
+- **HACS:** HACS namesti zadnjo izdajo (prva je 0.7.5). Nova izdaja se pokaže
+  v HACS in med posodobitvami v nastavitvah Home Assistanta: prenesi jo in
+  znova zaženi. Če je še ne vidiš, v HACS odpri Leapmotor → **⋮ → Posodobi
+  informacije** (*Update information*). Če si integracijo namestil pred prvo
+  izdajo, enkrat izberi **Prenesi znova** (*Redownload*). Če je kartica še
+  stara, osveži brskalnik (**Ctrl + F5**).
 - **Ročno:** ponovi [1. korak](#1-namestitev-integracije) (zamenjaj mapo) in
   znova zaženi. Tvoja certifikata v `/config/leapmotor/` ostaneta nedotaknjena.
 
