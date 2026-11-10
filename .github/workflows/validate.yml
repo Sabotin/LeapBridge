@@ -73,6 +73,7 @@ jobs:
           ! grep -RIE \
             'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|BEGIN CERTIFICATE|@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|192\.168\.' \
             --exclude-dir=.git \
+            --exclude-dir=certs \
             --exclude='validate.yml' \
             --exclude='config_flow.py' \
             --exclude='README.md' \

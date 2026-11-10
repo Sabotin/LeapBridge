@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 import importlib
-import json
 import os
 from pathlib import Path
 import stat
@@ -22,10 +21,9 @@ import test_status_path_fallback  # noqa: F401 - registers the package for the i
 
 cd = importlib.import_module("custom_components.leapmotor.cert_download")
 
-RELEASE = "https://github.com/markoceri/leapmotor-certs/releases/latest/download"
-API = "https://api.github.com/repos/markoceri/leapmotor-certs/releases/latest"
-RAW = "https://raw.githubusercontent.com/markoceri/leapmotor-certs/HEAD"
-ASSETS = "https://github.com/markoceri/leapmotor-certs/releases/download/v9"
+RELEASE = "https://raw.githubusercontent.com/Sabotin/LeapBridge/HEAD/certs"
+WEB = "https://github.com/Sabotin/LeapBridge/raw/HEAD/certs"
+RAW = "https://cdn.jsdelivr.net/gh/Sabotin/LeapBridge@main/certs"
 
 
 def make_pair(*, days: int = 365, name: str = "synthetic") -> tuple[bytes, bytes]:
@@ -100,14 +98,6 @@ class FakeSession:
         raise AssertionError("a session passed in by the caller must stay open")
 
 
-def release_json(cert_url: str, key_url: str, cert_name="app_cert.pem", key_name="app_key.pem") -> bytes:
-    return json.dumps({"tag_name": "v9", "assets": [
-        {"name": "notes.txt", "browser_download_url": f"{ASSETS}/notes.txt"},
-        {"name": cert_name, "browser_download_url": cert_url},
-        {"name": key_name, "browser_download_url": key_url},
-    ]}).encode()
-
-
 class NoWaiting(unittest.TestCase):
     def setUp(self) -> None:
         patcher = patch.object(cd, "_RETRY_WAIT_SECONDS", 0)
@@ -157,6 +147,15 @@ class CheckPairTests(unittest.TestCase):
                     cd.check_certificate_pair(cert, key)
 
 
+class RepositoryPairTests(unittest.TestCase):
+    def test_the_pair_in_the_certs_folder_is_usable_plain_pem(self) -> None:
+        folder = Path(__file__).parents[1] / "certs"
+        cert, key = (folder / "app_cert.pem").read_bytes(), (folder / "app_key.pem").read_bytes()
+        pair = cd.check_certificate_pair(cert, key)
+        self.assertEqual((pair.cert_pem, pair.key_pem), (cert, key))
+        self.assertFalse(pair.expired)
+
+
 class FetchTests(NoWaiting):
     def fetch(self, routes: dict):
         session = FakeSession(routes)
@@ -171,46 +170,34 @@ class FetchTests(NoWaiting):
             cd.fetch_certificate_pair(session)
         return caught.exception, session
 
-    def test_release_files_are_used_first_without_the_api(self) -> None:
+    def test_the_first_address_is_used_first(self) -> None:
         (pair, source), session = self.fetch(
             {f"{RELEASE}/app_cert.pem": BAG + CERT, f"{RELEASE}/app_key.pem": BAG + KEY}
         )
-        self.assertEqual((source, pair.cert_pem, pair.key_pem), ("latest release", CERT, KEY))
+        self.assertEqual((source, pair.cert_pem, pair.key_pem), ("GitHub", CERT, KEY))
         self.assertEqual(session.calls, [f"{RELEASE}/app_cert.pem", f"{RELEASE}/app_key.pem"])
 
-    def test_renamed_release_files_are_found(self) -> None:
+    def test_renamed_files_are_found(self) -> None:
         (pair, source), _ = self.fetch({f"{RELEASE}/app.crt": CERT, f"{RELEASE}/app.key": KEY})
-        self.assertEqual((source, pair.cert_pem), ("latest release", CERT))
+        self.assertEqual((source, pair.cert_pem), ("GitHub", CERT))
 
-    def test_api_route_when_the_fixed_addresses_are_missing(self) -> None:
-        (pair, source), session = self.fetch({
-            API: release_json(f"{ASSETS}/app_cert.crt", f"{ASSETS}/app_key.key",
-                              "APP_CERT.CRT", "App_Key.key"),
-            f"{ASSETS}/app_cert.crt": CERT,
-            f"{ASSETS}/app_key.key": KEY,
-            # Would win if the first route were skipped by mistake.
-            f"{RAW}/app.crt": OTHER_CERT, f"{RAW}/app.key": OTHER_KEY,
-        })
-        self.assertEqual((source, pair.cert_pem), ("latest release (GitHub API)", CERT))
-        self.assertNotIn(f"{RAW}/app.crt", session.calls)
-
-    def test_repository_files_when_releases_and_api_fail(self) -> None:
+    def test_the_mirror_is_used_when_github_fails(self) -> None:
         (pair, source), session = self.fetch({
             f"{RELEASE}/app_cert.pem": 503,
-            API: 403,  # GitHub API rate limit
-            f"{RAW}/app.crt": BAG + CERT, f"{RAW}/app.key": BAG + KEY,
+            f"{WEB}/app_cert.pem": 429,  # refused: asking again does not help
+            f"{RAW}/app_cert.pem": BAG + CERT, f"{RAW}/app_key.pem": BAG + KEY,
         })
-        self.assertEqual((source, pair.key_pem), ("repository files", KEY))
-        # The server error was retried, the rate limit was not.
+        self.assertEqual((source, pair.key_pem), ("jsDelivr mirror", KEY))
+        # The server error was retried, the refusal was not.
         self.assertEqual(session.calls.count(f"{RELEASE}/app_cert.pem"), 3)
-        self.assertEqual(session.calls.count(API), 1)
+        self.assertEqual(session.calls.count(f"{WEB}/app_cert.pem"), 1)
 
     def test_a_dropped_connection_is_retried(self) -> None:
         (pair, source), session = self.fetch({
             f"{RELEASE}/app_cert.pem": [requests.ConnectionError("reset"), CERT],
             f"{RELEASE}/app_key.pem": [requests.Timeout("slow"), 502, KEY],
         })
-        self.assertEqual((source, pair.cert_pem), ("latest release", CERT))
+        self.assertEqual((source, pair.cert_pem), ("GitHub", CERT))
         self.assertEqual(len(session.calls), 5)
 
     def test_an_unusable_pair_falls_through_to_the_next_route(self) -> None:
@@ -218,17 +205,7 @@ class FetchTests(NoWaiting):
             f"{RELEASE}/app_cert.pem": CERT, f"{RELEASE}/app_key.pem": OTHER_KEY,
             f"{RAW}/app.crt": CERT, f"{RAW}/app.key": KEY,
         })
-        self.assertEqual((source, pair.key_pem), ("repository files", KEY))
-
-    def test_release_files_from_another_host_are_ignored(self) -> None:
-        error, session = self.failure({
-            API: release_json("https://example.invalid/app_cert.pem",
-                              "http://github.com/x/app_key.pem"),
-            "https://example.invalid/app_cert.pem": CERT,
-            "http://github.com/x/app_key.pem": KEY,
-        })
-        self.assertEqual(error.reason, cd.REASON_NOT_FOUND)
-        self.assertNotIn("https://example.invalid/app_cert.pem", session.calls)
+        self.assertEqual((source, pair.key_pem), ("jsDelivr mirror", KEY))
 
     def test_oversized_file_is_not_read_to_the_end(self) -> None:
         error, _ = self.failure({
@@ -240,15 +217,13 @@ class FetchTests(NoWaiting):
 
     def test_failure_reasons(self) -> None:
         offline = requests.ConnectionError("Name or service not known")
-        everything_down = {f"{base}/{name}": offline for base in (RELEASE, RAW)
+        everything_down = {f"{base}/{name}": offline for base in (RELEASE, WEB, RAW)
                            for name in ("app_cert.pem", "app.crt", "app_cert.crt")}
-        everything_down[API] = offline
         cases = (
             ("no network", everything_down, cd.REASON_CANNOT_CONNECT),
             ("nothing published", {}, cd.REASON_NOT_FOUND),
             ("only a broken pair", {f"{RAW}/app.crt": CERT, f"{RAW}/app.key": OTHER_KEY},
              cd.REASON_INVALID),
-            ("release list is not JSON", {API: b"<html>"}, cd.REASON_CANNOT_CONNECT),
         )
         for label, routes, reason in cases:
             with self.subTest(label):
@@ -258,7 +233,7 @@ class FetchTests(NoWaiting):
 
     def test_an_unreachable_host_is_asked_only_once(self) -> None:
         offline = requests.ConnectionError("unreachable")
-        _, session = self.failure({f"{RELEASE}/app_cert.pem": offline, API: 404,
+        _, session = self.failure({f"{RELEASE}/app_cert.pem": offline,
                                    f"{RAW}/app_cert.pem": offline})
         # Three attempts for the first file of each host, none for its other names.
         for base in (RELEASE, RAW):
@@ -290,7 +265,7 @@ class InstallTests(NoWaiting):
         )
         result = cd.download_app_certificates(self.dir, session=session)
         self.assertEqual((result.source, result.changed, result.expired),
-                         ("latest release", True, False))
+                         ("GitHub", True, False))
         self.assertEqual((self.cert.read_bytes(), self.key.read_bytes()), (CERT, KEY))
         self.assertEqual((self.mode(self.cert), self.mode(self.key)), (0o644, 0o600))
         self.assertEqual(sorted(path.name for path in self.dir.iterdir()),

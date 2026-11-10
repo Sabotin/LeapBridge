@@ -42,13 +42,16 @@ Logging in to the Leapmotor EU server needs two files:
 - **`app_key.pem`**: its private key.
 
 They are **not** your username and password and not personal vehicle data;
-they are app-level material. That is why they are **not included in this
-repository**, and the integration cannot create or download them. Every user
-has to get the files themselves.
+they are app-level material. They are kept in the [`certs`](../certs) folder of
+this repository. Setup offers **Download from GitHub**, which fetches both
+files, checks that they belong together and stores them in
+`/config/leapmotor/`. Later you find the same switch under **Settings → Devices
+& services → Leapmotor → Configure**, and a missing pair shows up under
+**Settings → Repairs** with a one-click download. Uploading or pasting your own
+files still works.
 
-Keep the files **only in your Home Assistant**, never on GitHub. The
-repository has an automatic check that rejects any push containing a private
-key or certificate, so they can't end up online by accident.
+The installed integration itself contains no certificate; the files are only
+fetched when you ask for them.
 
 ---
 
@@ -130,7 +133,8 @@ certificates.
 ## 4. Set up the integration
 
 1. **Settings → Devices & services → + Add integration → Leapmotor**.
-2. **Certificates**: upload or paste `app_cert.pem` and `app_key.pem`.
+2. **Certificates**: choose **Download from GitHub (recommended)**, or upload
+   or paste `app_cert.pem` and `app_key.pem` yourself.
    (This step is skipped when the files are already in `/config/leapmotor/`.)
 3. **Account**: e-mail, password, vehicle PIN (prefilled with `0000`) and the
    update interval.

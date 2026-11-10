@@ -59,7 +59,7 @@
       },
       "certificate_source": {
         "title": "Certifikati Leapmotor",
-        "description": "Za prijavo v Leapmotor sta potrebna certifikat aplikacije in njegov zasebni ključ (app_cert.pem in app_key.pem). Nista del te integracije. Home Assistant ju lahko prenese iz skupnostnega repozitorija {repository}, lahko pa datoteki priskrbiš ročno. V obeh primerih se shranita samo na tem sistemu, v /config/leapmotor.",
+        "description": "Za prijavo v Leapmotor sta potrebna certifikat aplikacije in njegov zasebni ključ (app_cert.pem in app_key.pem). Nista del te integracije. Home Assistant ju lahko prenese iz repozitorija te integracije na GitHubu ({repository}), lahko pa datoteki priskrbiš ročno. V obeh primerih se shranita samo na tem sistemu, v /config/leapmotor.",
         "menu_options": {
           "download_certificates": "Prenesi z GitHuba (priporočeno)",
           "certificates": "Naloži ali prilepi datoteki ročno"
@@ -76,7 +76,7 @@
           "app_key_pem": "Prilepi PEM iz app_key.pem (zasebni ključ)"
         },
         "data_description": {
-          "download_certificates": "Prenese trenutni datoteki app_cert.pem in app_key.pem iz repozitorija leapmotor-certs in preveri, da spadata skupaj. Datoteki, ki ju naložiš ali prilepiš spodaj, imata prednost."
+          "download_certificates": "Prenese trenutni datoteki app_cert.pem in app_key.pem iz repozitorija te integracije na GitHubu in preveri, da spadata skupaj. Datoteki, ki ju naložiš ali prilepiš spodaj, imata prednost."
         }
       },
       "account": {
@@ -131,7 +131,7 @@
       "share_accept_failed": "Povabila ni bilo mogoče sprejeti. Poskusi znova ali ga sprejmi v aplikaciji Leapmotor.",
       "share_not_ready": "Povabilo je sprejeto, vendar se avto v računu še ni pojavil. Čez trenutek potrdi znova.",
       "cert_download_cannot_connect": "Certifikatov ni bilo mogoče prenesti: GitHub iz Home Assistanta ni bil dosegljiv. Preveri internetno povezavo in potrdi znova ali pa datoteki naloži ročno.",
-      "cert_download_not_found": "V repozitoriju leapmotor-certs ni bilo datotek s certifikatom. Datoteki naloži ročno.",
+      "cert_download_not_found": "V repozitoriju te integracije na GitHubu ni bilo datotek s certifikatom. Datoteki naloži ročno.",
       "cert_download_invalid": "Preneseni datoteki nista veljaven, ujemajoč se par certifikata in ključa, zato ni bilo nič spremenjeno. Poskusi znova pozneje ali pa datoteki naloži ročno.",
       "cert_download_write_failed": "Certifikata sta bila prenesena, vendar ju ni bilo mogoče shraniti v /config/leapmotor. Preveri, ali je v mapo mogoče pisati."
     },
@@ -954,7 +954,7 @@
           "grid_co2_g_kwh": "CO2 tvoje elektrike"
         },
         "data_description": {
-          "download_certificates": "Znova prenese app_cert.pem in app_key.pem iz repozitorija leapmotor-certs na GitHubu in po preverjanju zamenja shranjeni par. Pusti izklopljeno, če želiš obdržati trenutna certifikata.",
+          "download_certificates": "Znova prenese app_cert.pem in app_key.pem iz repozitorija te integracije na GitHubu in po preverjanju zamenja shranjeni par. Pusti izklopljeno, če želiš obdržati trenutna certifikata.",
           "eco_polling_enabled": "Počasnejši varčni interval uporabi le, ko so vsa vozila zanesljivo zaklenjena, parkirana in odklopljena.",
           "eco_scan_interval": "Interval poizvedovanja v varčnem načinu. Samodejno je omejen na najmanj običajni interval posodabljanja.",
           "price_home_kwh": "Uporabi se za polnjenja, ki se začnejo v coni Doma. Pusti 0, če stroškov ne želiš spremljati.",
@@ -979,7 +979,7 @@
       "certificate_import_error": "Uvoz certifikata ni uspel. Preveri certifikat PEM in zasebni ključ.",
       "missing_app_cert": "Manjka certifikat ali zasebni ključ aplikacije. Prenesi ju z GitHuba v možnostih integracije, prilepi obe vrednosti PEM ali shrani app_cert.pem in app_key.pem v /config/leapmotor.",
       "cert_download_cannot_connect": "Certifikatov ni bilo mogoče prenesti: GitHub iz Home Assistanta ni bil dosegljiv. Preveri internetno povezavo in potrdi znova ali pa datoteki naloži ročno.",
-      "cert_download_not_found": "V repozitoriju leapmotor-certs ni bilo datotek s certifikatom. Datoteki naloži ročno.",
+      "cert_download_not_found": "V repozitoriju te integracije na GitHubu ni bilo datotek s certifikatom. Datoteki naloži ročno.",
       "cert_download_invalid": "Preneseni datoteki nista veljaven, ujemajoč se par certifikata in ključa, zato ni bilo nič spremenjeno. Poskusi znova pozneje ali pa datoteki naloži ročno.",
       "cert_download_write_failed": "Certifikata sta bila prenesena, vendar ju ni bilo mogoče shraniti v /config/leapmotor. Preveri, ali je v mapo mogoče pisati."
     }
@@ -1298,7 +1298,7 @@
         },
         "error": {
           "cert_download_cannot_connect": "Certifikatov ni bilo mogoče prenesti: GitHub iz Home Assistanta ni bil dosegljiv. Preveri internetno povezavo in potrdi znova ali pa datoteki naloži ročno.",
-          "cert_download_not_found": "V repozitoriju leapmotor-certs ni bilo datotek s certifikatom. Datoteki naloži ročno.",
+          "cert_download_not_found": "V repozitoriju te integracije na GitHubu ni bilo datotek s certifikatom. Datoteki naloži ročno.",
           "cert_download_invalid": "Preneseni datoteki nista veljaven, ujemajoč se par certifikata in ključa, zato ni bilo nič spremenjeno. Poskusi znova pozneje ali pa datoteki naloži ročno.",
           "cert_download_write_failed": "Certifikata sta bila prenesena, vendar ju ni bilo mogoče shraniti v /config/leapmotor. Preveri, ali je v mapo mogoče pisati."
         }

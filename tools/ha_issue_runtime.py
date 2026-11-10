@@ -1240,6 +1240,7 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
                       "eco_scan_interval": 15, "abrp_enabled": False, "abrp_token": ""}
         with patch.object(config_flow, "LeapmotorApiClient", return_value=self.client), \
                 patch.object(config_flow, "has_app_certificate_material", return_value=True), \
+                patch.object(config_flow, "validate_app_certificate_material"), \
                 patch.object(config_flow, "save_app_certificate_material"), \
                 patch.object(config_flow, "SHARE_ACCEPT_WAIT_SECONDS", 0), \
                 patch.object(self.client, "close"), \
@@ -1267,6 +1268,7 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
                       "abrp_enabled": False, "abrp_token": ""}
         with patch.object(config_flow, "LeapmotorApiClient", return_value=self.client), \
                 patch.object(config_flow, "has_app_certificate_material", return_value=True), \
+                patch.object(config_flow, "validate_app_certificate_material"), \
                 patch.object(config_flow, "save_app_certificate_material"), \
                 patch.object(self.client, "close"):
             result = await self.hass.config_entries.flow.async_init("leapmotor", context={"source": "user"})

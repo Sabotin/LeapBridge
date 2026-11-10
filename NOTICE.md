@@ -40,6 +40,15 @@ are taken from [leapmotor-api](https://pypi.org/project/leapmotor-api/) 0.6.0
 by Marco Mancino, the library LeapConnect uses. Its payloads for actions this
 integration already had are identical.
 
+### Leapmotor app certificates
+
+The certificate pair in `certs/` comes from
+[leapmotor-certs](https://github.com/markoceri/leapmotor-certs) by Marco
+Mancino (release v1.0.0, reduced to the plain PEM blocks). The automatic
+certificate download and the charging schedule command
+(`custom_components/leapmotor/charging_schedule.py`) follow LeapConnect and
+leapmotor-api 0.6.0 by the same author.
+
 ### LeapConnect maintenance packs (MIT)
 
 `custom_components/leapmotor/maintenance_packs.json` bundles the factory and

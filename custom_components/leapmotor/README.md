@@ -395,8 +395,9 @@ data:
 
 - Unofficial cloud integration; Leapmotor can change authentication, endpoints,
   rate limits, or signal meanings at any time.
-- User-provided app certificate material is required. The integration does not
-  generate, bundle, fetch, or download backend-trusted certificates.
+- App certificate material is required. It is not bundled with the integration;
+  setup can download it from the `certs` folder of the GitHub repository, or
+  you provide your own files.
 - The backend is polled, not streamed. Use `Last refresh` and diagnostic age
   attributes when automations depend on freshness.
 - A second shared Leapmotor account is recommended because using the same
@@ -452,11 +453,11 @@ redacts secrets and includes a compact `support_summary`.
 
 ## Certificate Retrieval
 
-The integration cannot generate or retrieve backend-trusted app certificate
-material and does not include or download it automatically. Users must provide
-legitimate certificate/key material themselves, either as
-`/config/leapmotor/app_cert.pem` and `/config/leapmotor/app_key.pem` or via the
-setup/options upload fields. Without those files, login cannot complete
+The integration cannot generate app certificate material. On request (setup,
+options or the repair for a missing pair) it downloads `app_cert.pem` and
+`app_key.pem` from the `certs` folder of its GitHub repository, checks that
+they belong together and stores them in `/config/leapmotor/`. Users can also
+provide the files themselves, there or via the setup/options upload fields. Without those files, login cannot complete
 reliably. Community resources may discuss compatible PEM certificate/key
 material, but users must review and decide themselves whether using such
 material is acceptable for their setup.

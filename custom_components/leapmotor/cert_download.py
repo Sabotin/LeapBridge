@@ -1,15 +1,12 @@
-"""Download the Leapmotor app certificate pair from the community repository.
+"""Download the Leapmotor app certificate pair from this project's repository.
 
-The pair is published by the LeapConnect author in
-https://github.com/markoceri/leapmotor-certs and is fetched only when the user
-asks for it (setup or options). Nothing is bundled with this integration.
+The pair is kept in the ``certs`` folder of https://github.com/Sabotin/LeapBridge
+and is fetched only when the user asks for it (setup, options or a repair). It
+is not part of the installed integration.
 
-Three independent routes are tried, so one of them failing does not matter:
-
-1. the files of the latest release, by their fixed download address
-   (no GitHub API call, so no API rate limit);
-2. the latest release through the GitHub API, which also finds renamed files;
-3. the files in the repository's default branch.
+Three independent addresses are tried, so one of them failing does not matter:
+GitHub's file server, the same files through github.com, and the jsDelivr
+mirror of the repository.
 
 A pair is only installed after it was parsed and the private key was checked
 against the certificate, and it replaces the old files atomically. A failed
@@ -22,7 +19,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
-import json
 import logging
 import os
 from pathlib import Path
@@ -38,26 +34,22 @@ from .const import STATIC_APP_CERT, STATIC_APP_KEY
 
 _LOGGER = logging.getLogger(__name__)
 
-CERT_REPOSITORY = "markoceri/leapmotor-certs"
-CERT_REPOSITORY_URL = f"https://github.com/{CERT_REPOSITORY}"
-CERT_RELEASE_URL = f"{CERT_REPOSITORY_URL}/releases/latest"
+CERT_REPOSITORY = "Sabotin/LeapBridge"
+CERT_FOLDER = "certs"
+CERT_REPOSITORY_URL = f"https://github.com/{CERT_REPOSITORY}/tree/main/{CERT_FOLDER}"
 
-_RELEASE_DOWNLOAD_BASE = f"{CERT_RELEASE_URL}/download"
-_RELEASE_API_URL = f"https://api.github.com/repos/{CERT_REPOSITORY}/releases/latest"
-_RAW_BASE = f"https://raw.githubusercontent.com/{CERT_REPOSITORY}/HEAD"
+#: (name for the log, address of the folder)
+_BASES: tuple[tuple[str, str], ...] = (
+    ("GitHub", f"https://raw.githubusercontent.com/{CERT_REPOSITORY}/HEAD/{CERT_FOLDER}"),
+    ("github.com", f"https://github.com/{CERT_REPOSITORY}/raw/HEAD/{CERT_FOLDER}"),
+    ("jsDelivr mirror", f"https://cdn.jsdelivr.net/gh/{CERT_REPOSITORY}@main/{CERT_FOLDER}"),
+)
 
-#: File names the pair is published under (release files first, then the repository's).
+#: File names the pair may be stored under.
 _PAIR_NAMES: tuple[tuple[str, str], ...] = (
     ("app_cert.pem", "app_key.pem"),
     ("app.crt", "app.key"),
     ("app_cert.crt", "app_key.key"),
-)
-_CERT_NAMES = frozenset(names[0] for names in _PAIR_NAMES)
-_KEY_NAMES = frozenset(names[1] for names in _PAIR_NAMES)
-
-#: Release files may only come from GitHub itself.
-_TRUSTED_DOWNLOAD_HOSTS = frozenset(
-    {"github.com", "objects.githubusercontent.com", "release-assets.githubusercontent.com"}
 )
 
 _USER_AGENT = "LeapBridge-HomeAssistant"
@@ -266,49 +258,8 @@ def _pair_from_base(fetcher: _Fetcher, base_url: str) -> tuple[bytes, bytes] | N
     return None
 
 
-def _from_release_files(fetcher: _Fetcher) -> tuple[bytes, bytes] | None:
-    return _pair_from_base(fetcher, _RELEASE_DOWNLOAD_BASE)
-
-
-def _from_release_api(fetcher: _Fetcher) -> tuple[bytes, bytes] | None:
-    body = fetcher.get(_RELEASE_API_URL, accept="application/vnd.github+json")
-    if body is None:
-        return None
-    try:
-        release = json.loads(body)
-    except ValueError as exc:
-        raise _SourceUnavailable(f"the release list is not JSON: {exc}") from exc
-    urls: dict[str, str] = {}
-    assets = release.get("assets") if isinstance(release, dict) else None
-    for asset in assets if isinstance(assets, list) else []:
-        if not isinstance(asset, dict):
-            continue
-        name = str(asset.get("name") or "").lower()
-        url = str(asset.get("browser_download_url") or "")
-        parts = urlsplit(url)
-        if parts.scheme != "https" or parts.hostname not in _TRUSTED_DOWNLOAD_HOSTS:
-            continue
-        if name in _CERT_NAMES:
-            urls.setdefault("cert", url)
-        elif name in _KEY_NAMES:
-            urls.setdefault("key", url)
-    if "cert" not in urls or "key" not in urls:
-        return None
-    cert_data = fetcher.get(urls["cert"])
-    key_data = fetcher.get(urls["key"])
-    if cert_data is None or key_data is None:
-        return None
-    return cert_data, key_data
-
-
-def _from_repository_files(fetcher: _Fetcher) -> tuple[bytes, bytes] | None:
-    return _pair_from_base(fetcher, _RAW_BASE)
-
-
-_SOURCES = (
-    ("latest release", _from_release_files),
-    ("latest release (GitHub API)", _from_release_api),
-    ("repository files", _from_repository_files),
+_SOURCES = tuple(
+    (label, lambda fetcher, base=base: _pair_from_base(fetcher, base)) for label, base in _BASES
 )
 
 
@@ -444,7 +395,6 @@ def download_app_certificates(
 
 
 __all__ = [
-    "CERT_RELEASE_URL",
     "CERT_REPOSITORY",
     "CERT_REPOSITORY_URL",
     "CertificateDownloadError",

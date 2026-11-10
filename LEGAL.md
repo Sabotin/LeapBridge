@@ -11,10 +11,13 @@ legal, contractual, privacy, and safety risk for public distribution.
 
 - The repository contains independently written integration code only.
 - The repository must not contain Leapmotor APK files, decompiled application
-  code, private keys, client certificates, account tokens, vehicle credentials,
-  personal data, or captured traffic logs.
-- Users must provide their own Leapmotor account credentials and local
-  certificate material. Do not open public issues containing credentials,
+  code, account tokens, vehicle credentials, personal data, or captured traffic
+  logs. The one exception, by the maintainer's decision, is the app-level
+  client certificate pair in `certs/`, which the integration downloads on the
+  user's request; it is not part of the installed integration or its release
+  ZIP.
+- Users must provide their own Leapmotor account credentials. The certificate
+  material is downloaded on request or provided by the user. Do not open public issues containing credentials,
   certificates, tokens, VINs, precise locations, or raw diagnostics.
 - The integration is intended for use with the user's own account and vehicle.
 - The default polling behavior must remain conservative. Do not add aggressive

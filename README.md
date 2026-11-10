@@ -51,7 +51,7 @@
 
 - Home Assistant 2025.3 or newer and [HACS](https://hacs.xyz/).
 - The e-mail and password of your Leapmotor account. I recommend a second account that the car is shared with, so the official app doesn't log you out.
-- The app certificates: `app_cert.pem` and `app_key.pem`. They are not included in the repository; you need to get them yourself.
+- The app certificates `app_cert.pem` and `app_key.pem`. Setup downloads them for you from the [`certs`](certs) folder of this repository; you can also upload your own.
 - The vehicle PIN is set to `0000` by default. If you changed it in the car, change it here too.
 
 ### Install with HACS
@@ -62,7 +62,7 @@
 2. Add `https://github.com/Sabotin/LeapBridge` and choose the type **Integration**.
 3. Search for **Leapmotor**, click **Download** and restart Home Assistant.
 4. Open **Settings → Devices & services → Add integration → Leapmotor**.
-5. Upload both certificates and enter your account details. When setup is done, Leapmotor appears in the sidebar.
+5. Choose **Download from GitHub** for the certificates (or upload your own) and enter your account details. When setup is done, Leapmotor appears in the sidebar.
 
 **Updating:** HACS installs the latest release (the first one is 0.7.5). When a new release is out, the update appears in HACS and among the updates in Home Assistant's settings; download it and restart Home Assistant. If you do not see it yet, open Leapmotor in HACS and choose **⋮ → Update information**. If you installed the integration before the first release, choose **Redownload** once and restart Home Assistant. If the card still looks old, refresh the browser with **Ctrl + F5**.
 

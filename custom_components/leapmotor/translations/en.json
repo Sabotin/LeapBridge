@@ -59,7 +59,7 @@
       },
       "certificate_source": {
         "title": "Leapmotor certificates",
-        "description": "Logging in to Leapmotor needs the app certificate and its private key (app_cert.pem and app_key.pem). They are not part of this integration. Home Assistant can download them from the community repository {repository}, or you can provide the two files yourself. Either way they are stored only on this system, in /config/leapmotor.",
+        "description": "Logging in to Leapmotor needs the app certificate and its private key (app_cert.pem and app_key.pem). They are not part of this integration. Home Assistant can download them from this integration's GitHub repository ({repository}), or you can provide the two files yourself. Either way they are stored only on this system, in /config/leapmotor.",
         "menu_options": {
           "download_certificates": "Download from GitHub (recommended)",
           "certificates": "Upload or paste the files myself"
@@ -76,7 +76,7 @@
           "app_key_pem": "Paste app_key.pem PEM (private key)"
         },
         "data_description": {
-          "download_certificates": "Fetches the current app_cert.pem and app_key.pem from the leapmotor-certs repository and checks that they belong together. Files you upload or paste below are used instead."
+          "download_certificates": "Fetches the current app_cert.pem and app_key.pem from this integration's GitHub repository and checks that they belong together. Files you upload or paste below are used instead."
         }
       },
       "account": {
@@ -131,7 +131,7 @@
       "share_accept_failed": "The invitation could not be accepted. Try again, or accept it in the Leapmotor app.",
       "share_not_ready": "The invitation was accepted, but the car has not appeared in the account yet. Submit again in a moment.",
       "cert_download_cannot_connect": "The certificates could not be downloaded: GitHub was not reachable from Home Assistant. Check the internet connection and submit again, or upload the two files yourself.",
-      "cert_download_not_found": "No certificate files were found in the leapmotor-certs repository. Upload the two files yourself.",
+      "cert_download_not_found": "No certificate files were found in this integration's GitHub repository. Upload the two files yourself.",
       "cert_download_invalid": "The downloaded files are not a valid, matching certificate and key, so nothing was changed. Try again later, or upload the two files yourself.",
       "cert_download_write_failed": "The certificates were downloaded but could not be stored in /config/leapmotor. Check that the folder is writable."
     },
@@ -954,7 +954,7 @@
           "grid_co2_g_kwh": "CO2 of your electricity"
         },
         "data_description": {
-          "download_certificates": "Fetches app_cert.pem and app_key.pem again from the leapmotor-certs repository on GitHub and replaces the stored pair once it has been checked. Leave off to keep the current certificates.",
+          "download_certificates": "Fetches app_cert.pem and app_key.pem again from this integration's GitHub repository and replaces the stored pair once it has been checked. Leave off to keep the current certificates.",
           "eco_polling_enabled": "Use the slower eco interval only while every vehicle is clearly locked, parked, and unplugged.",
           "eco_scan_interval": "Polling interval used in eco mode. It is automatically clamped to at least the normal update interval.",
           "price_home_kwh": "Used for sessions that start inside your Home zone. Leave 0 to skip cost tracking.",
@@ -979,7 +979,7 @@
       "certificate_import_error": "Certificate import failed. Check the PEM certificate and private key.",
       "missing_app_cert": "Missing app certificate/private key. Download them from GitHub in the integration's options, paste both PEM values or place app_cert.pem and app_key.pem in /config/leapmotor.",
       "cert_download_cannot_connect": "The certificates could not be downloaded: GitHub was not reachable from Home Assistant. Check the internet connection and submit again, or upload the two files yourself.",
-      "cert_download_not_found": "No certificate files were found in the leapmotor-certs repository. Upload the two files yourself.",
+      "cert_download_not_found": "No certificate files were found in this integration's GitHub repository. Upload the two files yourself.",
       "cert_download_invalid": "The downloaded files are not a valid, matching certificate and key, so nothing was changed. Try again later, or upload the two files yourself.",
       "cert_download_write_failed": "The certificates were downloaded but could not be stored in /config/leapmotor. Check that the folder is writable."
     }
@@ -1298,7 +1298,7 @@
         },
         "error": {
           "cert_download_cannot_connect": "The certificates could not be downloaded: GitHub was not reachable from Home Assistant. Check the internet connection and submit again, or upload the two files yourself.",
-          "cert_download_not_found": "No certificate files were found in the leapmotor-certs repository. Upload the two files yourself.",
+          "cert_download_not_found": "No certificate files were found in this integration's GitHub repository. Upload the two files yourself.",
           "cert_download_invalid": "The downloaded files are not a valid, matching certificate and key, so nothing was changed. Try again later, or upload the two files yourself.",
           "cert_download_write_failed": "The certificates were downloaded but could not be stored in /config/leapmotor. Check that the folder is writable."
         }

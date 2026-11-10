@@ -59,7 +59,7 @@
       },
       "certificate_source": {
         "title": "Leapmotor Zertifikate",
-        "description": "Für die Anmeldung bei Leapmotor werden das App-Zertifikat und der zugehörige Private-Key benötigt (app_cert.pem und app_key.pem). Sie sind nicht Teil dieser Integration. Home Assistant kann sie aus dem Community-Repository {repository} herunterladen, oder die beiden Dateien werden selbst bereitgestellt. In beiden Fällen werden sie nur auf diesem System unter /config/leapmotor gespeichert.",
+        "description": "Für die Anmeldung bei Leapmotor werden das App-Zertifikat und der zugehörige Private-Key benötigt (app_cert.pem und app_key.pem). Sie sind nicht Teil dieser Integration. Home Assistant kann sie aus dem GitHub-Repository dieser Integration ({repository}) herunterladen, oder die beiden Dateien werden selbst bereitgestellt. In beiden Fällen werden sie nur auf diesem System unter /config/leapmotor gespeichert.",
         "menu_options": {
           "download_certificates": "Von GitHub herunterladen (empfohlen)",
           "certificates": "Dateien selbst hochladen oder einfügen"
@@ -76,7 +76,7 @@
           "app_key_pem": "app_key.pem PEM einfügen (Private Key)"
         },
         "data_description": {
-          "download_certificates": "Holt die aktuellen Dateien app_cert.pem und app_key.pem aus dem Repository leapmotor-certs und prüft, ob sie zusammengehören. Unten hochgeladene oder eingefügte Dateien haben Vorrang."
+          "download_certificates": "Holt die aktuellen Dateien app_cert.pem und app_key.pem aus dem GitHub-Repository dieser Integration und prüft, ob sie zusammengehören. Unten hochgeladene oder eingefügte Dateien haben Vorrang."
         }
       },
       "account": {
@@ -131,7 +131,7 @@
       "app_key_invalid": "Die Private-Key-Datei ist kein gültiger PEM-Private-Key. Prüfen, ob app_key.pem den vollständigen Block BEGIN/END PRIVATE KEY enthält und nicht verschlüsselt ist.",
       "certificate_key_mismatch": "Zertifikat und Private-Key passen nicht zusammen. app_cert.pem und app_key.pem müssen das zusammengehörige Paar aus derselben Quelle sein.",
       "cert_download_cannot_connect": "Die Zertifikate konnten nicht heruntergeladen werden: GitHub war von Home Assistant aus nicht erreichbar. Internetverbindung prüfen und erneut absenden oder die beiden Dateien selbst hochladen.",
-      "cert_download_not_found": "Im Repository leapmotor-certs wurden keine Zertifikatsdateien gefunden. Die beiden Dateien selbst hochladen.",
+      "cert_download_not_found": "Im GitHub-Repository dieser Integration wurden keine Zertifikatsdateien gefunden. Die beiden Dateien selbst hochladen.",
       "cert_download_invalid": "Die heruntergeladenen Dateien sind kein gültiges, zusammengehöriges Paar aus Zertifikat und Schlüssel; es wurde nichts geändert. Später erneut versuchen oder die beiden Dateien selbst hochladen.",
       "cert_download_write_failed": "Die Zertifikate wurden heruntergeladen, konnten aber nicht unter /config/leapmotor gespeichert werden. Prüfen, ob der Ordner beschreibbar ist."
     },
@@ -954,7 +954,7 @@
           "driving_scan_interval": "Aktualisierungsintervall während der Fahrt (Minuten)"
         },
         "data_description": {
-          "download_certificates": "Holt app_cert.pem und app_key.pem erneut aus dem Repository leapmotor-certs auf GitHub und ersetzt das gespeicherte Paar, sobald es geprüft ist. Ausgeschaltet lassen, um die aktuellen Zertifikate zu behalten.",
+          "download_certificates": "Holt app_cert.pem und app_key.pem erneut aus dem GitHub-Repository dieser Integration und ersetzt das gespeicherte Paar, sobald es geprüft ist. Ausgeschaltet lassen, um die aktuellen Zertifikate zu behalten.",
           "eco_polling_enabled": "Das langsamere Eco-Intervall nur verwenden, wenn alle Fahrzeuge eindeutig verriegelt, geparkt und nicht angesteckt sind.",
           "eco_scan_interval": "Polling-Intervall im Eco-Modus. Es wird automatisch mindestens auf das normale Aktualisierungsintervall begrenzt.",
           "fuel_price_l": "Zeigt, was ein Verbrenner für dieselbe Strecke gekostet hätte. Bei 0 werden nur Liter und CO2 angezeigt.",
@@ -979,7 +979,7 @@
       "certificate_import_error": "Zertifikatsimport fehlgeschlagen. PEM-Zertifikat und Private-Key prüfen.",
       "missing_app_cert": "App-Zertifikat/Private-Key fehlen. In den Optionen der Integration von GitHub herunterladen, beide PEM-Werte einfügen oder app_cert.pem und app_key.pem unter /config/leapmotor ablegen.",
       "cert_download_cannot_connect": "Die Zertifikate konnten nicht heruntergeladen werden: GitHub war von Home Assistant aus nicht erreichbar. Internetverbindung prüfen und erneut absenden oder die beiden Dateien selbst hochladen.",
-      "cert_download_not_found": "Im Repository leapmotor-certs wurden keine Zertifikatsdateien gefunden. Die beiden Dateien selbst hochladen.",
+      "cert_download_not_found": "Im GitHub-Repository dieser Integration wurden keine Zertifikatsdateien gefunden. Die beiden Dateien selbst hochladen.",
       "cert_download_invalid": "Die heruntergeladenen Dateien sind kein gültiges, zusammengehöriges Paar aus Zertifikat und Schlüssel; es wurde nichts geändert. Später erneut versuchen oder die beiden Dateien selbst hochladen.",
       "cert_download_write_failed": "Die Zertifikate wurden heruntergeladen, konnten aber nicht unter /config/leapmotor gespeichert werden. Prüfen, ob der Ordner beschreibbar ist."
     }
@@ -1287,7 +1287,7 @@
         },
         "error": {
           "cert_download_cannot_connect": "Die Zertifikate konnten nicht heruntergeladen werden: GitHub war von Home Assistant aus nicht erreichbar. Internetverbindung prüfen und erneut absenden oder die beiden Dateien selbst hochladen.",
-          "cert_download_not_found": "Im Repository leapmotor-certs wurden keine Zertifikatsdateien gefunden. Die beiden Dateien selbst hochladen.",
+          "cert_download_not_found": "Im GitHub-Repository dieser Integration wurden keine Zertifikatsdateien gefunden. Die beiden Dateien selbst hochladen.",
           "cert_download_invalid": "Die heruntergeladenen Dateien sind kein gültiges, zusammengehöriges Paar aus Zertifikat und Schlüssel; es wurde nichts geändert. Später erneut versuchen oder die beiden Dateien selbst hochladen.",
           "cert_download_write_failed": "Die Zertifikate wurden heruntergeladen, konnten aber nicht unter /config/leapmotor gespeichert werden. Prüfen, ob der Ordner beschreibbar ist."
         }

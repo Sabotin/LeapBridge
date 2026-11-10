@@ -4,6 +4,30 @@
 below; from this release on, HACS installs releases instead of the latest
 commit.
 
+## Unreleased: certificate download and the full charging schedule
+
+- **Certificates download themselves.** Setup starts with **Download from
+  GitHub (recommended)**: both files are fetched from the `certs` folder of
+  this repository (GitHub, with the jsDelivr mirror as a second way), checked
+  to be a matching pair and stored in `/config/leapmotor/`. The same switch is
+  in the account options, and a missing pair appears under **Settings →
+  Repairs** with a one-click download. A failed download never touches
+  certificates that already work. Uploading or pasting your own files still
+  works.
+- **Charging schedule, ported from LeapConnect.** The new action
+  `leapmotor.set_charging_schedule` sets the time window, weekdays, charge
+  limit, weekly repetition and auto recharge in one command; fields you leave
+  out keep the car's value. Two new entities, *Set charging schedule start*
+  and *Set charging schedule end* (`time.<model>_charging_schedule_start` /
+  `_end`), change one time and keep the rest. Works on the T03 as well, where
+  the schedule is read from the cloud because the status does not carry it.
+- A second charging-plan change within five minutes now builds on the first
+  one instead of on the car's status, which lags behind; before, changing the
+  limit right after another change could undo it. The confirmed plan is shown
+  at once.
+- Not yet in the dashboard card: the schedule is edited through the action or
+  the two time entities.
+
 ## 0.7.5: the car learns your routine, a Journey page, software and messages
 
 Everything that existed before works as before: the regular poll is unchanged,
