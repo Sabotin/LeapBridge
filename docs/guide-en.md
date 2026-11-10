@@ -7,7 +7,7 @@
 This guide takes you through installing the **Leapmotor** integration in Home
 Assistant, from the start to a working dashboard, and then covers every
 setting, service and known limitation. For a short overview see
-[README.en.md](../README.en.md). Slovenska navodila:
+[README.md](../README.md). Slovenska navodila:
 [navodila-sl.md](navodila-sl.md).
 
 > [!IMPORTANT]

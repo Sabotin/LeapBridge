@@ -126,6 +126,12 @@ regular update back. Card version 1.2.0.
   and tab labels and the driver-display gauges fit at 320 px.
 - Links point to the repository's current name, `Sabotin/LeapBridge`.
 
+### Documentation
+
+- The README is now in English first (`README.md`), with Slovenian
+  (`README.sl.md`) and German (`README.de.md`) versions and German
+  screenshots.
+
 ### Deliberately left out
 
 Commands that could not be verified on a real car are not included: setting
