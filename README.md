@@ -37,7 +37,7 @@
 - **Car software and messages:** a notice when Leapmotor offers a new software version, with the release notes, and the messages from the Leapmotor app.
 - **Remote control:** locking, trunk, windows, sentry mode, charging and more.
 - **Automations:** ready-made automations you can import into Home Assistant.
-- **Language:** English and Slovenian throughout; the dashboard is also available in German.
+- **Language:** the integration and the dashboard are available in English, Slovenian and German.
 
 <p align="center">
   <img src="docs/images/dashboard.png" alt="Dashboard" width="100%">
@@ -64,7 +64,7 @@
 4. Open **Settings → Devices & services → Add integration → Leapmotor**.
 5. Upload both certificates and enter your account details. When setup is done, Leapmotor appears in the sidebar.
 
-**Updating:** HACS installs the latest version from the `main` branch. To check for a new version, open Leapmotor in HACS and choose **⋮ → Update information**, then **Redownload** and restart Home Assistant. If the card still looks old, refresh the browser with **Ctrl + F5**.
+**Updating:** HACS installs the latest release (the first one is 0.7.5). When a new release is out, the update appears in HACS and among the updates in Home Assistant's settings; download it and restart Home Assistant. If you do not see it yet, open Leapmotor in HACS and choose **⋮ → Update information**. If you installed the integration before the first release, choose **Redownload** once and restart Home Assistant. If the card still looks old, refresh the browser with **Ctrl + F5**.
 
 Manual installation and detailed instructions: **[English guide](docs/guide-en.md)**.
 
@@ -111,7 +111,7 @@ Or add it manually:
 type: custom:leapmotor-card
 ```
 
-There are three themes: Classic (day or night sky), Driver display (gauges around the car) and Car app.
+There are three themes: Car app (the default), Classic (day or night sky) and Driver display (gauges around the car).
 
 In the **Settings** tab, each user can pick the theme, day or night display and the language. The settings apply to that user on every device.
 

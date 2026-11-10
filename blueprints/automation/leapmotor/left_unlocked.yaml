@@ -1,5 +1,5 @@
 blueprint:
-  name: Leapmotor — car left unlocked
+  name: "Leapmotor: car left unlocked"
   description: >-
     Notify when the car stays unlocked for a while, and optionally lock it
     automatically. Locking needs the vehicle PIN in the integration settings.

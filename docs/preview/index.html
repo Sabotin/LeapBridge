@@ -197,11 +197,11 @@
       ({ service_type, label, status, remaining_km, remaining_days, interval_km, interval_months, baseline, priority: "routine", category: "x" });
     const mItems = [
       mItem("tire_rotation", "Tire rotation", "due_soon", 620, null, 10000, null),
-      mItem("cabin_filter_replace", "Cabin (A/C) filter — replacement", "due_soon", 1550, 41, 20000, 12, "logged"),
-      mItem("brake_fluid_inspect", "Brake fluid — inspection", "ok", 1550, 211, 20000, 12),
-      mItem("wiper_blades_replace", "Wiper blades — replacement", "ok", null, 248, null, 12),
-      mItem("brake_fluid_replace", "Brake fluid — replacement (DOT4)", "ok", 21550, 576, 40000, 24),
-      mItem("tire_replace", "Tires — replacement", "ok", 41550, 941, 60000, 36),
+      mItem("cabin_filter_replace", "Cabin (A/C) filter: replacement", "due_soon", 1550, 41, 20000, 12, "logged"),
+      mItem("brake_fluid_inspect", "Brake fluid: inspection", "ok", 1550, 211, 20000, 12),
+      mItem("wiper_blades_replace", "Wiper blades: replacement", "ok", null, 248, null, 12),
+      mItem("brake_fluid_replace", "Brake fluid: replacement (DOT4)", "ok", 21550, 576, 40000, 24),
+      mItem("tire_replace", "Tires: replacement", "ok", 41550, 941, 60000, 36),
     ];
     add("sensor.c10_next_maintenance", "next_maintenance", mItems[0].label, { ...meta, ...mItems[0], overdue: 0, due_soon: 2, schedule: "C10", items: mItems });
     add("binary_sensor.c10_maintenance_due", "maintenance_due", "on", { ...meta, device_class: "problem", overdue: 0, due_soon: 2 });
@@ -372,7 +372,7 @@
       msg(39, "Vehicle not locked", "Your vehicle has been unlocked for more than 10 minutes.", 122, true),
       msg(38, "Tire pressure", "The pressure of the rear left tire is low.", 190, true),
       msg(37, "Welcome", "Your vehicle is now connected to your account.", 400, true)] });
-    if (q.get("pic")) add("image.c10_vehicle_picture", "vehicle_picture", iso(now - DAY), { ...meta, entity_picture: q.get("pic") });
+    if (q.get("pic")) add("image.c10_vehicle_picture", "vehicle_picture", iso(now - DAY), { ...meta, entity_picture: q.get("pic"), picture_id: q.get("picid") || q.get("pic") });
     S["sun.sun"] = { entity_id: "sun.sun", state: scene === "day" ? "above_horizon" : "below_horizon", attributes: {}, last_updated: iso(now) };
     S["zone.home"] = { entity_id: "zone.home", state: "0", attributes: { friendly_name: "Home" }, last_updated: iso(now) };
 

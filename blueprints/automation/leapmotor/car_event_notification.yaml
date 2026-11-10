@@ -1,5 +1,5 @@
 blueprint:
-  name: Leapmotor — notify when something happens with the car
+  name: "Leapmotor: notify when something happens with the car"
   description: >-
     Send a notification for the car events you pick: a trip finished (with
     distance, energy, cost and eco score), charging started, finished or

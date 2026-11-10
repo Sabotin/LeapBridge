@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import io
 import logging
 import time
@@ -107,24 +108,19 @@ class LeapmotorVehicleImage(
         if self._cached_image is not None:
             return self._cached_image
         cache_path = self._cache_path(picture_key)
-        if cache_path.exists() and not self._cache_refresh_attempted:
-            self._cache_refresh_attempted = True
-            try:
-                image = await self.hass.async_add_executor_job(
-                    self._download_static_vehicle_image,
-                    picture_key,
-                    cache_path,
-                )
-            except Exception:  # noqa: BLE001
-                _LOGGER.warning(
-                    "Could not refresh the Leapmotor vehicle image; using the cached image"
-                )
-                image = await self.hass.async_add_executor_job(cache_path.read_bytes)
-            self._cached_image = image
-            return image
         if cache_path.exists():
+            # The saved copy is served at once. It used to wait for a fresh
+            # download of the whole picture package after every restart, and
+            # the dashboard showed its built-in drawing for that long.
             image = await self.hass.async_add_executor_job(cache_path.read_bytes)
             self._cached_image = image
+            if not self._cache_refresh_attempted:
+                self._cache_refresh_attempted = True
+                self.coordinator.config_entry.async_create_background_task(
+                    self.hass,
+                    self._async_refresh_saved_image(picture_key, cache_path),
+                    name=f"{DOMAIN} vehicle picture refresh",
+                )
             return image
 
         if time.monotonic() < self._download_retry_after:
@@ -148,12 +144,45 @@ class LeapmotorVehicleImage(
         self._cached_image = image
         return image
 
+    async def _async_refresh_saved_image(self, picture_key: str, cache_path: Path) -> None:
+        """Fetch the picture package again, once, behind the saved copy."""
+        try:
+            image = await self.hass.async_add_executor_job(
+                self._download_static_vehicle_image,
+                picture_key,
+                cache_path,
+            )
+        except Exception:  # noqa: BLE001
+            _LOGGER.warning(
+                "Could not refresh the Leapmotor vehicle image; using the cached image"
+            )
+            return
+        if picture_key != self._picture_key:
+            return
+        changed = image != self._cached_image
+        self._cached_image = image
+        if changed:
+            self._attr_image_last_updated = datetime.now(UTC)
+        # The package's file list is an attribute; a changed picture also
+        # needs the new timestamp so that dashboards fetch it.
+        self.async_write_ha_state()
+
+    @property
+    def _picture_id(self) -> str | None:
+        """A short fingerprint of the picture key: it tells a dashboard that
+        the picture is still the same one without giving the key away."""
+        picture_key = self._picture_key
+        if not picture_key:
+            return None
+        return hashlib.sha256(str(picture_key).encode()).hexdigest()[:12]
+
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return non-sensitive picture metadata."""
         media = self.vehicle_data.get("media") or {}
         return {
             "vin": self.vin,
+            "picture_id": self._picture_id,
             "key_present": media.get("car_picture_key_present"),
             "whole_present": media.get("car_picture_whole_present"),
             "render_mode": "package_tripsum",

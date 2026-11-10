@@ -37,7 +37,7 @@
 - **Programska oprema in sporočila:** obvestilo, ko Leapmotor ponudi novo različico programske opreme, z opisom novosti, ter sporočila iz aplikacije Leapmotor.
 - **Upravljanje na daljavo:** zaklepanje, prtljažnik, okna, stražarski način, polnjenje in drugo.
 - **Avtomatizacije:** pripravljene avtomatizacije, ki jih lahko uvoziš v Home Assistant.
-- **Jezik:** slovenščina in angleščina v celoti; nadzorna plošča je na voljo tudi v nemščini.
+- **Jezik:** integracija in nadzorna plošča sta na voljo v slovenščini, angleščini in nemščini.
 
 <p align="center">
   <img src="docs/images/sl/nadzorna-plosca.png" alt="Nadzorna plošča" width="100%">
@@ -64,7 +64,7 @@
 4. Odpri **Nastavitve → Naprave in storitve → Dodaj integracijo → Leapmotor**.
 5. Naloži oba certifikata in vnesi podatke računa. Po končani namestitvi se v stranski vrstici pojavi Leapmotor.
 
-**Posodobitev:** HACS namesti zadnjo različico z veje `main`. Za preverjanje nove različice odpri Leapmotor v HACS in izberi **⋮ → Posodobi informacije** (*Update information*), nato **Prenesi znova** (*Redownload*) in znova zaženi Home Assistant. Če je kartica še vedno stara, osveži brskalnik s **Ctrl + F5**.
+**Posodobitev:** HACS namesti zadnjo izdajo (prva je 0.7.5). Ko izide nova izdaja, se posodobitev pokaže v HACS in med posodobitvami v nastavitvah Home Assistanta; prenesi jo in znova zaženi Home Assistant. Če je še ne vidiš, odpri Leapmotor v HACS in izberi **⋮ → Posodobi informacije** (*Update information*). Če si integracijo namestil pred prvo izdajo, enkrat izberi **Prenesi znova** (*Redownload*) in znova zaženi Home Assistant. Če je kartica še vedno stara, osveži brskalnik s **Ctrl + F5**.
 
 Ročna namestitev in podrobnejša navodila: **[navodila v slovenščini](docs/navodila-sl.md)**.
 
@@ -111,7 +111,7 @@ Ali jo dodaš ročno:
 type: custom:leapmotor-card
 ```
 
-Na voljo so tri teme: klasična (dnevno ali nočno nebo), voznikov zaslon (merilniki ob avtu) in aplikacija.
+Na voljo so tri teme: aplikacija (privzeta), klasična (dnevno ali nočno nebo) in voznikov zaslon (merilniki ob avtu).
 
 Vsak uporabnik si lahko v zavihku **Nastavitve** izbere temo, dnevni ali nočni prikaz in jezik. Nastavitve veljajo za tega uporabnika na vseh napravah.
 

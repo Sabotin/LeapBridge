@@ -1,5 +1,5 @@
 blueprint:
-  name: Leapmotor — pre-condition cabin before departure
+  name: "Leapmotor: pre-condition cabin before departure"
   description: >-
     Heat or cool the cabin at a set time on chosen weekdays. Pick the
     "Preheat cabin", "Pre-cool cabin" or "Pre-condition cabin (auto)" button;

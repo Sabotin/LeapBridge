@@ -1,5 +1,5 @@
 blueprint:
-  name: Leapmotor — attention, tires and maintenance alerts
+  name: "Leapmotor: attention, tires and maintenance alerts"
   description: >-
     Notify when the car needs attention (unlocked while parked, door, window,
     trunk or sunroof open), when a tire looks low, uneven or slowly leaking,

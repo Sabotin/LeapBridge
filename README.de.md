@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/banner.png" alt="Leapmotor für Home Assistant" width="100%">
+  <img src="docs/images/de/banner.png" alt="Leapmotor für Home Assistant" width="100%">
 </p>
 
 <p align="center">
@@ -37,7 +37,7 @@
 - **Fahrzeugsoftware und Nachrichten:** ein Hinweis, wenn Leapmotor eine neue Softwareversion anbietet, mit den Versionshinweisen, sowie die Nachrichten aus der Leapmotor-App.
 - **Fernsteuerung:** Verriegeln, Kofferraum, Fenster, Wächtermodus, Laden und mehr.
 - **Automatisierungen:** fertige Automatisierungen, die du in Home Assistant importieren kannst.
-- **Sprache:** Das Dashboard ist vollständig auf Deutsch. Einige Namen von Entitäten und Einstellungen erscheinen in Home Assistant noch auf Englisch; vollständig übersetzt sind Englisch und Slowenisch.
+- **Sprache:** Integration und Dashboard gibt es auf Deutsch, Englisch und Slowenisch.
 
 <p align="center">
   <img src="docs/images/de/dashboard.png" alt="Dashboard" width="100%">
@@ -64,7 +64,7 @@
 4. Öffne **Einstellungen → Geräte & Dienste → Integration hinzufügen → Leapmotor**.
 5. Lade beide Zertifikate hoch und gib deine Kontodaten ein. Nach der Einrichtung erscheint Leapmotor in der Seitenleiste.
 
-**Aktualisieren:** HACS installiert die neueste Version aus dem Branch `main`. Um nach einer neuen Version zu suchen, öffne Leapmotor in HACS und wähle **⋮ → Informationen aktualisieren** (*Update information*), dann **Erneut herunterladen** (*Redownload*) und starte Home Assistant neu. Wenn die Karte noch alt aussieht, lade den Browser mit **Strg + F5** neu.
+**Aktualisieren:** HACS installiert die neueste Veröffentlichung (die erste ist 0.7.5). Sobald es eine neue gibt, erscheint das Update in HACS und bei den Updates in den Einstellungen von Home Assistant; lade es herunter und starte Home Assistant neu. Wenn du es noch nicht siehst, öffne Leapmotor in HACS und wähle **⋮ → Informationen aktualisieren** (*Update information*). Wenn du die Integration vor der ersten Veröffentlichung installiert hast, wähle einmal **Erneut herunterladen** (*Redownload*) und starte Home Assistant neu. Wenn die Karte noch alt aussieht, lade den Browser mit **Strg + F5** neu.
 
 Manuelle Installation und ausführliche Anleitung: **[Anleitung auf Englisch](docs/guide-en.md)**.
 
@@ -76,7 +76,7 @@ Nach der Installation erscheint **Leapmotor** von selbst in der Seitenleiste. Da
 
 Wenn du mehrere Autos hast, bekommt jedes sein eigenes Dashboard.
 
-Wenn du es nicht in der Seitenleiste haben möchtest, kannst du es unter **Leapmotor → Konfigurieren** ausblenden (Schalter *Show the Leapmotor dashboard in the sidebar*).
+Wenn du es nicht in der Seitenleiste haben möchtest, kannst du es unter **Leapmotor → Konfigurieren** ausblenden (Schalter *Leapmotor-Dashboard in der Seitenleiste anzeigen*).
 
 Das Dashboard hat fünf Tabs und zusätzlich den Tab **Einstellungen**. Ein Punkt an einem Tab bedeutet, dass es auf dieser Seite etwas zu sehen gibt. Die Bilder unten zeigen das Design Auto-App.
 
@@ -111,7 +111,7 @@ Oder von Hand:
 type: custom:leapmotor-card
 ```
 
-Es gibt drei Designs: Klassisch (Tag- oder Nachthimmel), Fahrerdisplay (Instrumente rund ums Auto) und Auto-App.
+Es gibt drei Designs: Auto-App (der Standard), Klassisch (Tag- oder Nachthimmel) und Fahrerdisplay (Instrumente rund ums Auto).
 
 Im Tab **Einstellungen** kann jeder Benutzer das Design, die Tag- oder Nachtansicht und die Sprache wählen. Die Einstellungen gelten für diesen Benutzer auf jedem Gerät.
 
