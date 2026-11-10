@@ -1,0 +1,65 @@
+blueprint:
+  name: Leapmotor — plug in for tomorrow
+  description: >-
+    In the evening, tell you to plug in only when the battery is not enough
+    for what the car usually drives the next day. The integration learns the
+    usual distance of each weekday from the trip log (binary sensor "Charge
+    recommended"); on days the car usually stays at home there is no reminder.
+  domain: automation
+  source_url: https://github.com/Sabotin/LeapBridge/blob/main/blueprints/automation/leapmotor/smart_charge_reminder.yaml
+  input:
+    reminder_time:
+      name: Remind at
+      default: "20:30:00"
+      selector:
+        time:
+    recommended_sensor:
+      name: Charge recommended
+      selector:
+        entity:
+          filter:
+            - integration: leapmotor
+              domain: binary_sensor
+    location_tracker:
+      name: Only when the car is home (optional)
+      default: []
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - integration: leapmotor
+              domain: device_tracker
+    notify_device:
+      name: Phone
+      selector:
+        device:
+          filter:
+            - integration: mobile_app
+mode: single
+trigger:
+  - platform: time
+    at: !input reminder_time
+variables:
+  recommended_sensor: !input recommended_sensor
+  trackers: !input location_tracker
+condition:
+  - condition: state
+    entity_id: !input recommended_sensor
+    state: "on"
+  - condition: template
+    value_template: >-
+      {{ trackers | length == 0 or trackers | select('is_state', 'home') | list | length > 0 }}
+action:
+  - domain: mobile_app
+    type: notify
+    device_id: !input notify_device
+    title: Plug in your Leapmotor
+    message: >-
+      {% set soc = state_attr(recommended_sensor, 'soc') %}
+      {% set need = state_attr(recommended_sensor, 'needed_soc') %}
+      {% set km = state_attr(recommended_sensor, 'expected_km') %}
+      {% if state_attr(recommended_sensor, 'reason') == 'low_for_next_day' and need is not none and km is not none %}
+      The battery is at {{ soc | round(0) }} %. Tomorrow usually needs about {{ km | round(0) }} km, so charge to at least {{ need | round(0) }} %.
+      {% else %}
+      The battery is at {{ soc | round(0) if soc is not none else '?' }} %.
+      {% endif %}

@@ -2,14 +2,14 @@
  * Leapmotor Card
  * Dashboard for the Leapmotor Home Assistant integration, in three looks.
  *
- * Part of https://github.com/sabotin/leapmotor (MIT License).
+ * Part of https://github.com/Sabotin/LeapBridge (MIT License).
  * Bundled fonts: Outfit and JetBrains Mono, SIL Open Font License 1.1.
  *
  * The integration serves and auto-loads this file, so no manual resource
  * setup is needed. Add the card with:  type: custom:leapmotor-card
  */
 
-const CARD_VERSION = "1.1.0";
+const CARD_VERSION = "1.2.0";
 const MODULE_BASE = new URL(".", import.meta.url);
 
 /* ------------------------------------------------------------------ */
@@ -248,6 +248,201 @@ const STRINGS = {
   },
 };
 
+/* Texts of the insights, journey, charging-history, software and inbox panels. */
+Object.assign(STRINGS.en, {
+  pageJourney: "Journey",
+  weekTitle: "Your usual week",
+  outlookTitle: "Outlook", olTomorrow: "Tomorrow", olToday: "Today",
+  olLeaves: "Usually leaves at {t}", olLeavesSub: "on {p} % of your {d}s · learned from your trips",
+  olNoDeparture: "No usual departure", olNoDepartureSub: "the car usually stays parked on {d}s",
+  olNeeds: "Usually up to {km} km", olNeedsSub: "about {e} kWh · {p} % with reserve",
+  olEnough: "Enough battery", olCharge: "Plug in tonight", olChargeNow: "Charge before you leave", olLow: "Battery low", olPlugged: "Plugged in",
+  olSocSub: "{soc} % now · {need} % needed", olSocOnly: "{soc} % now", olLimitLow: "raise the charge limit to {p} %",
+  olLearning: "Still learning your routine", olLearningSub: "Predictions appear after about three weeks of driving.",
+  realRange: "Real range", carSays: "the car says {x}", basisTemp: "your consumption at this temperature",
+  basisRecent: "your recent trips", basisCloud: "your 6-week average", nextDep: "Next departure", inTime: "in {x}",
+  realShort: "real {x}",
+  tlTitle: "Last 24 hours", tlEmpty: "Nothing recorded in the last 24 hours yet.", tlDrove: "Drove {km} km",
+  tlDroveShort: "Drove", tlCharged: "Charged {p} %", tlChargedShort: "Charged", tlChargingNow: "Charging now",
+  tlDrivingNow: "Driving now", tlUnlocked: "Unlocked", tlLocked: "Locked", tlPlugged: "Plugged in", tlUnplugged: "Unplugged",
+  rtTitle: "Frequent routes", rtTrips: "{n} trips", rtUsual: "usually at {t}", rtBest: "best {x}",
+  rtEmpty: "Routes appear once you have driven the same way three times.", placeN: "Place {n}",
+  ecoScore: "Eco score", ecoShort: "eco {x}", exportCsv: "Export CSV", exported: "Exported {n} trips",
+  replay: "Replay", replayPause: "Pause",
+  cvTitle: "Charging curve", cvNow: "this session", cvLast: "last session", cvUsual: "usual", cvPeak: "peak {x} kW",
+  cvEmpty: "The curve appears after the next charging session.", slowTitle: "Charging slower than usual",
+  slowSub: "{now} kW now · usually {usual} kW here",
+  chTitle: "Charging history", chMeta: "last {n} days · Leapmotor cloud", chEmpty: "No charging sessions in the cloud yet.",
+  chAt: "at {p}", chSessions: "{n} sessions",
+  swTitle: "Car software", swUpToDate: "Up to date", swUpdate: "Update available", swInstalled: "Installed {v}",
+  swNew: "Version {v} is ready to install in the car", swSince: "since {d}", swNotes: "What is new",
+  swOwnerOnly: "The Leapmotor cloud only gives the software version to the owner's account.",
+  swUnknown: "The software version has not been reported yet.", swSize: "{x} MB download",
+  schedTitle: "Scheduled climate", schedNext: "next {t}", schedNone: "No climate schedule set in the car.",
+  schedOff: "off", schedDaily: "every day", modeHeat: "heat", modeCool: "cool", modeFan: "fan",
+  permTitle: "This account may", permShared: "shared car",
+  ibTitle: "Messages", ibEmpty: "No messages from the car.", ibUnread: "{n} unread",
+  calTitle: "A year of driving", calLess: "less", calMore: "more", calTotal: "{km} km on {d} days",
+  calNoData: "The calendar fills in as the cloud's daily history arrives.", monthsTitle: "Last 12 months",
+  recTitle: "Totals & records", recOdo: "Odometer", recEnergy: "Energy used", recAvg: "Lifetime average",
+  recPerDay: "per day", recEarth: "{x}× around the Earth", recLongestDay: "Longest day", recLongestTrip: "Longest trip",
+  recBestTrip: "Most efficient trip", recTopSpeed: "Top speed", recStreak: "Longest streak",
+  recStreakDays: "{n} days in a row", recBigCharge: "Biggest charge", recFastCharge: "Fastest charge",
+  recColdest: "Coldest drive", recYear: "This year", recProjected: "on course for {x} km", recBusiest: "Busiest month",
+  recNone: "Records appear as you drive.",
+  savTitle: "Compared with a petrol car", savFuel: "Fuel not burned", savMoney: "Saved", savCo2: "CO₂ avoided",
+  savAssume: "compared with {l} l/100 km · electricity at {g} g CO₂/kWh",
+  savSetPrice: "Set a fuel price in the integration options to see the money saved.", savLife: "since new", savMonth: "this month",
+  bdTitle: "Achievements", bdLevels: ["", "Bronze", "Silver", "Gold"], bdNext: "next: {x}", bdEarned: "{n} of {m}",
+  bd_distance: "Distance", bd_long_day: "Road-trip day", bd_long_trip: "Long haul", bd_eco_driver: "Eco driver",
+  bd_streak: "On a roll", bd_explorer: "Explorer", bd_frost: "Frost driver", bd_full_cycles: "Charge cycles",
+  bd_low_tariff: "Night owl", bd_co2: "CO₂ saver", bd_anniversary: "Together",
+  bdd_distance: "kilometres on the odometer", bdd_long_day: "kilometres in one day", bdd_long_trip: "kilometres in one trip",
+  bdd_eco_driver: "average eco score", bdd_streak: "driving days in a row", bdd_explorer: "places visited",
+  bdd_frost: "coldest drive in °C", bdd_full_cycles: "full battery cycles charged", bdd_low_tariff: "charges in the low tariff",
+  bdd_co2: "kg of CO₂ avoided", bdd_anniversary: "days with the car",
+  rlTitle: "Range lab", rlSpeed: "Speed", rlTemp: "Outside", rlClimate: "Climate", rlResult: "Estimated range",
+  rlNow: "with {p} % now", rlFull: "from 100 %", rlNote: "An estimate tuned to your own consumption: air drag grows with the square of speed, and heating or cooling costs more the further it is from 20 °C.",
+  rlNeedData: "The range lab needs your average consumption first.",
+  fcTitle: "Capacity trend", fcStable: "stable", fcSub: "{x} % per year · {n} full charges", fc90: "90 % around {d}",
+});
+Object.assign(STRINGS.sl, {
+  pageJourney: "Pot",
+  weekTitle: "Tvoj običajni teden",
+  outlookTitle: "Napoved", olTomorrow: "Jutri", olToday: "Danes",
+  olLeaves: "Običajno odpelje ob {t}", olLeavesSub: "{p} % dni ({d}) · naučeno iz tvojih voženj",
+  olNoDeparture: "Ni običajnega odhoda", olNoDepartureSub: "avto ta dan ({d}) običajno stoji",
+  olNeeds: "Običajno do {km} km", olNeedsSub: "približno {e} kWh · {p} % z rezervo",
+  olEnough: "Baterije je dovolj", olCharge: "Nocoj priključi", olChargeNow: "Napolni pred odhodom", olLow: "Baterija skoraj prazna", olPlugged: "Priključeno",
+  olSocSub: "zdaj {soc} % · potrebno {need} %", olSocOnly: "zdaj {soc} %", olLimitLow: "zvišaj mejo polnjenja na {p} %",
+  olLearning: "Še spoznavam tvoje navade", olLearningSub: "Napovedi se pokažejo po približno treh tednih voženj.",
+  realRange: "Dejanski doseg", carSays: "avto kaže {x}", basisTemp: "tvoja poraba pri tej temperaturi",
+  basisRecent: "tvoje zadnje vožnje", basisCloud: "tvoje 6-tedensko povprečje", nextDep: "Naslednji odhod", inTime: "čez {x}",
+  realShort: "dejansko {x}",
+  tlTitle: "Zadnjih 24 ur", tlEmpty: "V zadnjih 24 urah še ni zabeleženega ničesar.", tlDrove: "Prevoženo {km} km",
+  tlDroveShort: "Vožnja", tlCharged: "Napolnjeno {p} %", tlChargedShort: "Polnjenje", tlChargingNow: "Polnjenje poteka",
+  tlDrivingNow: "Vožnja poteka", tlUnlocked: "Odklenjeno", tlLocked: "Zaklenjeno", tlPlugged: "Kabel priključen", tlUnplugged: "Kabel odklopljen",
+  rtTitle: "Pogoste poti", rtTrips: "{n} voženj", rtUsual: "običajno ob {t}", rtBest: "najboljše {x}",
+  rtEmpty: "Poti se pokažejo, ko isto pot prevoziš trikrat.", placeN: "Kraj {n}",
+  ecoScore: "Eko ocena", ecoShort: "eko {x}", exportCsv: "Izvozi CSV", exported: "Izvoženih voženj: {n}",
+  replay: "Predvajaj", replayPause: "Ustavi",
+  cvTitle: "Polnilna krivulja", cvNow: "to polnjenje", cvLast: "zadnje polnjenje", cvUsual: "običajno", cvPeak: "največ {x} kW",
+  cvEmpty: "Krivulja se pokaže po naslednjem polnjenju.", slowTitle: "Polnjenje je počasnejše kot običajno",
+  slowSub: "zdaj {now} kW · tukaj običajno {usual} kW",
+  chTitle: "Zgodovina polnjenja", chMeta: "zadnjih {n} dni · oblak Leapmotor", chEmpty: "V oblaku še ni polnjenj.",
+  chAt: "{p}", chSessions: "{n} polnjenj",
+  swTitle: "Programska oprema avta", swUpToDate: "Posodobljeno", swUpdate: "Na voljo je posodobitev", swInstalled: "Nameščena {v}",
+  swNew: "Različica {v} je pripravljena za namestitev v avtu", swSince: "od {d}", swNotes: "Kaj je novega",
+  swOwnerOnly: "Oblak Leapmotor različico programske opreme pokaže samo lastnikovemu računu.",
+  swUnknown: "Različica programske opreme še ni bila sporočena.", swSize: "prenos {x} MB",
+  schedTitle: "Načrtovana klima", schedNext: "naslednjič {t}", schedNone: "V avtu ni nastavljenega urnika klime.",
+  schedOff: "izklopljeno", schedDaily: "vsak dan", modeHeat: "gretje", modeCool: "hlajenje", modeFan: "ventilator",
+  permTitle: "Ta račun sme", permShared: "deljen avto",
+  ibTitle: "Sporočila", ibEmpty: "Ni sporočil iz avta.", ibUnread: "neprebranih: {n}",
+  calTitle: "Leto voženj", calLess: "manj", calMore: "več", calTotal: "{km} km v {d} dneh",
+  calNoData: "Koledar se zapolni, ko prispe dnevna zgodovina iz oblaka.", monthsTitle: "Zadnjih 12 mesecev",
+  recTitle: "Skupaj in rekordi", recOdo: "Prevoženo", recEnergy: "Porabljena energija", recAvg: "Povprečje od začetka",
+  recPerDay: "na dan", recEarth: "{x}× okoli Zemlje", recLongestDay: "Najdaljši dan", recLongestTrip: "Najdaljša vožnja",
+  recBestTrip: "Najvarčnejša vožnja", recTopSpeed: "Najvišja hitrost", recStreak: "Najdaljši niz",
+  recStreakDays: "{n} dni zapored", recBigCharge: "Največje polnjenje", recFastCharge: "Najhitrejše polnjenje",
+  recColdest: "Najhladnejša vožnja", recYear: "Letos", recProjected: "na poti do {x} km", recBusiest: "Najbolj prevožen mesec",
+  recNone: "Rekordi se pokažejo z vožnjami.",
+  savTitle: "V primerjavi z bencinskim avtom", savFuel: "Neporabljeno gorivo", savMoney: "Prihranek", savCo2: "Prihranjen CO₂",
+  savAssume: "v primerjavi s {l} l/100 km · elektrika {g} g CO₂/kWh",
+  savSetPrice: "Za prikaz prihranka v nastavitvah integracije vnesi ceno goriva.", savLife: "od novega", savMonth: "ta mesec",
+  bdTitle: "Dosežki", bdLevels: ["", "Bron", "Srebro", "Zlato"], bdNext: "naslednje: {x}", bdEarned: "{n} od {m}",
+  bd_distance: "Razdalja", bd_long_day: "Dan na cesti", bd_long_trip: "Dolga pot", bd_eco_driver: "Varčen voznik",
+  bd_streak: "V zagonu", bd_explorer: "Raziskovalec", bd_frost: "Zimski voznik", bd_full_cycles: "Cikli polnjenja",
+  bd_low_tariff: "Nočna ptica", bd_co2: "Varuh zraka", bd_anniversary: "Skupaj",
+  bdd_distance: "prevoženih kilometrov", bdd_long_day: "kilometrov v enem dnevu", bdd_long_trip: "kilometrov v eni vožnji",
+  bdd_eco_driver: "povprečna eko ocena", bdd_streak: "dni vožnje zapored", bdd_explorer: "obiskanih krajev",
+  bdd_frost: "najhladnejša vožnja v °C", bdd_full_cycles: "napolnjenih polnih ciklov", bdd_low_tariff: "polnjenj v nizki tarifi",
+  bdd_co2: "kg prihranjenega CO₂", bdd_anniversary: "dni z avtom",
+  rlTitle: "Laboratorij dosega", rlSpeed: "Hitrost", rlTemp: "Zunaj", rlClimate: "Klima", rlResult: "Ocenjeni doseg",
+  rlNow: "s trenutnimi {p} %", rlFull: "s 100 %", rlNote: "Ocena, umerjena na tvojo porabo: zračni upor raste s kvadratom hitrosti, gretje in hlajenje pa staneta več, čim dlje je od 20 °C.",
+  rlNeedData: "Laboratorij dosega najprej potrebuje tvojo povprečno porabo.",
+  fcTitle: "Trend kapacitete", fcStable: "stabilno", fcSub: "{x} % na leto · {n} polnih polnjenj", fc90: "90 % okoli {d}",
+});
+Object.assign(STRINGS.de, {
+  pageJourney: "Reise",
+  weekTitle: "Deine übliche Woche",
+  outlookTitle: "Ausblick", olTomorrow: "Morgen", olToday: "Heute",
+  olLeaves: "Fährt meist um {t} los", olLeavesSub: "an {p} % der Tage ({d}) · aus deinen Fahrten gelernt",
+  olNoDeparture: "Keine übliche Abfahrt", olNoDepartureSub: "das Auto steht an diesem Tag ({d}) meist",
+  olNeeds: "Meist bis zu {km} km", olNeedsSub: "etwa {e} kWh · {p} % mit Reserve",
+  olEnough: "Akku reicht", olCharge: "Heute Abend einstecken", olChargeNow: "Vor der Abfahrt laden", olLow: "Akku fast leer", olPlugged: "Eingesteckt",
+  olSocSub: "jetzt {soc} % · nötig {need} %", olSocOnly: "jetzt {soc} %", olLimitLow: "Ladelimit auf {p} % erhöhen",
+  olLearning: "Lerne noch deine Gewohnheiten", olLearningSub: "Vorhersagen erscheinen nach etwa drei Wochen Fahren.",
+  realRange: "Reale Reichweite", carSays: "das Auto zeigt {x}", basisTemp: "dein Verbrauch bei dieser Temperatur",
+  basisRecent: "deine letzten Fahrten", basisCloud: "dein 6-Wochen-Schnitt", nextDep: "Nächste Abfahrt", inTime: "in {x}",
+  realShort: "real {x}",
+  tlTitle: "Letzte 24 Stunden", tlEmpty: "In den letzten 24 Stunden wurde noch nichts aufgezeichnet.", tlDrove: "{km} km gefahren",
+  tlDroveShort: "Fahrt", tlCharged: "{p} % geladen", tlChargedShort: "Geladen", tlChargingNow: "Lädt gerade",
+  tlDrivingNow: "Fährt gerade", tlUnlocked: "Entriegelt", tlLocked: "Verriegelt", tlPlugged: "Eingesteckt", tlUnplugged: "Ausgesteckt",
+  rtTitle: "Häufige Strecken", rtTrips: "{n} Fahrten", rtUsual: "meist um {t}", rtBest: "beste {x}",
+  rtEmpty: "Strecken erscheinen, sobald du denselben Weg dreimal gefahren bist.", placeN: "Ort {n}",
+  ecoScore: "Eco-Wertung", ecoShort: "Eco {x}", exportCsv: "CSV exportieren", exported: "{n} Fahrten exportiert",
+  replay: "Abspielen", replayPause: "Pause",
+  cvTitle: "Ladekurve", cvNow: "dieser Ladevorgang", cvLast: "letzter Ladevorgang", cvUsual: "üblich", cvPeak: "Spitze {x} kW",
+  cvEmpty: "Die Kurve erscheint nach dem nächsten Ladevorgang.", slowTitle: "Lädt langsamer als üblich",
+  slowSub: "jetzt {now} kW · hier üblich {usual} kW",
+  chTitle: "Ladehistorie", chMeta: "letzte {n} Tage · Leapmotor-Cloud", chEmpty: "Noch keine Ladevorgänge in der Cloud.",
+  chAt: "{p}", chSessions: "{n} Ladevorgänge",
+  swTitle: "Fahrzeugsoftware", swUpToDate: "Aktuell", swUpdate: "Update verfügbar", swInstalled: "Installiert {v}",
+  swNew: "Version {v} kann im Auto installiert werden", swSince: "seit {d}", swNotes: "Was ist neu",
+  swOwnerOnly: "Die Leapmotor-Cloud nennt die Softwareversion nur dem Konto des Besitzers.",
+  swUnknown: "Die Softwareversion wurde noch nicht gemeldet.", swSize: "{x} MB Download",
+  schedTitle: "Geplante Klimatisierung", schedNext: "nächste {t}", schedNone: "Im Auto ist kein Klimazeitplan gesetzt.",
+  schedOff: "aus", schedDaily: "täglich", modeHeat: "Heizen", modeCool: "Kühlen", modeFan: "Lüfter",
+  permTitle: "Dieses Konto darf", permShared: "geteiltes Auto",
+  ibTitle: "Nachrichten", ibEmpty: "Keine Nachrichten vom Auto.", ibUnread: "{n} ungelesen",
+  calTitle: "Ein Jahr Fahren", calLess: "weniger", calMore: "mehr", calTotal: "{km} km an {d} Tagen",
+  calNoData: "Der Kalender füllt sich, sobald der Tagesverlauf aus der Cloud eintrifft.", monthsTitle: "Letzte 12 Monate",
+  recTitle: "Summen & Rekorde", recOdo: "Kilometerstand", recEnergy: "Verbrauchte Energie", recAvg: "Schnitt gesamt",
+  recPerDay: "pro Tag", recEarth: "{x}× um die Erde", recLongestDay: "Längster Tag", recLongestTrip: "Längste Fahrt",
+  recBestTrip: "Sparsamste Fahrt", recTopSpeed: "Höchstgeschwindigkeit", recStreak: "Längste Serie",
+  recStreakDays: "{n} Tage in Folge", recBigCharge: "Größte Ladung", recFastCharge: "Schnellste Ladung",
+  recColdest: "Kälteste Fahrt", recYear: "Dieses Jahr", recProjected: "auf Kurs zu {x} km", recBusiest: "Stärkster Monat",
+  recNone: "Rekorde erscheinen mit dem Fahren.",
+  savTitle: "Im Vergleich zu einem Benziner", savFuel: "Nicht verbrannter Kraftstoff", savMoney: "Gespart", savCo2: "CO₂ vermieden",
+  savAssume: "verglichen mit {l} l/100 km · Strom mit {g} g CO₂/kWh",
+  savSetPrice: "Kraftstoffpreis in den Optionen der Integration eintragen, um die Ersparnis zu sehen.", savLife: "seit neu", savMonth: "diesen Monat",
+  bdTitle: "Erfolge", bdLevels: ["", "Bronze", "Silber", "Gold"], bdNext: "als Nächstes: {x}", bdEarned: "{n} von {m}",
+  bd_distance: "Strecke", bd_long_day: "Roadtrip-Tag", bd_long_trip: "Langstrecke", bd_eco_driver: "Sparfuchs",
+  bd_streak: "Im Lauf", bd_explorer: "Entdecker", bd_frost: "Frostfahrer", bd_full_cycles: "Ladezyklen",
+  bd_low_tariff: "Nachteule", bd_co2: "CO₂-Sparer", bd_anniversary: "Gemeinsam",
+  bdd_distance: "Kilometer auf dem Tacho", bdd_long_day: "Kilometer an einem Tag", bdd_long_trip: "Kilometer in einer Fahrt",
+  bdd_eco_driver: "Eco-Wertung im Schnitt", bdd_streak: "Fahrtage in Folge", bdd_explorer: "besuchte Orte",
+  bdd_frost: "kälteste Fahrt in °C", bdd_full_cycles: "geladene Vollzyklen", bdd_low_tariff: "Ladungen im Niedertarif",
+  bdd_co2: "kg CO₂ vermieden", bdd_anniversary: "Tage mit dem Auto",
+  rlTitle: "Reichweiten-Labor", rlSpeed: "Tempo", rlTemp: "Außen", rlClimate: "Klima", rlResult: "Geschätzte Reichweite",
+  rlNow: "mit {p} % jetzt", rlFull: "ab 100 %", rlNote: "Eine Schätzung, abgestimmt auf deinen eigenen Verbrauch: Der Luftwiderstand wächst mit dem Quadrat des Tempos, Heizen und Kühlen kosten umso mehr, je weiter es von 20 °C entfernt ist.",
+  rlNeedData: "Das Reichweiten-Labor braucht zuerst deinen Durchschnittsverbrauch.",
+  fcTitle: "Kapazitätstrend", fcStable: "stabil", fcSub: "{x} % pro Jahr · {n} Vollladungen", fc90: "90 % etwa {d}",
+});
+
+/** What a shared account may do, in words (rights the cloud lists for the car). */
+const RIGHT_LABELS = {
+  en: { lock: "lock and unlock", find_car: "find the car", trunk: "trunk", sunroof: "sunroof", sunshade: "sunshade",
+    climate: "climate", quick_climate: "quick heat and cool", send_destination: "send a destination",
+    battery_preheat: "battery preheat", unlock_charger: "release the cable", start_stop_charging: "start and stop charging",
+    sentry_mode: "sentry mode", windows: "windows", seat_heat: "seat heating", steering_wheel_heat: "steering wheel heating",
+    charge_limit: "charge limit", prepare_car: "prepare the car", seat_ventilation: "seat ventilation",
+    mirror_heat: "mirror heating", windshield_defrost: "defrost", healthy_charging: "healthy charging", speed_limit: "speed limit" },
+  sl: { lock: "zaklepanje in odklepanje", find_car: "iskanje avta", trunk: "prtljažnik", sunroof: "strešno okno", sunshade: "senčnik",
+    climate: "klima", quick_climate: "hitro gretje in hlajenje", send_destination: "pošiljanje cilja",
+    battery_preheat: "gretje baterije", unlock_charger: "sprostitev kabla", start_stop_charging: "začetek in konec polnjenja",
+    sentry_mode: "stražarski način", windows: "okna", seat_heat: "gretje sedežev", steering_wheel_heat: "gretje volana",
+    charge_limit: "meja polnjenja", prepare_car: "priprava avta", seat_ventilation: "prezračevanje sedežev",
+    mirror_heat: "gretje ogledal", windshield_defrost: "odmrzovanje", healthy_charging: "zdravo polnjenje", speed_limit: "omejitev hitrosti" },
+  de: { lock: "ver- und entriegeln", find_car: "Auto finden", trunk: "Kofferraum", sunroof: "Schiebedach", sunshade: "Sonnenschutz",
+    climate: "Klima", quick_climate: "schnell heizen und kühlen", send_destination: "Ziel senden",
+    battery_preheat: "Akku vorheizen", unlock_charger: "Kabel freigeben", start_stop_charging: "Laden starten und stoppen",
+    sentry_mode: "Wächtermodus", windows: "Fenster", seat_heat: "Sitzheizung", steering_wheel_heat: "Lenkradheizung",
+    charge_limit: "Ladelimit", prepare_car: "Auto vorbereiten", seat_ventilation: "Sitzlüftung",
+    mirror_heat: "Spiegelheizung", windshield_defrost: "Entfrosten", healthy_charging: "Schonladen", speed_limit: "Tempolimit" },
+};
+
 /** Localised maintenance item names (the bundled packs are English). */
 const SERVICE_NAMES = {
   sl: {
@@ -383,6 +578,31 @@ const SPEC = {
   speeding: ["binary_sensor", "speeding", "speeding"],
   climateMode: ["sensor", "climate_mode", "climate_mode"],
   chargeLimitSet: ["number", "charge_limit_setting", "charge_limit_setting"],
+  // Insights and the extra cloud data
+  realRange: ["sensor", "real_range_km", "real_range"],
+  nextDeparture: ["sensor", "next_departure", "next_departure"],
+  nextDay: ["sensor", "next_day_distance_km", "next_day_distance"],
+  chargeAdvice: ["binary_sensor", "charge_recommended", "charge_recommended"],
+  ecoScore: ["sensor", "eco_score", "eco_score"],
+  routes: ["sensor", "frequent_routes", "frequent_routes"],
+  capacityTrend: ["sensor", "battery_capacity_trend", "battery_capacity_trend"],
+  fuelSavings: ["sensor", "fuel_savings_month", "fuel_savings_this_month"],
+  fuelSavingsTotal: ["sensor", "fuel_savings_total", "fuel_savings_total"],
+  co2Total: ["sensor", "co2_saved_total", "co2_saved_total"],
+  co2Month: ["sensor", "co2_saved_month", "co2_saved_this_month"],
+  fuelAvoided: ["sensor", "fuel_avoided_total_l", "fuel_not_burned"],
+  yearDistance: ["sensor", "distance_this_year", "distance_this_year"],
+  achievements: ["sensor", "achievements", "achievements"],
+  curve: ["sensor", "charging_curve", "charging_curve"],
+  slowCharging: ["binary_sensor", "slow_charging", "slow_charging"],
+  cloudCharging: ["sensor", "cloud_charging_sessions", "cloud_charging_sessions"],
+  software: ["update", "vehicle_software", "software"],
+  softwareVersion: ["sensor", "software_version", "software_version"],
+  inbox: ["sensor", "unread_message_count", "unread_message_count"],
+  nextSchedule: ["sensor", "next_scheduled_preconditioning", "next_scheduled_preconditioning"],
+  permissions: ["sensor", "remote_permissions", "remote_permissions"],
+  lifetimeConsumption: ["sensor", "lifetime_consumption_kwh_100km", "lifetime_average_consumption"],
+  availableEnergy: ["sensor", "available_energy_kwh", "available_energy"],
 };
 
 const DOORS = [
@@ -393,10 +613,11 @@ const WINDOWS = ["winFL", "winFR", "winRL", "winRR", "skylight"];
 const TIRES = [["tireFL", "FL"], ["tireFR", "FR"], ["tireRL", "RL"], ["tireRR", "RR"]];
 /** Pages of the card: the first page holds the car, its status and the remote controls. */
 const PAGES = [
-  { id: "overview", label: "pageOverview", icon: "car", sections: ["hero", "check", "controls"] },
-  { id: "trips", label: "pageTrips", icon: "route", sections: ["map", "trips", "week"] },
-  { id: "charging", label: "pageCharging", icon: "bolt", sections: ["charging", "chart", "energy"] },
-  { id: "vehicle", label: "pageVehicle", icon: "wrench", sections: ["maintenance", "tires", "insights"] },
+  { id: "overview", label: "pageOverview", icon: "car", sections: ["hero", "outlook", "check", "timeline", "controls"] },
+  { id: "trips", label: "pageTrips", icon: "route", sections: ["map", "trips", "week", "routes"] },
+  { id: "charging", label: "pageCharging", icon: "bolt", sections: ["charging", "chart", "energy", "curve", "sessions"] },
+  { id: "vehicle", label: "pageVehicle", icon: "wrench", sections: ["maintenance", "tires", "insights", "software", "inbox"] },
+  { id: "journey", label: "pageJourney", icon: "trophy", sections: ["calendar", "records", "rangelab", "badges"] },
 ];
 const ALL_SECTIONS = PAGES.flatMap((p) => p.sections);
 /** Per-user theme and language; shown as the last tab, not one of the `sections`. */
@@ -469,6 +690,18 @@ const ICONS = {
   route: '<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/>',
   fuel: '<path d="M4.5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h13M4.5 10h10"/><path d="M14.5 8.5 18 11v6.5a1.5 1.5 0 0 0 3 0V8l-3-3"/>',
   sign: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/>',
+  trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8.5 20.5h7M10 17h4"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  download: '<path d="M12 4v11M7.5 11 12 15.5 16.5 11M5 19.5h14"/>',
+  play: '<path d="M8 5.5v13l10-6.5-10-6.5Z"/>',
+  pause: '<path d="M8.5 5.5v13M15.5 5.5v13"/>',
+  mail: '<rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/><path d="m4.5 7.5 7.5 6 7.5-6"/>',
+  chip: '<rect x="7" y="7" width="10" height="10" rx="2"/><path d="M10 3.5V7M14 3.5V7M10 17v3.5M14 17v3.5M3.5 10H7M3.5 14H7M17 10h3.5M17 14h3.5"/>',
+  medal: '<circle cx="12" cy="14.5" r="5.5"/><path d="M9 9.8 6.5 3.5h4L12 7l1.5-3.5h4L15 9.8M12 12.2l.8 1.6 1.7.2-1.3 1.2.4 1.7-1.6-.9-1.6.9.4-1.7-1.3-1.2 1.7-.2.8-1.6Z"/>',
+  flask: '<path d="M9.5 3.5h5M10.5 3.5v6L5 19a1.5 1.5 0 0 0 1.3 2.2h11.4A1.5 1.5 0 0 0 19 19l-5.5-9.5v-6"/><path d="M7.8 15h8.4"/>',
+  co2: '<path d="M7 18.5a4.5 4.5 0 0 1-.5-8.97A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9.5H7Z"/><path d="M9.5 14.5c.6-1.6 2-2.5 3.5-2.5M11 16.5c1.5 0 3-1.2 3.4-3"/>',
+  piggy: '<path d="M4.5 12.5c0-3.3 3.1-6 7-6 1.2 0 2.3.2 3.3.7l2.7-1.2-.3 2.9c1 .9 1.6 2 1.8 3.1h1.5v3h-2c-.5.8-1.2 1.5-2 2V19.5h-2.5v-1.2a9 9 0 0 1-3 0v1.2H8.5V17a5.6 5.6 0 0 1-4-4.5Z"/><path d="M15.5 11.5v.1"/>',
+  calendarHeart: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M12 17.5s-3-1.8-3-3.6a1.6 1.6 0 0 1 3-.8 1.6 1.6 0 0 1 3 .8c0 1.8-3 3.6-3 3.6Z"/>',
 };
 
 ICONS.gear = (() => {
@@ -619,7 +852,8 @@ function routeSvg(track, startLabel, endLabel, W = 640, H = 300, starry = false)
     : "";
   const [sx, sy] = xy(pts[0][1], pts[0][2]);
   const [ex, ey] = xy(pts[pts.length - 1][1], pts[pts.length - 1][2]);
-  return `<svg class="routesvg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(startLabel)} → ${esc(endLabel)}">
+  const proj = esc(JSON.stringify({ kx, minX, minY, scale, ox, oy }));
+  return `<svg class="routesvg" data-proj="${proj}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(startLabel)} → ${esc(endLabel)}">
     <defs>
       <pattern id="lm-grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="rgba(148,163,184,.1)"/></pattern>
       <filter id="lm-routeglow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
@@ -751,6 +985,105 @@ function carSvg(night) {
 </svg>`;
 }
 
+/* ------------------------------------------------------------------ */
+/* Car picture: cut it to the car itself                               */
+/* ------------------------------------------------------------------ */
+
+/** Longest run of entries above zero as [start, end), or null. */
+function longestRun(counts) {
+  let best = null, start = -1;
+  for (let i = 0; i <= counts.length; i++) {
+    const on = i < counts.length && counts[i] > 0;
+    if (on && start < 0) start = i;
+    if (!on && start >= 0) {
+      if (!best || i - start > best[1] - best[0]) best = [start, i];
+      start = -1;
+    }
+  }
+  return best;
+}
+
+/** How far the nearest other content is from a run, on each side. */
+function runGaps(counts, [start, end]) {
+  let before = start, after = counts.length - end;
+  for (let i = start - 1; i >= 0; i--) if (counts[i] > 0) { before = start - 1 - i; break; }
+  for (let i = end; i < counts.length; i++) if (counts[i] > 0) { after = i - end; break; }
+  return [before, after];
+}
+
+/**
+ * The official car picture has wide transparent margins and, on some models,
+ * a hairline along its edge. This finds the car (the largest connected block
+ * of non-transparent columns and rows), cuts the picture to it and notes
+ * where the body begins at charge-port height, so the wallbox stands next to
+ * the car and the charging cable ends on it.
+ *
+ * Resolves to { url, attach } where url is a cut copy (or null when the
+ * picture already fits) and attach the cable end as fractions of the picture
+ * (x from the left, y from the bottom). Resolves to null when the picture
+ * cannot be read, e.g. a picture from another site.
+ */
+async function trimCarPicture(img, flip) {
+  const W = img.naturalWidth, H = img.naturalHeight;
+  if (!W || !H) return null;
+  // A copy at most 640 px wide is plenty to find the car and quick to scan.
+  const scale = Math.min(1, 640 / W);
+  const w = Math.max(1, Math.round(W * scale)), h = Math.max(1, Math.round(H * scale));
+  const probe = document.createElement("canvas");
+  probe.width = w;
+  probe.height = h;
+  const ctx = probe.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0, w, h);
+  const data = ctx.getImageData(0, 0, w, h).data; // throws for a picture from another site
+  const alpha = (x, y) => data[(y * w + x) * 4 + 3];
+  const cols = new Uint32Array(w);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (alpha(x, y) > 40) cols[x]++;
+  const cx = longestRun(cols);
+  if (!cx) return null;
+  const rows = new Uint32Array(h);
+  for (let y = 0; y < h; y++) for (let x = cx[0]; x < cx[1]; x++) if (alpha(x, y) > 40) rows[y]++;
+  const cy = longestRun(rows);
+  if (!cy) return null;
+
+  // A little air around the car, never reaching into other content (the hairline).
+  const pad = (counts, run, size) => {
+    const [before, after] = runGaps(counts, run);
+    const want = Math.round(size * 0.012);
+    return [Math.max(0, run[0] - Math.min(want, Math.floor(before / 2))),
+      Math.min(counts.length, run[1] + Math.min(want, Math.floor(after / 2)))];
+  };
+  const bx = pad(cols, cx, w), by = pad(rows, cy, h);
+  const bw = bx[1] - bx[0], bh = by[1] - by[0];
+  if (bw < 8 || bh < 8) return null;
+
+  // Where the body begins at charge-port height (40 % up from the wheels).
+  const PORT_HEIGHT = 0.4;
+  const hits = [];
+  const yMid = Math.round(cy[1] - (cy[1] - cy[0]) * PORT_HEIGHT);
+  for (let y = Math.max(cy[0], yMid - 3); y <= Math.min(cy[1] - 1, yMid + 3); y++) {
+    if (flip) {
+      for (let x = cx[1] - 1; x >= cx[0]; x--) if (alpha(x, y) > 128) { hits.push(bx[1] - 1 - x); break; }
+    } else {
+      for (let x = cx[0]; x < cx[1]; x++) if (alpha(x, y) > 128) { hits.push(x - bx[0]); break; }
+    }
+  }
+  hits.sort((a, b) => a - b);
+  const attach = hits.length
+    ? { x: clamp(hits[Math.floor(hits.length / 2)] / bw, 0, 0.6), y: clamp((by[1] - yMid) / bh, 0.15, 0.8) }
+    : null;
+
+  // Nothing to cut away: keep the picture as it is.
+  if (bw >= w * 0.97 && bh >= h * 0.97) return { url: null, attach };
+  const X = Math.floor(bx[0] / scale), Y = Math.floor(by[0] / scale);
+  const CW = Math.min(W - X, Math.ceil(bw / scale)), CH = Math.min(H - Y, Math.ceil(bh / scale));
+  const out = document.createElement("canvas");
+  out.width = CW;
+  out.height = CH;
+  out.getContext("2d").drawImage(img, X, Y, CW, CH, 0, 0, CW, CH);
+  const blob = await new Promise((resolve) => out.toBlob(resolve, "image/png"));
+  return blob ? { url: URL.createObjectURL(blob), attach } : { url: null, attach };
+}
+
 /**
  * Round instrument gauge (240° sweep) as used in a driver display: track,
  * tick marks, the value arc and an optional marker (e.g. the charge limit).
@@ -878,6 +1211,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .ptitle{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px;min-height:30px}
 .ptitle h3{margin:0;display:flex;align-items:center;gap:10px;font-size:18px;font-weight:650;letter-spacing:-.005em;color:var(--lm-text);white-space:nowrap}
 .ptitle h3 .ic{width:20px;height:20px;color:var(--lm-amber-2)}
+.ptitle:has(.seg),.ptitle:has(.cchip),.ptitle:has(.hbtn){flex-wrap:wrap;row-gap:8px}
 .ptitle .meta{font-size:13.5px;color:var(--lm-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .mono{font-family:var(--lm-mono);font-feature-settings:"zero" 1}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--c,var(--lm-amber));box-shadow:0 0 10px var(--c,var(--lm-amber));flex:none;display:inline-block}
@@ -905,7 +1239,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .look-cluster .tab.on .ic{color:var(--lm-amber-2)}
 .tab .ti{position:relative;display:grid;place-items:center}
 .tab .ic{width:20px;height:20px}
-.tab .tlb{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tab .tlb{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .tab .tb{position:absolute;top:-3px;right:-5px;width:9px;height:9px;border-radius:50%;background:var(--c);box-shadow:0 0 0 2px var(--lm-bg),0 0 10px var(--c)}
 .tab .tb.pulse{animation:lm-pulse 1.6s ease-in-out infinite}
 .lm.sticky .panel{scroll-margin-top:calc(var(--lm-tabs-top,0px) + 76px)}
@@ -936,7 +1270,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 :where(.lm:not(.look-classic)) .car img{display:block;max-width:100%;max-height:220px;object-fit:contain;filter:drop-shadow(0 18px 14px rgba(0,0,0,.6))}
 :where(.lm:not(.look-classic)) .car img.flip{transform:scaleX(-1)}
 :where(.lm:not(.look-classic)) .car .carsvg{width:100%;height:auto;display:block}
-:where(.lm:not(.look-classic)) .car.charging::after{content:"";position:absolute;left:0;right:0;bottom:-16px;height:66px;border-radius:50%;
+:where(.lm:not(.look-classic)) .car.charging .carbox::after{content:"";position:absolute;left:0;right:0;bottom:-16px;height:66px;border-radius:50%;
   background:radial-gradient(closest-side,rgba(52,211,153,.8),rgba(52,211,153,.28) 62%,transparent);filter:blur(10px);animation:lm-pulse 2.4s ease-in-out infinite;z-index:-1}
 :where(.lm:not(.look-classic)) .wallbox{position:absolute;left:-30px;bottom:8px;width:20px;height:66px;border-radius:7px;background:linear-gradient(180deg,#26324f,#141c33);
   border:1px solid rgba(148,163,184,.25);box-shadow:0 10px 20px rgba(0,0,0,.4)}
@@ -1084,7 +1418,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 :where(.look-classic) .car img{display:block;max-width:100%;max-height:230px;object-fit:contain;filter:drop-shadow(0 20px 16px rgba(0,0,0,.55)) brightness(.94)}
 :where(.look-classic) .car img.flip{transform:scaleX(-1)}
 :where(.look-classic) .car .carsvg{width:100%;height:auto;display:block}
-:where(.look-classic) .car.charging::after{content:"";position:absolute;left:0;right:0;bottom:-16px;height:66px;border-radius:50%;
+:where(.look-classic) .car.charging .carbox::after{content:"";position:absolute;left:0;right:0;bottom:-16px;height:66px;border-radius:50%;
   background:radial-gradient(closest-side,rgba(52,211,153,.8),rgba(52,211,153,.28) 62%,transparent);filter:blur(10px);animation:lm-pulse 2.4s ease-in-out infinite;z-index:-1}
 :where(.look-classic) .wallbox{position:absolute;left:-30px;bottom:8px;width:20px;height:66px;border-radius:7px;background:linear-gradient(180deg,#26324f,#141c33);
   border:1px solid rgba(148,163,184,.25);box-shadow:0 10px 20px rgba(0,0,0,.4)}
@@ -1372,27 +1706,214 @@ button.trip:hover{background:rgba(255,255,255,.06)}
 .sfoot{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;margin-top:20px;padding-top:14px;border-top:1px solid var(--lm-line-2);font-size:13px;color:var(--lm-muted)}
 .lk:focus-visible,.sseg button:focus-visible,.tab:focus-visible,.mdone:focus-visible{outline:2px solid var(--lm-amber-2);outline-offset:2px}
 
+
+/* ---------- outlook ---------- */
+.otiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
+.otile{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:15px;min-width:0;background:rgba(255,255,255,.035);border:1px solid var(--lm-line-2);--c:var(--lm-sky)}
+.otile .sq{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;flex:none;color:var(--c);background:color-mix(in srgb,var(--c) 16%,transparent)}
+.otile .sq .ic{width:20px;height:20px}
+.otile>div{min-width:0;flex:1}
+.otile b{display:block;font-size:15.5px;font-weight:650;line-height:1.25}
+.otile small{display:block;font-size:13px;color:var(--lm-muted);margin-top:3px;line-height:1.35}
+.otile.ok{--c:var(--lm-green);border-color:rgba(52,211,153,.4);background:linear-gradient(135deg,rgba(52,211,153,.14),rgba(52,211,153,.03))}
+.otile.warn{--c:var(--lm-amber);border-color:rgba(246,168,35,.5);background:linear-gradient(135deg,rgba(246,168,35,.16),rgba(246,168,35,.03))}
+.otile.bad{--c:var(--lm-red);border-color:rgba(251,113,133,.5);background:linear-gradient(135deg,rgba(251,113,133,.16),rgba(251,113,133,.03))}
+.obig{flex:none;font-size:26px;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
+.obig small{display:inline;font-size:13px;font-weight:600;color:var(--lm-amber);margin:0 0 0 3px}
+.onext{display:flex;align-items:center;gap:9px;margin-top:12px;font-size:13.5px;color:var(--lm-muted)}
+.onext .ic{width:16px;height:16px;color:var(--lm-amber-2)}
+.onext b{color:var(--lm-text);font-weight:600}
+.outlook .note{margin:12px 0 0}
+.wk{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.wkd{display:grid;justify-items:center;gap:5px;padding:9px 2px 8px;border-radius:13px;background:rgba(255,255,255,.03);border:1px solid var(--lm-line-2);min-width:0}
+.wkd small{font-size:12.5px;font-weight:600;color:var(--lm-muted)}
+.wkb{width:100%;max-width:34px;height:54px;display:flex;align-items:flex-end;border-radius:7px;background:rgba(148,163,184,.1);overflow:hidden}
+.wkb i{display:block;width:100%;border-radius:7px;background:linear-gradient(180deg,#60a5fa,#2563eb)}
+.wkd b{font-size:14.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.wkd em{font-style:normal;font:500 11.5px var(--lm-mono);color:var(--lm-muted);white-space:nowrap}
+.wkd.idle b{color:var(--lm-dim)}
+.wkd.today small{color:var(--lm-text)}
+.wkd.target{border-color:rgba(246,168,35,.6);background:rgba(246,168,35,.08)}
+.wkd.target small{color:var(--lm-amber-2)}
+.wkd.target .wkb i{background:linear-gradient(180deg,#ffc461,#f6a823)}
+.outlook .note b{color:var(--lm-text)}
+/* ---------- last 24 hours ---------- */
+.tline{position:relative;display:grid;gap:2px;--tw:44px}
+.tline.wide{--tw:70px}
+.tlr{position:relative;display:grid;grid-template-columns:var(--tw) 30px minmax(0,1fr);align-items:center;gap:10px;padding:7px 4px}
+.tlt{font:600 13px var(--lm-mono);color:var(--lm-muted);text-align:right;white-space:nowrap}
+.tld{position:relative;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 16%,transparent);border:1px solid color-mix(in srgb,var(--c) 40%,transparent)}
+.tlr+.tlr .tld::before{content:"";position:absolute;left:50%;bottom:calc(100% + 2px);height:13px;width:2px;margin-left:-1px;border-radius:2px;background:rgba(148,163,184,.2)}
+.tld .ic{width:15px;height:15px}
+.tlr b{display:block;font-size:14.5px;font-weight:600;line-height:1.25}
+.tlr small{display:block;font-size:13px;color:var(--lm-muted);margin-top:2px}
+.tlr.live .tld{animation:lm-pulse 1.8s ease-in-out infinite}
+.tlr.live b{color:var(--c)}
+/* ---------- frequent routes ---------- */
+.rcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+.rcard{padding:14px;border-radius:16px;background:rgba(255,255,255,.035);border:1px solid var(--lm-line-2);min-width:0}
+.rname{display:flex;align-items:center;gap:8px;min-width:0;font-size:15.5px}
+.rname .ic{width:16px;height:16px;color:var(--lm-amber-2)}
+.rname b{font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.rname i{font-style:normal;color:var(--lm-dim);flex:none}
+.rname .pill{margin-left:auto;flex:none;letter-spacing:0;font-size:12px;color:var(--lm-soft);background:rgba(148,163,184,.14)}
+.rstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));gap:8px;margin-top:12px}
+.rstats b{display:block;font-size:19px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+.rstats small{display:block;font-size:12px;color:var(--lm-muted);margin-top:1px;white-space:nowrap}
+.rsub{display:block;font-size:13px;color:var(--lm-muted);margin-top:10px;line-height:1.4}
+/* ---------- trips: eco score, export, replay ---------- */
+.eco{display:block;margin-top:5px;font-size:12px;font-weight:700;color:var(--c);white-space:nowrap}
+.hbtn{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:6px 12px;border-radius:10px;font-size:13px;font-weight:600;color:var(--lm-soft);background:rgba(255,255,255,.04);border:1px solid var(--lm-line);flex:none}
+.hbtn:hover{background:rgba(255,255,255,.09);color:var(--lm-text)}
+.hbtn .ic{width:15px;height:15px}
+.replay{display:flex;align-items:center;gap:10px 12px;flex-wrap:wrap;margin-top:12px}
+.rpb{display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:7px 14px;border-radius:999px;font-size:13.5px;font-weight:600;color:var(--lm-amber-2);background:rgba(246,168,35,.12);border:1px solid rgba(246,168,35,.5);flex:none}
+.rpb:hover,.rpb.on{background:rgba(246,168,35,.22)}
+.rpb .ic{width:15px;height:15px}
+.rps{flex:1 1 140px;min-width:0}
+.rpi{font:600 13px var(--lm-mono);color:var(--lm-soft);white-space:nowrap;min-width:9ch}
+.rpcur{position:absolute;top:0;bottom:22px;width:2px;margin-left:-1px;border-radius:2px;background:#fff;box-shadow:0 0 8px rgba(255,255,255,.7);pointer-events:none}
+.mapbox .rpdot{fill:#fff;stroke:#0b1224;stroke-width:3}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:30px;background:transparent;margin:0;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:4px;background:rgba(148,163,184,.24)}
+input[type=range]::-moz-range-track{height:6px;border-radius:4px;background:rgba(148,163,184,.24)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-8px;border-radius:50%;background:var(--lm-amber);border:3px solid #0f1729;box-shadow:0 0 0 1px rgba(246,168,35,.7)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--lm-amber);border:3px solid #0f1729;box-shadow:0 0 0 1px rgba(246,168,35,.7)}
+input[type=range]:focus-visible{outline:2px solid var(--lm-amber-2);outline-offset:3px;border-radius:8px}
+/* ---------- charging curve and history ---------- */
+.cv{margin-top:0}
+.cvdot{position:absolute;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;border-radius:50%;background:var(--lm-green);border:2px solid #0f1729;box-shadow:0 0 10px var(--lm-green);animation:lm-pulse 1.8s ease-in-out infinite;pointer-events:none}
+.alegend i.dash{background:repeating-linear-gradient(90deg,var(--c) 0 4px,transparent 4px 7px)}
+.slowbox{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;margin-bottom:14px;color:var(--lm-amber-2);background:rgba(246,168,35,.1);border:1px solid rgba(246,168,35,.5)}
+.slowbox .ic{width:22px;height:22px;flex:none}
+.slowbox b{display:block;font-size:15px;font-weight:650;color:var(--lm-text)}
+.slowbox small{display:block;font-size:13px;color:var(--lm-soft);margin-top:2px}
+.chsum{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:14px}
+.hbar{height:7px;border-radius:5px;background:rgba(56,189,248,.35);margin-top:9px;overflow:hidden}
+.hbar i{display:block;height:100%;border-radius:5px;background:var(--lm-green)}
+.chrows{display:grid;gap:6px}
+.chrow{display:grid;grid-template-columns:minmax(58px,max-content) minmax(0,1fr) auto;align-items:center;gap:12px;padding:11px 13px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid var(--lm-line-2)}
+.sd b{display:block;font-size:14.5px;font-weight:650;white-space:nowrap}
+.sd small,.sx small{display:block;font-size:13px;color:var(--lm-muted);margin-top:2px;white-space:nowrap}
+.sm{min-width:0}
+.sm b{display:block;font-size:18px;font-weight:700;white-space:nowrap}
+.sm b small{font-size:13px;font-weight:500;color:var(--lm-muted);margin-left:3px}
+.sm span{display:block;font-size:13px;color:var(--lm-muted);margin-top:3px;line-height:1.35}
+.sx{text-align:right}
+.pill.dc{color:#c4b5fd;background:rgba(167,139,250,.16)}
+/* ---------- software, schedules, messages ---------- */
+.notes{display:grid;gap:8px}
+.nrow{padding:11px 13px;border-radius:13px;background:rgba(255,255,255,.03);border:1px solid var(--lm-line-2)}
+.nrow b{display:block;font-size:14.5px;font-weight:650}
+.nrow p{margin:4px 0 0;font-size:13.5px;line-height:1.5;color:var(--lm-soft);white-space:pre-line;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.subh .subm{float:right;font-size:13px;font-weight:500;color:var(--lm-muted)}
+.schrows{display:grid;gap:6px}
+.schrow{display:flex;align-items:center;gap:12px;padding:10px 13px;border-radius:13px;background:rgba(255,255,255,.03);border:1px solid var(--lm-line-2)}
+.schrow b{font:600 15px var(--lm-mono);white-space:nowrap}
+.schrow span:not(.pill){font-size:13.5px;color:var(--lm-soft);min-width:0;flex:1}
+.schrow.off{opacity:.6}
+.pchips{display:flex;flex-wrap:wrap;gap:6px}
+.pchips span{padding:5px 10px;border-radius:999px;font-size:13px;color:var(--lm-soft);background:rgba(255,255,255,.05);border:1px solid var(--lm-line-2)}
+.mrows2{display:grid;gap:6px}
+.mrow2{display:grid;grid-template-columns:10px minmax(0,1fr) auto;align-items:start;gap:11px;padding:12px 13px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid var(--lm-line-2)}
+.mrow2 i{width:8px;height:8px;margin-top:6px;border-radius:50%;background:transparent}
+.mrow2.unread{border-color:rgba(246,168,35,.4)}
+.mrow2.unread i{background:var(--lm-amber);box-shadow:0 0 8px var(--lm-amber)}
+.mrow2 b{display:block;font-size:14.5px;font-weight:600;line-height:1.3}
+.mrow2 p{margin:3px 0 0;font-size:13.5px;line-height:1.45;color:var(--lm-muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.mrow2 small{font-size:12.5px;color:var(--lm-dim);white-space:nowrap;margin-top:2px}
+/* ---------- journey ---------- */
+.cal svg{display:block;width:100%;height:auto;max-width:1180px}
+.cal text{font:500 10px var(--lm-font);fill:var(--lm-muted)}
+.cal rect.cu{fill:rgba(148,163,184,.05)}
+.cal rect.c0,.callegend i.c0{fill:rgba(148,163,184,.14);background:rgba(148,163,184,.14)}
+.cal rect.c1,.callegend i.c1{fill:#7c4a12;background:#7c4a12}
+.cal rect.c2,.callegend i.c2{fill:#b96d15;background:#b96d15}
+.cal rect.c3,.callegend i.c3{fill:#e9951b;background:#e9951b}
+.cal rect.c4,.callegend i.c4{fill:#ffc461;background:#ffc461}
+.calhalf{display:none}
+.callegend{display:flex;align-items:center;gap:5px;margin-top:10px;font-size:12.5px;color:var(--lm-muted)}
+.callegend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.callegend span:first-child{margin-right:3px}
+.callegend span:last-child{margin-left:3px}
+.mbars{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:6px;height:150px;align-items:end}
+.mb{display:grid;grid-template-rows:16px minmax(0,1fr) 18px;height:100%;justify-items:center;min-width:0}
+.mb span{grid-row:1;font-size:11.5px;color:var(--lm-muted);white-space:nowrap;overflow:hidden;max-width:100%}
+.mb i{grid-row:2}
+.mb small{grid-row:3}
+.mb i{align-self:end;width:100%;max-width:38px;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,#60a5fa,#2563eb);min-height:0}
+.mb.now i{background:linear-gradient(180deg,#ffc461,#f6a823);box-shadow:0 0 16px -4px rgba(246,168,35,.8)}
+.mb small{font-size:12px;color:var(--lm-muted);align-self:end}
+.mb.now small{color:var(--lm-amber-2);font-weight:600}
+.recrows{margin-top:12px;display:grid;gap:7px}
+.recrows .irow{margin-top:0}
+@container lmcard (min-width:1180px){.recrows{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.records .subh{margin-top:18px}
+.badgegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+.badge{display:flex;align-items:center;gap:12px;padding:12px;border-radius:15px;min-width:0;background:rgba(255,255,255,.03);border:1px solid var(--lm-line-2)}
+.badge.l0{opacity:.72}
+.badge:not(.l0){border-color:color-mix(in srgb,var(--c) 45%,transparent);background:linear-gradient(135deg,color-mix(in srgb,var(--c) 12%,transparent),rgba(255,255,255,.02))}
+.bring{position:relative;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;flex:none;color:var(--c);
+  background:conic-gradient(var(--c) calc(var(--p) * 1%),rgba(148,163,184,.16) 0)}
+.bring::before{content:"";position:absolute;inset:4px;border-radius:50%;background:#101a30}
+.bring .ic{position:relative;width:22px;height:22px}
+.badge>div{min-width:0}
+.badge b{display:block;font-size:14.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge small{display:block;font-size:12.5px;color:var(--c);font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge.l0 small{color:var(--lm-muted);font-weight:500}
+.badge em{display:block;font-style:normal;font-size:12.5px;color:var(--lm-muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge em span{color:var(--lm-text);font-weight:600}
+.rl{display:grid;gap:12px}
+.rlout{padding:14px 16px;border-radius:16px;background:linear-gradient(135deg,rgba(246,168,35,.13),rgba(246,168,35,.02));border:1px solid rgba(246,168,35,.35)}
+.rlbig{font-size:46px;font-weight:700;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.rlbig small{font-size:19px;font-weight:600;color:var(--lm-amber);margin-left:5px;letter-spacing:0}
+.rlsub{font-size:13.5px;color:var(--lm-muted);margin-top:7px}
+.rlsub b{color:var(--lm-text);font-weight:600}
+.rlcons{font-size:13.5px;color:var(--lm-muted);margin-top:3px}
+.rlcons b{color:var(--lm-text);font-weight:600;font-variant-numeric:tabular-nums}
+.rls{display:block}
+.rls>span{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;font-weight:600;color:var(--lm-soft)}
+.rls b{font:600 14px var(--lm-mono);color:var(--lm-text)}
+.rlt{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:44px;padding:9px 14px;border-radius:13px;font-size:14.5px;font-weight:600;color:var(--lm-soft);background:rgba(255,255,255,.04);border:1px solid var(--lm-line)}
+.rlt .ic{width:17px;height:17px}
+.rlt.on{color:#7dd3fc;border-color:rgba(56,189,248,.5);background:rgba(56,189,248,.1)}
+.rl .foot{margin-top:0}
+.rlchart{margin-top:0}
+.hbtn:focus-visible,.rpb:focus-visible,.rlt:focus-visible,.more:focus-visible{outline:2px solid var(--lm-amber-2);outline-offset:2px}
 /* ---------- layout ---------- */
-.pg-overview .check,.pg-vehicle .maintenance,.pg-charging .chart,.pg-charging .charge{align-self:stretch}
+.pg-overview .check,.pg-vehicle .maintenance,.pg-charging .chart,.pg-charging .charge,.pg-overview .timeline,.pg-journey .rangelab{align-self:stretch}
+.page{grid-auto-flow:row dense}
 @container lmcard (min-width:760px){
   .page{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .hero,.map,.energy,.maintenance,.settings{grid-column:1/-1}
-  .pg-overview:not(:has(.check)) .controls{grid-column:1/-1}
+  .hero,.map,.energy,.maintenance,.settings,.outlook,.controls,.routes,.calendar,.badges{grid-column:1/-1}
   .pg-charging .charge:only-child,.pg-trips .trips:last-child:nth-child(2){grid-column:1/-1}
+  .page>.panel:only-child{grid-column:1/-1}
+  .pg-overview:not(:has(.timeline)) .check,.pg-overview:not(:has(.check)) .timeline{grid-column:1/-1}
 }
 @container lmcard (min-width:1180px){
   .page{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .hero{grid-column:span 2}
-  .pg-overview:not(:has(.check)) .hero{grid-column:1/-1}
-  .controls{grid-column:1/-1}
+  .hero,.outlook{grid-column:span 2}
+  .pg-overview .check,.pg-overview .timeline{grid-column:auto}
+  .pg-overview:not(:has(.check)) .hero,.pg-overview:not(:has(.timeline)) .outlook{grid-column:1/-1}
+  .controls,.routes,.calendar,.badges{grid-column:1/-1}
   .map{grid-column:span 2}
   .pg-trips:not(:has(.trips)) .map{grid-column:1/-1}
   .week{grid-column:1/-1}
   .pg-trips:has(.map):has(.week) .trips{grid-row:span 2}
   .pg-trips:has(.map):has(.trips) .week{grid-column:span 2}
   .charge{grid-row:span 2}
-  .chart,.energy{grid-column:span 2}
+  .chart,.energy,.sessions,.inbox,.records{grid-column:span 2}
+  .pg-charging:not(:has(.curve)) .sessions,.pg-vehicle:not(:has(.software)) .inbox,.pg-journey:not(:has(.rangelab)) .records{grid-column:1/-1}
   .maintenance{grid-column:span 2;grid-row:span 2}
+}
+/* Six pages and the settings tab: tablets get the settings icon alone, then the stacked tabs phones use. */
+@container lmcard (max-width:1100px){
+  .tabs.has-set{grid-template-columns:repeat(var(--n),minmax(0,1fr));grid-auto-columns:50px}
+  .tabs.has-menu.has-set{grid-template-columns:44px repeat(var(--n),minmax(0,1fr))}
+  .tab.set .tlb{display:none}
+}
+@container lmcard (max-width:900px){
+  .tab{flex-direction:column;gap:4px;min-height:54px;padding:7px 2px;font-size:13.5px}
 }
 @container lmcard (max-width:640px){
   :where(.look-classic) .hero{min-height:0}
@@ -1432,6 +1953,11 @@ button.trip:hover{background:rgba(255,255,255,.06)}
   .look-console .qbtn{width:76px;font-size:13px}
   .look-console .qbtn .qi{width:54px;height:54px}
   .look-console .strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .look-console .cell{gap:8px;padding:10px 9px}
+  .look-console .cell .ci{width:30px;height:30px;border-radius:10px}
+  .look-console .cell .ci .ic{width:16px;height:16px}
+  .look-console .cell .v small{margin-left:2px}
+  .look-console .cell .l{font-size:12px}
   :where(.lm:not(.look-classic)) .cell .v{font-size:16.5px}
   .mapbox{height:260px}
   .fxpin b{font-size:10px;padding:2px 6px}
@@ -1447,7 +1973,20 @@ button.trip:hover{background:rgba(255,255,255,.06)}
   .mrow .sq{width:32px;height:32px}
   .wstats{grid-template-columns:repeat(2,minmax(0,1fr))}
   .wrow{grid-template-columns:48px minmax(0,1fr) 86px;gap:10px;padding:7px 8px}
-  .tab{flex-direction:column;gap:4px;min-height:54px;padding:7px 4px;font-size:13px}
+  .tab{flex-direction:column;gap:4px;min-height:54px;padding:7px 2px;font-size:12.5px}
+  .calfull{display:none}
+  .calhalf{display:block}
+  .otiles{grid-template-columns:minmax(0,1fr)}
+  .rlbig{font-size:40px}
+  .mbars{gap:3px;height:130px}
+  .mb span{display:none}
+  .mb{grid-template-rows:0 minmax(0,1fr) 18px}
+  .tlr{gap:8px}
+  .wk{gap:4px}
+  .wkd{padding:8px 1px 7px}
+  .wkd b{font-size:13.5px}
+  .wkd em{white-space:normal;text-align:center;line-height:1.2;font-size:10.5px}
+  .badgegrid{grid-template-columns:minmax(0,1fr)}
   .tabs.has-set{grid-template-columns:repeat(var(--n),minmax(0,1fr));grid-auto-columns:50px}
   .tabs.has-menu.has-set{grid-template-columns:40px repeat(var(--n),minmax(0,1fr))}
   .tab.set .tlb{display:none}
@@ -1461,11 +2000,37 @@ button.trip:hover{background:rgba(255,255,255,.06)}
   .soc{font-size:50px}
   .tdh .dist{font-size:34px}
 }
+@container lmcard (max-width:440px){
+  /* Six tabs on a phone: the label size follows the width, so the names stay whole. */
+  .tab{font-size:clamp(10px,3.2cqi,12.5px);letter-spacing:-.01em;padding:7px 0}
+  .tabs{gap:2px}
+  .tabs.has-set{grid-auto-columns:44px}
+  .tabs.has-menu.has-set{grid-template-columns:36px repeat(var(--n),minmax(0,1fr))}
+  .tabs.has-menu .tab:not(.menu){font-size:clamp(9.5px,2.85cqi,12.5px)}
+}
+@container lmcard (max-width:350px){
+  /* With the sidebar button on the narrowest phones the tabs are icons (they keep their labels for screen readers). */
+  .tabs.has-menu .tab:not(.menu) .tlb{display:none}
+  .tabs.has-menu .tab{min-height:46px}
+}
 @container lmcard (max-width:380px){
+  .tabs{padding:4px}
+  .tabs.has-set{grid-auto-columns:42px}
+  .tells{min-width:0}
+  .tell{flex:1 1 0;width:auto;min-width:0}
+  .tell .ic{width:18px;height:18px}
+  .gin .gv{font-size:29px}
+  .gin .gv small{font-size:13px}
+  .gin .gs{font-size:12px;margin-top:4px}
+  .look-console .cell .ci{display:none}
+  .look-console .cell{padding:10px 12px}
   .ctiles{grid-template-columns:minmax(0,1fr)}
   .trip{gap:10px;padding:10px 11px}
 }
 .carbox{position:relative;display:inline-block;max-width:100%;line-height:0}
+.plugdot{position:absolute;width:11px;height:11px;margin:0 0 -5.5px -5.5px;border-radius:50%;background:var(--c,#34d399);border:2px solid #0b1224;
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--c,#34d399) 45%,transparent),0 0 12px var(--c,#34d399);z-index:1;pointer-events:none}
+.car.charging .plugdot{animation:lm-pulse 1.8s ease-in-out infinite}
 .carbox.svgcar{width:100%}
 .fxaura{position:absolute;left:24%;right:30%;top:6%;height:46%;border-radius:50%;filter:blur(14px);opacity:.8;pointer-events:none;mix-blend-mode:screen;animation:lm-pulse 3s ease-in-out infinite}
 .fxaura.warm{background:radial-gradient(closest-side,rgba(251,146,60,.9),rgba(251,146,60,0))}
@@ -1533,6 +2098,11 @@ class LeapmotorCard extends HTMLElement {
     this._ids = {};
     this._page = null;
     this._tripLimit = TRIPS_SHOWN;
+    this._sessLimit = 6;
+    this._inboxLimit = 5;
+    this._tlLimit = 7;
+    this._lab = null;
+    this._replay = null;
   }
 
   /* ----- Lovelace API ----- */
@@ -1547,6 +2117,11 @@ class LeapmotorCard extends HTMLElement {
       ["map", "Trips · trip details and map"], ["trips", "Trips · trip log"], ["week", "Trips · last 7 days"],
       ["charging", "Charging · charging and charge limit"], ["chart", "Charging · last 24 hours"], ["energy", "Charging · battery & efficiency"],
       ["maintenance", "Vehicle · maintenance"], ["tires", "Vehicle · tires"], ["insights", "Vehicle · insights"],
+      ["outlook", "Overview · outlook (usual departure, next day, real range)"], ["timeline", "Overview · last 24 hours"],
+      ["routes", "Trips · frequent routes"], ["curve", "Charging · charging curve"], ["sessions", "Charging · charging history"],
+      ["software", "Vehicle · car software and schedules"], ["inbox", "Vehicle · messages"],
+      ["calendar", "Journey · a year of driving"], ["records", "Journey · totals, records and savings"],
+      ["rangelab", "Journey · range lab"], ["badges", "Journey · achievements"],
     ].map(([value, label]) => ({ value, label }));
     return {
       schema: [
@@ -1576,7 +2151,8 @@ class LeapmotorCard extends HTMLElement {
         },
         { name: "page", selector: { select: { mode: "dropdown", options: [
           { value: "overview", label: "Overview" }, { value: "trips", label: "Trips" },
-          { value: "charging", label: "Charging" }, { value: "vehicle", label: "Vehicle" }, { value: "settings", label: "Settings" },
+          { value: "charging", label: "Charging" }, { value: "vehicle", label: "Vehicle" },
+          { value: "journey", label: "Journey" }, { value: "settings", label: "Settings" },
         ] } } },
         { name: "entity_prefix", selector: { text: {} } },
       ],
@@ -1584,7 +2160,7 @@ class LeapmotorCard extends HTMLElement {
         device_id: "Vehicle", name: "Title (optional)", sections: "Sections", look: "Look", scene: "Day or night (sky in Classic, display in the other looks)",
         language: "Language", confirm_actions: "Tap twice to confirm remote actions",
         backdrop: "Dark backdrop", image_flip: "Mirror the car picture", quick_actions: "Quick buttons under the battery", entity_prefix: "Entity prefix (optional, e.g. c10)",
-        tabs: "Pages with tabs (Overview, Trips, Charging, Vehicle)", page: "First page",
+        tabs: "Pages with tabs (Overview, Trips, Charging, Vehicle, Journey)", page: "First page",
         settings: "Settings tab (each user picks theme and language)",
       })[s.name],
     };
@@ -1647,6 +2223,7 @@ class LeapmotorCard extends HTMLElement {
   }
 
   disconnectedCallback() {
+    this._stopReplay();
     clearInterval(this._tick);
     window.removeEventListener("leapmotor-card-prefs", this._onPrefs);
     if (this._ro) this._ro.disconnect();
@@ -1935,6 +2512,17 @@ class LeapmotorCard extends HTMLElement {
       maintenance: `<section class="panel maintenance" id="maintenance"></section>`,
       tires: `<section class="panel tires" id="tires"></section>`,
       insights: `<section class="panel insights" id="insights"></section>`,
+      outlook: `<section class="panel outlook" id="outlook"></section>`,
+      timeline: `<section class="panel timeline" id="timeline"></section>`,
+      routes: `<section class="panel routes" id="routes"></section>`,
+      curve: `<section class="panel curve" id="curve"></section>`,
+      sessions: `<section class="panel sessions" id="sessions"></section>`,
+      software: `<section class="panel software" id="software"></section>`,
+      inbox: `<section class="panel inbox" id="inbox"></section>`,
+      calendar: `<section class="panel calendar" id="calendar"></section>`,
+      records: `<section class="panel records" id="records"></section>`,
+      rangelab: `<section class="panel rangelab" id="rangelab"></section>`,
+      badges: `<section class="panel badges" id="badges"></section>`,
       settings: `<section class="panel settings" id="settings"></section>`,
     };
     const body = pages.map((p) =>
@@ -1946,6 +2534,7 @@ class LeapmotorCard extends HTMLElement {
     this._built = true;
     const root = this.shadowRoot.getElementById("root");
     root.addEventListener("click", (ev) => this._onClick(ev));
+    root.addEventListener("input", (ev) => this._onInput(ev));
     const chart = this.shadowRoot.getElementById("chart");
     if (chart && this._ro) this._ro.observe(chart);
   }
@@ -1983,12 +2572,15 @@ class LeapmotorCard extends HTMLElement {
     else if (plugged) out.charging = { c: OK_C };
     if (this._on("tireWarning") === true) out.vehicle = { c: BAD_C };
     else if (this._on("maintenanceDue") === true) out.vehicle = { c: WARN_C };
+    else if (this._s("software")?.state === "on") out.vehicle = { c: "#38bdf8" };
+    if (!out.charging && this._on("slowCharging") === true) out.charging = { c: WARN_C };
     return out;
   }
 
   _setPage(id) {
     if (!this._tabbed || id === this._page || !this._pages().some((p) => p.id === id)) return;
     this._page = id;
+    this._stopReplay();
     for (const p of this._pages()) {
       const el = this.shadowRoot.getElementById(`page-${p.id}`);
       if (el) el.hidden = p.id !== id;
@@ -2022,6 +2614,17 @@ class LeapmotorCard extends HTMLElement {
       tires: () => this._sig(["tireFL", "tireFR", "tireRL", "tireRR", "tireWarning"]),
       insights: () => this._sig(["driveCost", "costPer100", "drain", "tripConsumption", "tireWarning", "lastTrip"]),
       controls: () => this._controlsSig(),
+      outlook: () => this._sig(["nextDay", "nextDeparture", "realRange", "chargeAdvice", "battery", "chargeLimit"]) + Math.floor(Date.now() / MIN),
+      timeline: () => `${this._hist?.fetchedAt || 0}|${this._histLoading ? 1 : 0}|${this._tlLimit}`,
+      routes: () => this._sig(["routes", "driveCost"]),
+      curve: () => this._sig(["curve", "slowCharging", "power", "isCharging"]),
+      sessions: () => this._sig(["cloudCharging", "monthCost"]) + `|${this._sessLimit}`,
+      software: () => this._sig(["software", "softwareVersion", "nextSchedule", "permissions"]),
+      inbox: () => this._sig(["inbox"]) + `|${this._inboxLimit}|${Math.floor(Date.now() / (10 * MIN))}`,
+      calendar: () => this._sig(["yearDistance"]),
+      records: () => this._sig(["yearDistance", "fuelSavingsTotal", "fuelSavings", "co2Total", "co2Month", "fuelAvoided", "lifetimeConsumption"]),
+      rangelab: () => this._sig(["realRange", "outdoor", "battery", "avg", "lifetimeConsumption", "availableEnergy"]),
+      badges: () => this._sig(["achievements"]),
       settings: () => `${JSON.stringify(this._prefs || {})}|${this._prefsWhere || ""}|${this._look}|${this._config.look}|${this._config.language}|${this._config.scene}`,
     };
     const html = {
@@ -2035,6 +2638,17 @@ class LeapmotorCard extends HTMLElement {
       energy: () => this._energyHtml(),
       tires: () => this._tiresHtml(),
       controls: () => this._controlsHtml(),
+      outlook: () => this._outlookHtml(),
+      timeline: () => this._timelineHtml(),
+      routes: () => this._routesHtml(),
+      curve: () => this._curveHtml(),
+      sessions: () => this._sessionsHtml(),
+      software: () => this._softwareHtml(),
+      inbox: () => this._inboxHtml(),
+      calendar: () => this._calendarHtml(),
+      records: () => this._recordsHtml(),
+      rangelab: () => this._rangelabHtml(),
+      badges: () => this._badgesHtml(),
       settings: () => this._settingsHtml(),
     };
     const target = this.shadowRoot.getElementById(name === "hero" ? "heroui" : name);
@@ -2102,7 +2716,7 @@ class LeapmotorCard extends HTMLElement {
   _heroSig() {
     return [
       this._sig(["battery", "batteryPrecise", "range", "lock", "isCharging", "isPlugged", "connection", "isDriving", "speed", "gear",
-        "interior", "outdoor", "odometer", "chargeLimit", "avg", "lastUpdate", "tracker", "picture", "remaining", "vehicleState", "fuel", "power", "finish"]),
+        "interior", "outdoor", "odometer", "chargeLimit", "avg", "lastUpdate", "tracker", "picture", "remaining", "vehicleState", "fuel", "power", "finish", "realRange"]),
       this._sig(DOORS.map(([k]) => k)), this._sig(WINDOWS), this._sig(["trunk"]),
       this._sig(["speeding", "speedLimit", "speedLimitOn", "climateOn", "climateMode", "climateSwitch", "sentry"]), this._sig(TIRES.map(([k]) => k)),
       this._sceneMode(), Math.floor(Date.now() / MIN), JSON.stringify(this._armed), JSON.stringify(this._busy),
@@ -2163,12 +2777,29 @@ class LeapmotorCard extends HTMLElement {
       ? `<img src="${esc(picUrl)}" alt="${esc(this._vehicleName())}"${this._config.image_flip ? ' class="flip"' : ""}>`
       : carSvg(d.night);
     const fx = this._carFx({ charging: d.charging, plugged: d.plugged, night: d.night, driving: d.driving, locked: d.locked }, { tirePins: !tireTags });
-    const carInner = `<div class="carbox${picUrl ? "" : " svgcar"}">${carArt}${fx}${tireTags ? this._tireTagsHtml() : ""}</div>`;
-    const led = d.charging ? "#34d399" : "#f6a823";
-    const plug = d.plugged
-      ? `<div class="wallbox" style="--c:${led}"><i></i></div><svg class="cable${d.charging ? "" : " idle"}" style="--c:${led}" viewBox="0 0 100 96" preserveAspectRatio="none"><path d="M8 50C14 98 70 102 96 30" vector-effect="non-scaling-stroke"/></svg>`
-      : "";
-    return `${floor ? floorSvg() : ""}<div class="car${d.charging ? " charging" : ""}${d.plugged ? " plugged" : ""}">${plug}${carInner}</div>`;
+    // The wallbox and cable belong to the picture box, so they stay with the car whatever its width.
+    const plug = d.plugged ? this._plugHtml(d.charging, picUrl ? this._pic?.attach : null) : "";
+    const carInner = `<div class="carbox${picUrl ? "" : " svgcar"}">${plug}${carArt}${fx}${tireTags ? this._tireTagsHtml() : ""}</div>`;
+    return `${floor ? floorSvg() : ""}<div class="car${d.charging ? " charging" : ""}${d.plugged ? " plugged" : ""}">${carInner}</div>`;
+  }
+
+  /**
+   * Wallbox and charging cable. With a known attach point (from the car
+   * picture) the cable ends on the car's body and a connector marks the spot;
+   * otherwise it uses the geometry of the built-in drawing.
+   */
+  _plugHtml(charging, attach) {
+    const led = charging ? "#34d399" : "#f6a823";
+    let cableStyle = "", dot = "";
+    if (attach) {
+      // The path ends at 96 % of the cable's width and 68.75 % of its height (viewBox 100 × 96, end point 96 30).
+      const x = attach.x * 100, y = attach.y * 100;
+      cableStyle = `;width:calc((${f1(x)}% + 30px) / 0.96);height:${f1(Math.max(12, (y - 6) / 0.6875))}%`;
+      dot = `<span class="plugdot" style="--c:${led};left:calc(${f1(x)}% + 8px);bottom:${f1(y)}%"></span>`;
+    }
+    return `<div class="wallbox" style="--c:${led}"><i></i></div>` +
+      `<svg class="cable${charging ? "" : " idle"}" style="--c:${led}${cableStyle}" viewBox="0 0 100 96" preserveAspectRatio="none">` +
+      `<path d="M8 50C14 98 70 102 96 30" vector-effect="non-scaling-stroke"/></svg>${dot}`;
   }
 
   /** Pressures at the wheels (left · right per axle); the car faces right. */
@@ -2338,6 +2969,8 @@ class LeapmotorCard extends HTMLElement {
     if (d.limit != null) note.push(this._trHtml("limitWord", `<b>${this._num(d.limit)} %</b>`));
     const fin = d.charging ? this._ts("finish") : null;
     if (fin) note.push(esc(t("doneAt", { x: this._time(new Date(fin)) })));
+    const real = this._v("realRange");
+    if (real != null && !fin) note.push(esc(t("realShort", { x: `${this._num(real)} km` })));
     const lim = d.limit != null ? `<span class="blim" style="left:calc((100% - 7px) * ${clamp(d.limit, 0, 100) / 100})"></span>` : "";
     const left = `
       <div class="rbox">
@@ -2398,6 +3031,8 @@ class LeapmotorCard extends HTMLElement {
       meta.push(`<span>${icon("arrowUp")} ${pre}<b>${this._num(limit)} %</b>${post}</span>`);
     }
     if (rangeV != null) meta.push(`<span>${esc(t("rangeWord", { x: `${this._num(rangeV)} ${rangeU}` }))}</span>`);
+    const realKm = this._v("realRange");
+    if (realKm != null) meta.push(`<span>${esc(t("realShort", { x: `${this._num(realKm)} km` }))}</span>`);
     const upd = this._ts("lastUpdate");
     if (upd) meta.push(`<span>${esc(t("updated", { x: this._ago(upd) }))}</span>`);
 
@@ -2458,17 +3093,7 @@ class LeapmotorCard extends HTMLElement {
         mins < 60 ? "min" : mins < 1440 ? "h" : "d", "lastUpdate");
     }
 
-    // Car
     const night = this._sceneMode() === "night";
-    const picUrl = this._carPicture();
-    const carArt = picUrl
-      ? `<img src="${esc(picUrl)}" alt="${esc(this._vehicleName())}"${this._config.image_flip ? ' class="flip"' : ""}>`
-      : carSvg(night);
-    const carInner = `<div class="carbox${picUrl ? "" : " svgcar"}">${carArt}${this._carFx({ charging, plugged, night, driving, locked })}</div>`;
-    const ledColor = charging ? "#34d399" : "#f6a823";
-    const plug = plugged
-      ? `<div class="wallbox" style="--c:${ledColor}"><i></i></div><svg class="cable${charging ? "" : " idle"}" style="--c:${ledColor}" viewBox="0 0 100 96" preserveAspectRatio="none"><path d="M8 50C14 98 70 102 96 30" vector-effect="non-scaling-stroke"/></svg>`
-      : "";
 
     return {
       hchips: chips.join("") + (this._ids.refreshBtn
@@ -2481,7 +3106,7 @@ class LeapmotorCard extends HTMLElement {
         <div class="big clickable" data-more="battery">${socTxt}<span class="u">%</span></div>
         <div class="state">${icon(stateIcon)}${esc(stateBits.join(" · "))}</div>
         <div class="metaline">${meta.join("")}</div>${this._quickHtml()}`,
-      hcar: `<div class="car${charging ? " charging" : ""}">${plug}${carInner}</div>`,
+      hcar: this._heroCarHtml({ charging, plugged, night, driving, locked }),
       hstrip: cells.length ? `<div class="strip">${cells.slice(0, 7).join("")}</div>` : "",
     };
   }
@@ -2493,27 +3118,53 @@ class LeapmotorCard extends HTMLElement {
    * and only swapped in once it has loaded — no flicker, no broken image.
    */
   _carPicture() {
-    if (this._config.image) return this._config.image;
-    if (!this._config.show_image) return null;
-    const pic = this._s("picture");
-    const url = pic && !["unavailable", "unknown"].includes(pic.state) ? pic.attributes?.entity_picture : null;
-    const p = this._pic || (this._pic = { shown: null, pending: null });
+    const custom = this._config.image || null;
+    const pic = custom || !this._config.show_image ? null : this._s("picture");
+    const url = custom || (pic && !["unavailable", "unknown"].includes(pic.state) ? pic.attributes?.entity_picture : null);
+    const p = this._pic || (this._pic = { shown: null, pending: null, key: null, pendingKey: null, attach: null, cut: false });
     if (!url) {
       p.shown = null;
+      p.key = null;
+      p.attach = null;
       return null;
     }
-    if (url !== p.shown && url !== p.pending) {
+    // The picture itself only changes with the entity's state; the address
+    // carries a token that rotates every few minutes.
+    const key = `${custom ? url : `${pic.entity_id}|${pic.state}`}|${this._config.image_flip ? 1 : 0}`;
+    const stale = key !== p.key || (!p.cut && url !== p.shown);
+    if (stale && url !== p.pending) {
       p.pending = url;
+      p.pendingKey = key;
       const img = new Image();
-      img.onload = () => {
+      img.onload = async () => {
         if (p.pending !== url) return;
-        p.shown = url;
+        let result = null;
+        if (key !== p.key || !p.cut) {
+          try {
+            result = await trimCarPicture(img, !!this._config.image_flip);
+          } catch (_e) {
+            result = null; // not readable: show the picture as it is
+          }
+        }
+        if (p.pending !== url) {
+          if (result?.url) URL.revokeObjectURL(result.url);
+          return;
+        }
+        if (p.cut && p.shown && p.shown !== result?.url) URL.revokeObjectURL(p.shown);
+        p.shown = result?.url || url;
+        p.cut = !!result?.url;
+        p.attach = result?.attach || null;
+        p.key = key;
         p.pending = null;
+        p.pendingKey = null;
         this._sigs.hero = null;
         this._renderSection("hero");
       };
       img.onerror = () => {
-        if (p.pending === url) p.pending = null;
+        if (p.pending === url) {
+          p.pending = null;
+          p.pendingKey = null;
+        }
       };
       img.src = url;
     }
@@ -2610,7 +3261,7 @@ class LeapmotorCard extends HTMLElement {
   }
 
   _maybeFetchHistory() {
-    if (!this._config.sections.includes("chart") || this._histLoading) return;
+    if (!["chart", "timeline"].some((name) => this._config.sections.includes(name)) || this._histLoading) return;
     if (typeof this._hass.callWS !== "function") return;
     const bat = this._s("battery");
     const stamp = bat ? bat.last_updated : "";
@@ -2621,7 +3272,8 @@ class LeapmotorCard extends HTMLElement {
 
   async _fetchHistory(stamp) {
     this._histLoading = true;
-    const keys = ["battery", "range", "power", "odometer", "isCharging", "isDriving"];
+    const keys = ["battery", "range", "power", "odometer", "isCharging", "isDriving", "isPlugged", "lock"];
+    const flags = new Set(["isCharging", "isDriving", "isPlugged"]);
     const ids = keys.map((k) => this._ids[k]).filter(Boolean);
     const end = new Date();
     const start = new Date(end.getTime() - DAY);
@@ -2645,9 +3297,10 @@ class LeapmotorCard extends HTMLElement {
           const time = isFinite(ts) ? Math.max(ts, start.getTime()) : prevTime;
           prevTime = time;
           const s = st.s ?? st.state;
-          const value = key === "isCharging" || key === "isDriving" ? s === "on" : parseFloat(s);
+          const value = flags.has(key) ? (s === "on" ? true : s === "off" ? false : null)
+            : key === "lock" ? (s === "locked" || s === "unlocked" ? s : null) : parseFloat(s);
           return [time, value];
-        }).filter(([, v]) => typeof v === "boolean" || isFinite(v));
+        }).filter(([, v]) => typeof v === "boolean" || typeof v === "string" || (typeof v === "number" && isFinite(v)));
       }
     } catch (_e) {
       // Recorder disabled or websocket unavailable: show the empty state.
@@ -2655,6 +3308,7 @@ class LeapmotorCard extends HTMLElement {
     this._hist = { fetchedAt: Date.now(), stamp, start: start.getTime(), end: end.getTime(), series };
     this._histLoading = false;
     this._renderSection("chart", true);
+    this._renderSection("timeline");
   }
 
   _chartHtml() {
@@ -3034,7 +3688,7 @@ class LeapmotorCard extends HTMLElement {
       const v = this._v(k);
       return `<div class="stat clickable" data-more="${k}"><small>${esc(t(l))}</small><b style="${v != null && v < TIRE_LOW_BAR ? "color:var(--lm-red)" : ""}">${v != null ? this._num(v, 1) : "—"}<span>bar</span></b></div>`;
     }).join("");
-    const body = `${this._healthHtml()}${consumption}${tires ? `<div class="stats" style="margin-top:14px">${tires}</div>` : ""}${split}`;
+    const body = `${this._healthHtml()}${this._forecastHtml()}${consumption}${tires ? `<div class="stats" style="margin-top:14px">${tires}</div>` : ""}${split}`;
     return `${this._head(t("batteryEff"), "battery")}${body.trim() ? body : `<div class="empty">—</div>`}`;
   }
 
@@ -3050,6 +3704,21 @@ class LeapmotorCard extends HTMLElement {
     return `<div class="health clickable" data-more="health"><span class="sq">${icon("heart")}</span>
       <div><b>${esc(t("health"))}</b><small>${esc(sub)}</small></div>
       <span class="big2">${soh != null ? `${this._num(soh, 1)} %` : "—"}</span></div>`;
+  }
+
+  /** Where the measured capacity is heading (needs months of full charges). */
+  _forecastHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const s = this._s("capacityTrend");
+    const trend = this._v("capacityTrend");
+    if (!s || trend == null) return "";
+    const a = s.attributes || {};
+    const stable = a.stable === true || trend >= -0.2;
+    const bits = [t("fcSub", { x: `${trend > 0 ? "+" : ""}${this._num(trend, 1)}`, n: this._num(a.samples ?? 0) })];
+    if (a.reaches_90) bits.push(t("fc90", { d: this._date(this._day(a.reaches_90), { month: "short", year: "numeric" }) }));
+    return `<div class="health clickable" data-more="capacityTrend" style="margin-top:8px"><span class="sq" style="color:#38bdf8;background:rgba(56,189,248,.14)">${icon("gauge")}</span>
+      <div><b>${esc(t("fcTitle"))}</b><small>${esc(bits.join(" · "))}</small></div>
+      <span class="big2" style="font-size:18px">${esc(stable ? t("fcStable") : `${this._num(trend, 1)} %`)}</span></div>`;
   }
 
   /* ----- tires ----- */
@@ -3237,6 +3906,8 @@ class LeapmotorCard extends HTMLElement {
     if (trip.start_soc != null && trip.end_soc != null) bits.push(`${this._num(trip.start_soc)} → ${this._num(trip.end_soc)} %`);
     const vs = latest && trip.vs_usual_pct != null
       ? `<span class="vs ${trip.vs_usual_pct <= 0 ? "good" : "bad"}">${trip.vs_usual_pct > 0 ? "+" : ""}${this._num(trip.vs_usual_pct, 0)} %</span>` : "";
+    const eco = trip.eco_score != null
+      ? `<span class="eco" style="--c:${this._ecoColor(trip.eco_score)}" title="${esc(t("ecoScore"))}">${esc(t("ecoShort", { x: this._num(trip.eco_score) }))}</span>` : "";
     const tag = pick ? "button" : "div";
     const sub = live
       ? `<small><span class="dot pulse" style="--c:#38bdf8;width:6px;height:6px;margin-right:6px;vertical-align:1px"></span>${esc(t("mapLive"))}</small>`
@@ -3244,8 +3915,12 @@ class LeapmotorCard extends HTMLElement {
     return `<${tag} class="trip${live ? " live" : ""}${selected ? " sel" : ""}"${pick ? ` data-trip="${live ? "live" : index}"` : ""}>
       <div class="tt"><b>${start ? esc(this._time(start)) : "—"}</b>${sub}</div>
       <div class="td"><b>${this._num(trip.distance_km ?? 0, 1)}<small>km</small>${vs}</b><span>${esc(bits.map((b) => b.replace(/ /g, "\u00a0")).join(" · ") || (live ? t("drivingNow") : ""))}</span></div>
-      <div class="tcx">${cons != null ? `<span class="cons" style="background:${consColor}">${this._num(cons, 1)}</span><small>kWh/100 km</small>` : ""}</div>
+      <div class="tcx">${cons != null ? `<span class="cons" style="background:${consColor}">${this._num(cons, 1)}</span><small>kWh/100 km</small>` : ""}${eco}</div>
     </${tag}>`;
+  }
+
+  _ecoColor(score) {
+    return score >= 80 ? OK_C : score >= 60 ? "#a3e635" : score >= 40 ? WARN_C : "#fb923c";
   }
 
   /** Trips grouped by day, newest first, like the LeapConnect trips page. */
@@ -3255,7 +3930,8 @@ class LeapmotorCard extends HTMLElement {
     const recent = Array.isArray(a.recent_trips) ? a.recent_trips : [];
     const current = a.current_trip && a.current_trip.start ? a.current_trip : null;
     const pick = this._config.sections.includes("map");
-    const head = this._head(t("tripsTitle"), "route");
+    const head = this._head(t("tripsTitle"), "route", recent.length
+      ? `<button type="button" class="hbtn" data-act="exportcsv" title="${esc(t("exportCsv"))}" aria-label="${esc(t("exportCsv"))}">${icon("download")}<span>CSV</span></button>` : "");
 
     const currency = this._unit("driveCost") || this._unit("monthCost");
     const dc = this._s("driveCost")?.attributes || {};
@@ -3496,9 +4172,10 @@ class LeapmotorCard extends HTMLElement {
     if (limit && tr && tr.state === "ok") stat(t("aboveLimit"), this._num(Math.round(tr.aboveMs / MIN)), "min", tr.aboveMs > 0 ? SPEED_FAST : "");
     if (price && trip.energy_kwh != null) stat(t("cost"), esc(this._money(trip.energy_kwh * price, currency)), "");
     if (trip.outdoor_temp_c != null) stat(t("outside"), this._num(trip.outdoor_temp_c, 1), "°C");
+    if (trip.eco_score != null) stat(t("ecoScore"), this._num(trip.eco_score), "", this._ecoColor(trip.eco_score));
     return {
       maphead,
-      mapfoot: `<div class="legend">${legend}</div>${cells.length ? `<div class="stats">${cells.join("")}</div>` : ""}${this._speedChartHtml(tr, limit, sl?.source)}`,
+      mapfoot: `${this._replayHtml(tr)}<div class="legend">${legend}</div>${cells.length ? `<div class="stats">${cells.join("")}</div>` : ""}${this._speedChartHtml(tr, limit, sl?.source)}`,
     };
   }
 
@@ -3644,6 +4321,7 @@ class LeapmotorCard extends HTMLElement {
   async _drawRoute(box, tr) {
     const key = `${tr.key}|${tr.fetchedAt}`;
     if (box.__drawn === key) return;
+    if (this._replay && this._replay.key !== tr.key) this._stopReplay();
     box.__drawn = key;
     box.classList.remove("msg");
     const useMap = this._config.map !== "drawn" && (await this._ensureHaMap());
@@ -3908,6 +4586,854 @@ class LeapmotorCard extends HTMLElement {
         ${custom ? `<button type="button" class="mdone" data-act="prefreset">${esc(t("setReset"))}</button>` : ""}</div>`;
   }
 
+  /* ----- helpers of the insight panels ----- */
+
+  _a(key, name) {
+    return this._s(key)?.attributes?.[name];
+  }
+
+  /** Weekday name for Monday = 0 … Sunday = 6. */
+  _weekday(index, style = "long") {
+    // 1 January 2024 was a Monday.
+    const date = new Date(Date.UTC(2024, 0, 1 + ((Number(index) % 7) + 7) % 7, 12));
+    try {
+      return new Intl.DateTimeFormat(this._lang, { weekday: style, timeZone: "UTC" }).format(date);
+    } catch (_e) {
+      return new Intl.DateTimeFormat("en", { weekday: style, timeZone: "UTC" }).format(date);
+    }
+  }
+
+  _date(value, options = { day: "numeric", month: "short" }) {
+    const date = value instanceof Date ? value : new Date(value);
+    if (!isFinite(date)) return "—";
+    try {
+      return new Intl.DateTimeFormat(this._lang, options).format(date);
+    } catch (_e) {
+      return date.toDateString();
+    }
+  }
+
+  /** A date-only text (YYYY-MM-DD or YYYY-MM) as a local date, so the day never shifts. */
+  _day(text) {
+    const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?/.exec(String(text || ""));
+    return m ? new Date(+m[1], +m[2] - 1, m[3] ? +m[3] : 1, 12) : new Date(NaN);
+  }
+
+  /** "07:20" in the user's clock format. */
+  _clock(hhmm) {
+    const m = /^(\d{1,2}):(\d{2})/.exec(String(hhmm || ""));
+    if (!m) return String(hhmm || "—");
+    const date = new Date();
+    date.setHours(+m[1], +m[2], 0, 0);
+    return this._time(date);
+  }
+
+  _currency() {
+    return this._unit("monthCost") || this._unit("driveCost") || this._unit("lastSessionCost") || this._unit("fuelSavings");
+  }
+
+  /* ----- outlook: usual departure, the next day, real range ----- */
+
+  _outlookHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const o = this._s("nextDay")?.attributes || {};
+    const ra = this._s("realRange")?.attributes || {};
+    const real = this._v("realRange");
+    const known = o.day != null;
+    const tiles = [];
+    const tile = (st, ic, title, sub, more, big = "") => tiles.push(
+      `<div class="otile${st ? ` ${st}` : ""}${more && this._ids[more] ? " clickable" : ""}"${more && this._ids[more] ? ` data-more="${more}"` : ""}>` +
+      `<span class="sq">${icon(ic)}</span><div><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</div>${big}</div>`);
+    const n = (v) => this._num(v);
+    if (known) {
+      const need = o.needed_soc;
+      const socSub = o.soc == null ? "" : need != null
+        ? t("olSocSub", { soc: n(o.soc), need: n(need) }) : t("olSocOnly", { soc: n(o.soc) });
+      if (o.reason === "plugged_in") {
+        const raise = o.limit_ok === false && need != null ? ` · ${t("olLimitLow", { p: n(Math.min(100, Math.ceil(need / 5) * 5)) })}` : "";
+        tile(o.limit_ok === false ? "warn" : "ok", "plug", t("olPlugged"), socSub + raise, "chargeAdvice");
+      } else if (o.reason === "low_battery") tile("bad", "battery", t("olLow"), socSub, "chargeAdvice");
+      else if (o.reason === "low_for_next_day") tile("warn", "plug", t(o.is_today ? "olChargeNow" : "olCharge"), socSub, "chargeAdvice");
+      else if (o.reason === "enough") tile("ok", "check", t("olEnough"), socSub, "chargeAdvice");
+      const dayName = this._weekday(o.weekday);
+      if (o.departure?.time) {
+        tile("", "clock", t("olLeaves", { t: this._clock(o.departure.time) }),
+          t("olLeavesSub", { p: n((o.departure.confidence || 0) * 100), d: dayName }), "nextDeparture");
+      } else if (o.drive_probability != null && o.drive_probability < 0.3) {
+        tile("", "parked", t("olNoDeparture"), t("olNoDepartureSub", { d: dayName }), "nextDeparture");
+      }
+      if (o.expected_km != null) {
+        tile("", "route", t("olNeeds", { km: n(o.expected_km) }),
+          o.expected_kwh != null && need != null ? t("olNeedsSub", { e: this._num(o.expected_kwh, 1), p: n(need) }) : "", "nextDay");
+      }
+    }
+    if (real != null) {
+      const basis = { temperature: t("basisTemp"), recent: t("basisRecent"), six_week: t("basisCloud") }[ra.basis] || "";
+      const car = ra.car_km != null ? t("carSays", { x: `${n(ra.car_km)} km` }) : "";
+      tile("", "gauge", t("realRange"), [car, basis].filter(Boolean).join(" · "), "realRange",
+        `<span class="obig">${n(real)}<small>km</small></span>`);
+    }
+    const learned = known && (o.departure?.time || o.expected_km != null || (o.drive_probability != null && o.drive_probability < 0.3));
+    const meta = known
+      ? `<span class="meta">${esc(o.is_today ? t("olToday") : t("olTomorrow"))} · ${esc(this._weekday(o.weekday))}</span>` : "";
+    const next = this._ts("nextDeparture");
+    const nextLine = next && next > Date.now()
+      ? `<div class="onext clickable" data-more="nextDeparture">${icon("clock")}<span>${esc(t("nextDep"))} <b>${esc(this._weekday((new Date(next).getDay() + 6) % 7, "short"))} ${esc(this._time(new Date(next)))}</b> · ${esc(t("inTime", { x: this._dur((next - Date.now()) / MIN) }))}</span></div>`
+      : "";
+    const note = learned ? "" : `<div class="note"><span class="dot" style="--c:var(--lm-sky)"></span><span><b>${esc(t("olLearning"))}.</b> ${esc(t("olLearningSub"))}</span></div>`;
+    return `${this._head(t("outlookTitle"), "clock", meta)}${tiles.length ? `<div class="otiles">${tiles.join("")}</div>` : ""}${nextLine}${note}${this._weekPatternHtml(known ? o.weekday : null)}`;
+  }
+
+  /** What each weekday usually looks like: distance and first departure. */
+  _weekPatternHtml(target) {
+    const days = this._a("nextDeparture", "weekdays");
+    if (!Array.isArray(days) || days.length !== 7 || !days.some((d) => d.typical_km != null || (d.departures || []).length)) return "";
+    const top = Math.max(1, ...days.map((d) => d.typical_km || 0));
+    const today = (new Date().getDay() + 6) % 7;
+    const cols = days.map((d, index) => {
+      const km = d.typical_km;
+      const first = (d.departures || [])[0];
+      const cls = `${index === target ? " target" : ""}${index === today ? " today" : ""}${km ? "" : " idle"}`;
+      return `<div class="wkd${cls}"><small>${esc(this._weekday(index, "short").replace(".", ""))}</small>` +
+        `<div class="wkb"><i style="height:${km ? Math.max(8, (km / top) * 100) : 0}%"></i></div>` +
+        `<b>${km != null ? this._num(km) : "—"}</b><em>${first ? esc(this._clock(first.time)) : "&nbsp;"}</em></div>`;
+    });
+    return `<div class="subh clickable" data-more="nextDeparture">${esc(this._tr("weekTitle"))}<span class="subm">km</span></div><div class="wk">${cols.join("")}</div>`;
+  }
+
+  /* ----- last 24 hours: what the car did ----- */
+
+  _timelineEvents() {
+    const h = this._hist;
+    if (!h) return null;
+    const S = h.series || {};
+    const events = [];
+    const runs = (series) => {
+      const out = [];
+      let open = null;
+      for (const [ts, on] of series || []) {
+        if (on === true && !open) open = { from: ts };
+        else if (on === false && open) {
+          open.to = ts;
+          out.push(open);
+          open = null;
+        }
+      }
+      if (open) out.push(open);
+      return out;
+    };
+    const odo = S.odometer || [], bat = S.battery || [];
+    for (const run of runs(S.isDriving)) {
+      const a = valueAt(odo, run.from), b = valueAt(odo, run.to ?? h.end);
+      events.push({ t: run.from, to: run.to, kind: "drive", km: a != null && b != null ? Math.max(0, b - a) : null });
+    }
+    for (const run of runs(S.isCharging)) {
+      const a = valueAt(bat, run.from), b = valueAt(bat, run.to ?? h.end);
+      events.push({ t: run.from, to: run.to, kind: "charge", pct: a != null && b != null ? Math.max(0, b - a) : null });
+    }
+    // The first sample is the state at the start of the window, not a change.
+    const changes = (series, map) => {
+      let last = null;
+      (series || []).forEach(([ts, value], index) => {
+        if (index > 0 && value !== last && map[value]) events.push({ t: ts, kind: map[value] });
+        last = value;
+      });
+    };
+    changes(S.lock, { locked: "locked", unlocked: "unlocked" });
+    changes(S.isPlugged, { true: "plugged", false: "unplugged" });
+    return events.sort((x, y) => y.t - x.t);
+  }
+
+  _timelineHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const head = this._head(t("tlTitle"), "calendar");
+    const events = this._timelineEvents();
+    if (events == null) return `${head}<div class="empty">…</div>`;
+    if (!events.length) return `${head}<div class="empty">${esc(t("tlEmpty"))}</div>`;
+    const look = {
+      drive: ["route", "#38bdf8"], charge: ["bolt", OK_C], locked: ["lock", "#94a3b8"], unlocked: ["unlock", WARN_C],
+      plugged: ["plug", "#5eead4"], unplugged: ["plug", "#94a3b8"],
+    };
+    let wide = false;
+    const rows = events.slice(0, this._tlLimit).map((ev) => {
+      const [ic, color] = look[ev.kind];
+      const from = this._time(new Date(ev.t));
+      if (from.length > 5) wide = true;
+      const span = ev.to ? `${from} – ${this._time(new Date(ev.to))} · ${this._dur((ev.to - ev.t) / MIN)}` : "";
+      let title, sub = span, live = false;
+      if (ev.kind === "drive") {
+        live = !ev.to;
+        title = live ? t("tlDrivingNow") : ev.km != null && ev.km >= 0.1 ? t("tlDrove", { km: this._num(ev.km, ev.km < 100 ? 1 : 0) }) : t("tlDroveShort");
+      } else if (ev.kind === "charge") {
+        live = !ev.to;
+        title = live ? t("tlChargingNow") : ev.pct != null && ev.pct >= 1 ? t("tlCharged", { p: `+${this._num(ev.pct)}` }) : t("tlChargedShort");
+        if (live && ev.pct != null && ev.pct >= 1) sub = `+${this._num(ev.pct)} %`;
+      } else {
+        title = t({ locked: "tlLocked", unlocked: "tlUnlocked", plugged: "tlPlugged", unplugged: "tlUnplugged" }[ev.kind]);
+      }
+      return `<div class="tlr${live ? " live" : ""}" style="--c:${color}"><span class="tlt">${esc(from)}</span>` +
+        `<span class="tld">${icon(ic)}</span><div><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</div></div>`;
+    });
+    const left = events.length - this._tlLimit;
+    const more = left > 0 ? `<button class="more" data-act="moretimeline">${esc(t("showMore", { n: Math.min(10, left) }))}</button>` : "";
+    return `${head}<div class="tline${wide ? " wide" : ""}">${rows.join("")}</div>${more}`;
+  }
+
+  /* ----- frequent routes ----- */
+
+  _placeName(place) {
+    return place?.name || (place?.rank ? this._tr("placeN", { n: place.rank }) : "?");
+  }
+
+  _routesHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const routes = this._a("routes", "routes");
+    const head = this._head(t("rtTitle"), "route");
+    if (!Array.isArray(routes) || !routes.length) return `${head}<div class="empty">${esc(t("rtEmpty"))}</div>`;
+    const currency = this._currency();
+    const cards = routes.map((r) => {
+      const stat = (value, unit) => (value == null ? "" : `<div><b>${value}</b><small>${esc(unit)}</small></div>`);
+      const cons = r.consumption_kwh_100km;
+      const color = cons != null ? rampColor(EFFICIENCY_STOPS, clamp((cons - 10) / 20, 0, 1)) : "";
+      const sub = [
+        r.usual_departure ? t("rtUsual", { t: this._clock(r.usual_departure) }) : "",
+        r.best_duration_min != null && r.duration_min != null && r.best_duration_min < r.duration_min ? t("rtBest", { x: this._dur(r.best_duration_min) }) : "",
+        r.best_consumption_kwh_100km != null && cons != null && r.best_consumption_kwh_100km < cons ? t("rtBest", { x: `${this._num(r.best_consumption_kwh_100km, 1)} kWh/100 km` }) : "",
+      ].filter(Boolean).join(" · ");
+      return `<div class="rcard"><div class="rname">${icon(r.from?.home || r.to?.home ? "pin" : "route")}<b>${esc(this._placeName(r.from))}</b><i>→</i><b>${esc(this._placeName(r.to))}</b>` +
+        `<span class="pill">${esc(t("rtTrips", { n: r.trips }))}</span></div>` +
+        `<div class="rstats">${stat(this._num(r.distance_km, 1), "km")}${stat(r.duration_min != null ? this._num(r.duration_min) : null, "min")}` +
+        `${cons != null ? `<div><b style="color:${color}">${this._num(cons, 1)}</b><small>kWh/100 km</small></div>` : ""}` +
+        `${r.cost != null ? `<div><b>${esc(this._money(r.cost, currency))}</b><small>${esc(t("cost"))}</small></div>` : ""}</div>` +
+        `${sub ? `<small class="rsub">${esc(sub)}</small>` : ""}</div>`;
+    });
+    return `${head}<div class="rcards">${cards.join("")}</div>`;
+  }
+
+  /* ----- charging curve ----- */
+
+  _curveHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const a = this._s("curve")?.attributes || {};
+    const live = !!a.current?.points?.length;
+    const shown = live ? a.current : a.last;
+    const points = shown?.points || [];
+    const usual = Array.isArray(a.usual) ? a.usual : [];
+    const peak = points.length ? Math.max(...points.map((pt) => pt[1])) : null;
+    const head = this._head(t("cvTitle"), "gauge",
+      peak != null ? `<span class="cchip" style="--c:${live ? OK_C : "#94a3b8"}">${esc(t("cvPeak", { x: this._num(peak, peak >= 100 ? 0 : 1) }))}</span>` : "");
+    let slow = "";
+    if (this._on("slowCharging") === true) {
+      const sa = this._s("slowCharging").attributes || {};
+      slow = `<div class="slowbox clickable" data-more="slowCharging">${icon("alert")}<div><b>${esc(t("slowTitle"))}</b>` +
+        `<small>${esc(t("slowSub", { now: this._num(sa.now_kw, 1), usual: this._num(sa.usual_kw, 1) }))}</small></div></div>`;
+    }
+    if (!points.length) return `${head}${slow}<div class="empty">${esc(t("cvEmpty"))}</div>`;
+    const top = Math.max(peak, ...usual.map((pt) => pt[1]), 1);
+    const hi = [4, 8, 12, 24, 50, 100, 150, 200, 250, 350].find((v) => v >= top * 1.05) || Math.ceil(top / 100) * 100;
+    const X = (soc) => f1(clamp(soc, 0, 100) * 10), Y = (kw) => f1((1 - clamp(kw / hi, 0, 1)) * 300);
+    // Each point is the average power over a 2 % slice of the battery.
+    const path = (pts) => pts.map(([soc, kw], i) => `${i ? "L" : "M"}${X(soc)} ${Y(kw)}`).join("") + `L${X(pts[pts.length - 1][0] + 2)} ${Y(pts[pts.length - 1][1])}`;
+    const line = path(points);
+    const area = `${line}L${X(points[points.length - 1][0] + 2)} 300L${X(points[0][0])} 300Z`;
+    const color = live ? OK_C : WARN_C;
+    const usualLine = usual.length ? `<path d="${path(usual)}" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-dasharray="6 6" vector-effect="non-scaling-stroke" opacity=".8"/>` : "";
+    const last = points[points.length - 1];
+    const dot = live ? `<span class="cvdot" style="left:calc(36px + (100% - 36px) * ${clamp(last[0] + 2, 0, 100) / 100});top:${f1((1 - clamp(last[1] / hi, 0, 1)) * 118)}px"></span>` : "";
+    const yl = [0, hi / 2, hi].map((v) => `<span class="yl" style="top:${f1((1 - v / hi) * 118)}px">${this._num(v, v % 1 ? 1 : 0)}</span>`).join("");
+    const legend = `<span><i style="--c:${color}"></i>${esc(live ? t("cvNow") : t("cvLast"))}</span>` +
+      (usual.length ? `<span><i class="dash" style="--c:#94a3b8"></i>${esc(t("cvUsual"))}</span>` : "");
+    return `${head}${slow}<div class="spd cv"><div class="sh">kW · ${esc(t("tabBattery"))} %<span>${esc(shown.dc ? "DC" : "AC")}${shown.start ? ` · ${esc(this._date(shown.start))}` : ""}</span></div>
+      <div class="spdbox">${yl}
+        <svg viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">
+          <defs><linearGradient id="lm-cva" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".32"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+          <line x1="0" x2="1000" y1="300" y2="300" stroke="rgba(148,163,184,.25)" vector-effect="non-scaling-stroke"/>
+          <line x1="0" x2="1000" y1="150" y2="150" stroke="rgba(148,163,184,.08)" vector-effect="non-scaling-stroke"/>
+          <line x1="500" x2="500" y1="0" y2="300" stroke="rgba(148,163,184,.08)" vector-effect="non-scaling-stroke"/>
+          <path d="${area}" fill="url(#lm-cva)"/>${usualLine}
+          <path d="${line}" fill="none" stroke="${color}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+        </svg>${dot}
+        <div class="xl"><span>0 %</span><span>50 %</span><span>100 %</span></div>
+      </div></div><div class="alegend">${legend}</div>`;
+  }
+
+  /* ----- charging history from the cloud ----- */
+
+  _sessionsHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const s = this._s("cloudCharging");
+    const a = s?.attributes || {};
+    const sessions = Array.isArray(a.sessions) ? a.sessions : [];
+    const head = this._head(t("chTitle"), "plug",
+      a.window_days ? `<span class="meta">${esc(t("chMeta", { n: a.window_days }))}</span>` : "");
+    if (!sessions.length) return `${head}<div class="empty">${esc(t("chEmpty"))}</div>`;
+    const currency = this._currency();
+    const m = a.month || {};
+    let summary = "";
+    if (m.sessions) {
+      const shared = (m.home_energy_kwh || 0) + (m.public_energy_kwh || 0);
+      const home = shared > 0 ? Math.round((m.home_energy_kwh || 0) / shared * 100) : null;
+      const bits = [t("chSessions", { n: m.sessions }), m.cost != null ? this._money(m.cost, currency) : null].filter(Boolean).join(" · ");
+      summary = `<div class="chsum"><div class="stat"><small>${esc(t("monthL"))}</small><b>${this._num(m.energy_kwh, 1)}<span>kWh</span></b><em>${esc(bits)}</em></div>` +
+        (home != null ? `<div class="stat"><small>${esc(t("tierHome"))}</small><b>${this._num(home)}<span>%</span></b><div class="hbar"><i style="width:${home}%"></i></div></div>` : "") + `</div>`;
+    }
+    const rows = sessions.slice(0, this._sessLimit).map((item) => {
+      const start = new Date(item.start);
+      const where = item.place || this._tierLabel(item.tier);
+      const bits = [item.duration_min != null ? this._dur(item.duration_min) : null,
+        item.avg_power_kw != null ? `${this._num(item.avg_power_kw, 1)} kW` : null, where || null].filter(Boolean);
+      const dc = item.type === "dc";
+      return `<div class="chrow"><div class="sd"><b>${esc(this._date(start))}</b><small>${esc(this._time(start))}</small></div>` +
+        `<div class="sm"><b>${item.energy_kwh != null ? this._num(item.energy_kwh, 1) : "—"}<small>kWh</small></b><span>${esc(bits.join(" · "))}</span></div>` +
+        `<div class="sx">${item.type ? `<span class="pill${dc ? " dc" : ""}">${dc ? "DC" : "AC"}</span>` : ""}${item.cost != null ? `<small>${esc(this._money(item.cost, currency))}</small>` : ""}</div></div>`;
+    });
+    const left = sessions.length - this._sessLimit;
+    const more = left > 0 ? `<button class="more" data-act="moresessions">${esc(t("showMore", { n: Math.min(10, left) }))}</button>` : "";
+    return `${head}${summary}<div class="chrows">${rows.join("")}</div>${more}`;
+  }
+
+  /* ----- car software, schedules, permissions ----- */
+
+  _softwareHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const sw = this._s("software");
+    const a = sw?.attributes || {};
+    const perm = this._s("permissions")?.attributes || {};
+    const head = this._head(t("swTitle"), "chip");
+    let body;
+    if (sw && a.installed_version) {
+      const update = sw.state === "on" && a.latest_version && a.latest_version !== a.installed_version;
+      const since = a.installed_at ? ` · ${t("swSince", { d: this._date(a.installed_at, { day: "numeric", month: "short", year: "numeric" }) })}` : "";
+      const size = update && a.update_size_mb ? ` · ${t("swSize", { x: this._num(a.update_size_mb) })}` : "";
+      body = `<div class="summary clickable${update ? " warn" : ""}" data-more="software"><div class="sq">${icon(update ? "download" : "check")}</div><div>` +
+        `<b>${esc(update ? t("swUpdate") : t("swUpToDate"))}</b>` +
+        `<span>${esc(update ? t("swNew", { v: a.latest_version }) + size : t("swInstalled", { v: a.installed_version }) + since)}</span></div></div>`;
+      if (update) body += `<div class="foot" style="margin:-4px 2px 10px">${esc(t("swInstalled", { v: a.installed_version }) + since)}</div>`;
+      const notes = Array.isArray(a.notes) ? a.notes.filter((x) => x && (x.title || x.content)).slice(0, 4) : [];
+      if (notes.length) {
+        body += `<div class="subh">${esc(t("swNotes"))}</div><div class="notes">${notes.map((x) =>
+          `<div class="nrow">${x.title ? `<b>${esc(x.title)}</b>` : ""}${x.content ? `<p>${esc(x.content)}</p>` : ""}</div>`).join("")}</div>`;
+      }
+    } else {
+      body = `<div class="cnone" style="margin-top:0">${esc(perm.shared ? t("swOwnerOnly") : t("swUnknown"))}</div>`;
+    }
+    // Climate schedules read back from the car.
+    const schedules = this._a("nextSchedule", "schedules") || {};
+    const entries = [...(schedules.climate || []), ...(schedules.prepare_car || [])];
+    if (this._s("nextSchedule")) {
+      const next = this._ts("nextSchedule");
+      const dayList = (days) => {
+        if (!days || !days.length || days.length === 7) return t("schedDaily");
+        // The app counts Sunday as 0.
+        return days.map((d) => this._weekday((d + 6) % 7, "short").replace(".", "")).join(" ");
+      };
+      const rows = entries.map((e) => {
+        const what = e.kind === "climate"
+          ? [{ heat: t("modeHeat"), cool: t("modeCool"), fan: t("modeFan") }[e.mode], e.temperature != null ? `${this._num(e.temperature)} °C` : null].filter(Boolean).join(" ")
+          : (e.name || t("autoCabin"));
+        return `<div class="schrow${e.enabled === false ? " off" : ""}"><b>${esc(e.time ? this._clock(e.time) : "—")}</b>` +
+          `<span>${esc([dayList(e.days), what].filter(Boolean).join(" · "))}</span>${e.enabled === false ? `<span class="pill warn">${esc(t("schedOff"))}</span>` : ""}</div>`;
+      });
+      body += `<div class="subh clickable" data-more="nextSchedule">${esc(t("schedTitle"))}${next ? `<span class="subm">${esc(t("schedNext", { t: `${this._weekday((new Date(next).getDay() + 6) % 7, "short")} ${this._time(new Date(next))}` }))}</span>` : ""}</div>` +
+        (rows.length ? `<div class="schrows">${rows.join("")}</div>` : `<div class="foot" style="margin-top:0">${esc(t("schedNone"))}</div>`);
+    }
+    if (perm.shared && Array.isArray(perm.rights) && perm.rights.length) {
+      const labels = RIGHT_LABELS[this._lang.split("-")[0]] || RIGHT_LABELS.en;
+      const chips = perm.rights.map((r) => labels[r]).filter(Boolean);
+      if (chips.length) {
+        body += `<div class="subh clickable" data-more="permissions">${esc(t("permTitle"))}<span class="subm">${esc(t("permShared"))}</span></div>` +
+          `<div class="pchips">${chips.map((c) => `<span>${esc(c)}</span>`).join("")}</div>`;
+      }
+    }
+    return `${head}${body}`;
+  }
+
+  /* ----- messages from the car ----- */
+
+  _inboxHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const s = this._s("inbox");
+    const messages = Array.isArray(s?.attributes?.messages) ? s.attributes.messages : [];
+    const unread = this._v("inbox");
+    const head = this._head(t("ibTitle"), "mail",
+      unread ? `<span class="cchip clickable" data-more="inbox" style="--c:${WARN_C}">${esc(t("ibUnread", { n: this._num(unread) }))}</span>` : "");
+    if (!messages.length) return `${head}<div class="empty">${esc(t("ibEmpty"))}</div>`;
+    const rows = messages.slice(0, this._inboxLimit).map((msg) => {
+      const when = msg.ts ? msg.ts * 1000 : Date.parse(msg.time);
+      return `<div class="mrow2${msg.read === false ? " unread" : ""}"><i></i><div><b>${esc(msg.title || msg.message || "")}</b>` +
+        `${msg.title && msg.message ? `<p>${esc(msg.message)}</p>` : ""}</div><small>${isFinite(when) ? esc(this._ago(when)) : ""}</small></div>`;
+    });
+    const left = messages.length - this._inboxLimit;
+    const more = left > 0 ? `<button class="more" data-act="moremessages">${esc(t("showMore", { n: Math.min(10, left) }))}</button>` : "";
+    return `${head}<div class="mrows2">${rows.join("")}</div>${more}`;
+  }
+
+  /* ----- journey: a year of driving ----- */
+
+  /** One heat-map of the last `weeks` weeks; a column is a week, Monday on top. */
+  _calendarSvg(start, km, weeks, cap) {
+    const cols = Math.ceil(km.length / 7);
+    const first = Math.max(0, cols - weeks);
+    const STEP = 15, CELL = 12, LEFT = 30, TOP = 18;
+    let dayFmt, monthFmt;
+    try {
+      dayFmt = new Intl.DateTimeFormat(this._lang, { weekday: "short", day: "numeric", month: "short" });
+      monthFmt = new Intl.DateTimeFormat(this._lang, { month: "short" });
+    } catch (_e) {
+      dayFmt = new Intl.DateTimeFormat("en", { weekday: "short", day: "numeric", month: "short" });
+      monthFmt = new Intl.DateTimeFormat("en", { month: "short" });
+    }
+    let cells = "", labels = "", lastMonth = -1, lastLabelX = -100;
+    for (let col = first; col < cols; col++) {
+      const x = LEFT + (col - first) * STEP;
+      const monday = new Date(start.getFullYear(), start.getMonth(), start.getDate() + col * 7, 12);
+      if (monday.getMonth() !== lastMonth) {
+        lastMonth = monday.getMonth();
+        if (x - lastLabelX >= 30) {
+          labels += `<text x="${x}" y="11">${esc(monthFmt.format(monday).replace(".", ""))}</text>`;
+          lastLabelX = x;
+        }
+      }
+      for (let row = 0; row < 7; row++) {
+        const index = col * 7 + row;
+        if (index >= km.length) break;
+        const value = km[index];
+        const level = value < 0 ? "u" : value < 1 ? 0 : 1 + Math.min(3, Math.floor((value / cap) * 4 - 1e-9));
+        const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + index, 12);
+        const tip = `${dayFmt.format(date)}${value >= 0 ? ` · ${this._num(value)} km` : ""}`;
+        cells += `<rect x="${x}" y="${TOP + row * STEP}" width="${CELL}" height="${CELL}" rx="3" class="c${level}"><title>${esc(tip)}</title></rect>`;
+      }
+    }
+    const side = [0, 2, 4].map((row) =>
+      `<text x="0" y="${TOP + row * STEP + 10}">${esc(this._weekday(row, "short").replace(".", ""))}</text>`).join("");
+    const width = LEFT + (cols - first) * STEP;
+    return `<svg viewBox="0 0 ${width} ${TOP + 7 * STEP}" role="img" aria-label="${esc(this._tr("calTitle"))}">${labels}${side}${cells}</svg>`;
+  }
+
+  _calendarHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const a = this._s("yearDistance")?.attributes || {};
+    const cal = a.calendar;
+    const km = Array.isArray(cal?.km) ? cal.km : [];
+    const start = this._day(cal?.start);
+    const driven = km.filter((v) => v >= 1);
+    const total = km.reduce((sum, v) => sum + (v > 0 ? v : 0), 0);
+    const head = this._head(t("calTitle"), "calendarHeart",
+      driven.length ? `<span class="meta">${esc(t("calTotal", { km: this._num(total), d: this._num(driven.length) }))}</span>` : "");
+    if (!km.length || !isFinite(start) || !km.some((v) => v >= 0)) return `${head}<div class="empty">${esc(t("calNoData"))}</div>`;
+    const sorted = [...driven].sort((x, y) => x - y);
+    const cap = Math.max(10, sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.9))] : 10);
+    const legend = `<div class="callegend"><span>${esc(t("calLess"))}</span>${[0, 1, 2, 3, 4].map((l) => `<i class="c${l}"></i>`).join("")}<span>${esc(t("calMore"))}</span></div>`;
+    // Months: one bar per month, the current one highlighted.
+    const months = Array.isArray(a.months) ? a.months : [];
+    let bars = "";
+    if (months.some((m) => m.km > 0)) {
+      const top = Math.max(1, ...months.map((m) => m.km || 0));
+      bars = `<div class="subh">${esc(t("monthsTitle"))}</div><div class="mbars">${months.map((m, index) => {
+        const date = this._day(m.month);
+        const label = this._date(date, { month: "short" }).replace(".", "");
+        const tip = `${this._date(date, { month: "long", year: "numeric" })} · ${this._num(m.km)} km${m.kwh != null ? ` · ${this._num(m.kwh)} kWh` : ""}`;
+        return `<div class="mb${index === months.length - 1 ? " now" : ""}" title="${esc(tip)}"><span>${m.km >= 1 ? this._num(m.km) : ""}</span>` +
+          `<i style="height:${Math.max(m.km > 0 ? 4 : 0, (m.km / top) * 100)}%"></i><small>${esc(label)}</small></div>`;
+      }).join("")}</div>`;
+    }
+    return `${head}<div class="cal"><div class="calfull">${this._calendarSvg(start, km, 54, cap)}</div>` +
+      `<div class="calhalf">${this._calendarSvg(start, km, 22, cap)}</div></div>${legend}${bars}`;
+  }
+
+  /* ----- journey: totals, records and savings ----- */
+
+  _recordsHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const a = this._s("yearDistance")?.attributes || {};
+    const totals = a.totals || {}, rec = a.records || {}, year = a.year || {};
+    const head = this._head(t("recTitle"), "trophy");
+    const stat = (label, value, unit, sub = "", more = "") =>
+      `<div class="stat${more ? " clickable" : ""}"${more ? ` data-more="${more}"` : ""}><small>${esc(label)}</small><b>${value}${unit ? `<span>${esc(unit)}</span>` : ""}</b>${sub ? `<em>${esc(sub)}</em>` : ""}</div>`;
+    const stats = [];
+    if (totals.odometer_km != null) {
+      stats.push(stat(t("recOdo"), this._num(totals.odometer_km), "km",
+        totals.earth_laps != null && totals.earth_laps >= 0.05 ? t("recEarth", { x: this._num(totals.earth_laps, 2) }) : "", "odometer"));
+    }
+    if (year.km != null && year.km > 0) {
+      stats.push(stat(`${t("recYear")} ${year.year || ""}`.trim(), this._num(year.km), "km",
+        year.projected_km ? t("recProjected", { x: this._num(year.projected_km) }) : "", "yearDistance"));
+    }
+    const life = this._v("lifetimeConsumption");
+    if (life != null) stats.push(stat(t("recAvg"), this._num(life, 1), "kWh/100 km", "", "lifetimeConsumption"));
+    if (totals.lifetime_energy_kwh != null) stats.push(stat(t("recEnergy"), this._num(totals.lifetime_energy_kwh), "kWh"));
+    if (totals.km_per_day != null) stats.push(stat(t("recPerDay"), this._num(totals.km_per_day, 1), "km"));
+
+    const rows = [];
+    const row = (ic, color, label, value, sub = "") => rows.push(
+      `<div class="irow" style="--c:${color}"><span class="sq">${icon(ic)}</span><div><b>${esc(label)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</div><span class="mono">${esc(value)}</span></div>`);
+    const day = (text) => (text ? this._date(this._day(text), { day: "numeric", month: "short", year: "numeric" }) : "");
+    if (rec.longest_day) row("road", "#38bdf8", t("recLongestDay"), `${this._num(rec.longest_day.km)} km`, day(rec.longest_day.date));
+    if (rec.longest_trip) row("route", "#a78bfa", t("recLongestTrip"), `${this._num(rec.longest_trip.km, 1)} km`, day(rec.longest_trip.date));
+    if (rec.most_efficient_trip) {
+      row("leaf", "#34d399", t("recBestTrip"), `${this._num(rec.most_efficient_trip.kwh_100km, 1)} kWh/100`,
+        [day(rec.most_efficient_trip.date), rec.most_efficient_trip.km != null ? `${this._num(rec.most_efficient_trip.km, 1)} km` : ""].filter(Boolean).join(" · "));
+    }
+    if (rec.best_streak_days) row("spark", "#fbbf24", t("recStreak"), t("recStreakDays", { n: this._num(rec.best_streak_days) }));
+    if (rec.busiest_month) row("calendar", "#5eead4", t("recBusiest"), `${this._num(rec.busiest_month.km)} km`, this._date(this._day(rec.busiest_month.month), { month: "long", year: "numeric" }));
+    if (rec.top_speed) row("gauge", "#fb7185", t("recTopSpeed"), `${this._num(rec.top_speed.kmh)} km/h`, day(rec.top_speed.date));
+    if (rec.biggest_charge) row("battery", "#34d399", t("recBigCharge"), `${this._num(rec.biggest_charge.kwh, 1)} kWh`, day(rec.biggest_charge.date));
+    if (rec.fastest_charge) row("bolt", "#f6a823", t("recFastCharge"), `${this._num(rec.fastest_charge.kw, 1)} kW`, day(rec.fastest_charge.date));
+    if (rec.coldest_drive_c != null) row("snow", "#7dd3fc", t("recColdest"), `${this._num(rec.coldest_drive_c, 1)} °C`);
+
+    // Against a petrol car driving the same distance.
+    const sv = this._s("fuelSavingsTotal")?.attributes || {};
+    const assume = this._s("co2Total")?.attributes || {};
+    const litres = this._v("fuelAvoided");
+    const co2 = this._v("co2Total");
+    const money = this._v("fuelSavingsTotal");
+    let savings = "";
+    if (litres != null || co2 != null || money != null) {
+      const currency = this._currency();
+      const tiles = [];
+      const month = this._v("fuelSavings");
+      if (money != null) tiles.push(stat(t("savMoney"), esc(this._money(money, currency)), "", month != null ? `${this._money(month, currency)} ${t("savMonth")}` : t("savLife"), "fuelSavingsTotal"));
+      if (litres != null) tiles.push(stat(t("savFuel"), this._num(litres), "l", t("savLife"), "fuelAvoided"));
+      if (co2 != null) {
+        const tons = Math.abs(co2) >= 1000;
+        tiles.push(stat(t("savCo2"), this._num(tons ? co2 / 1000 : co2, tons ? 2 : 0), tons ? "t" : "kg", t("savLife"), "co2Total"));
+      }
+      const note = [
+        assume.fuel_l_100km != null && assume.grid_co2_g_kwh != null
+          ? t("savAssume", { l: this._num(assume.fuel_l_100km, 1), g: this._num(assume.grid_co2_g_kwh) }) : "",
+        money == null && sv.fuel_cost == null ? t("savSetPrice") : "",
+      ].filter(Boolean).join(" ");
+      savings = `<div class="subh">${esc(t("savTitle"))}</div><div class="stats">${tiles.join("")}</div>${note ? `<div class="foot">${esc(note)}</div>` : ""}`;
+    }
+    if (!stats.length && !rows.length && !savings) return `${head}<div class="empty">${esc(t("recNone"))}</div>`;
+    return `${head}${stats.length ? `<div class="stats">${stats.join("")}</div>` : ""}` +
+      `${rows.length ? `<div class="recrows">${rows.join("")}</div>` : ""}${savings}`;
+  }
+
+  /* ----- journey: achievements ----- */
+
+  _badgesHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const badges = this._a("achievements", "badges");
+    if (!Array.isArray(badges) || !badges.length) return `${this._head(t("bdTitle"), "medal")}<div class="empty">${esc(t("recNone"))}</div>`;
+    const levels = this._t.bdLevels || STRINGS.en.bdLevels;
+    const colors = ["#64748b", "#d08a4e", "#cbd5e1", "#fbbf24"];
+    const earned = badges.filter((b) => b.level > 0).length;
+    const tiles = badges.map((b) => {
+      const level = clamp(b.level || 0, 0, 3);
+      const digits = b.id === "full_cycles" || b.id === "frost" ? 1 : 0;
+      const value = b.value != null ? this._num(b.value, Number.isInteger(b.value) ? 0 : digits) : "—";
+      const next = b.next != null ? ` · ${esc(t("bdNext", { x: this._num(b.next) }))}` : "";
+      return `<div class="badge l${level}" style="--c:${colors[level]}" title="${esc(t(`bdd_${b.id}`))}">` +
+        `<span class="bring" style="--p:${Math.round(clamp(b.progress ?? 0, 0, 1) * 100)}">${icon("medal")}</span>` +
+        `<div><b>${esc(t(`bd_${b.id}`))}</b><small>${esc(level ? levels[level] : t(`bdd_${b.id}`))}</small>` +
+        `<em><span>${value}</span>${next}</em></div></div>`;
+    });
+    return `${this._head(t("bdTitle"), "medal", `<span class="meta">${esc(t("bdEarned", { n: earned, m: badges.length }))}</span>`)}` +
+      `<div class="badgegrid clickable" data-more="achievements">${tiles.join("")}</div>`;
+  }
+
+  /* ----- journey: range lab ----- */
+
+  /**
+   * Consumption at a steady speed and outside temperature, as a shape:
+   * rolling resistance, air drag (with the square of speed) and the power the
+   * climate and electronics draw, which weighs more the slower the car goes.
+   * It is scaled to the driver's own average, so only the shape matters.
+   */
+  _labModel(speed, temp, climate) {
+    const aux = 0.35 + (climate ? (temp < 20 ? (20 - temp) * 0.11 : (temp - 20) * 0.07) : 0); // kW
+    return 5.2 + 0.00095 * speed * speed + (aux / Math.max(speed, 10)) * 100;
+  }
+
+  _labBase() {
+    const ra = this._s("realRange")?.attributes || {};
+    const own = Number(ra.consumption_kwh_100km) || this._v("lifetimeConsumption") || this._v("avg");
+    if (!own || own <= 0) return null;
+    // The driver's average belongs to their usual pace: the mean speed of recent trips.
+    const trips = (this._a("lastTrip", "recent_trips") || []).filter((x) => x.avg_speed_kmh > 0 && x.distance_km > 0);
+    const km = trips.reduce((sum, x) => sum + x.distance_km, 0);
+    const pace = km > 0 ? clamp(trips.reduce((sum, x) => sum + x.avg_speed_kmh * x.distance_km, 0) / km, 30, 90) : 55;
+    const outside = this._v("outdoor");
+    const soc = this._v("batteryPrecise") ?? this._v("battery");
+    let energy = Number(ra.energy_kwh) || this._v("availableEnergy");
+    let capacity = ra.full_km ? (ra.full_km * own) / 100 : null;
+    if (!capacity && energy && soc && soc >= 20) capacity = (energy / soc) * 100;
+    if (!energy && capacity && soc != null) energy = (capacity * soc) / 100;
+    return { own, pace, outside: outside ?? 15, soc, energy: energy || null, capacity: capacity || null };
+  }
+
+  _labResult() {
+    const base = this._labBase();
+    if (!base) return null;
+    const lab = this._lab || (this._lab = { speed: 90, temp: Math.round(base.outside), climate: true });
+    const factor = base.own / this._labModel(base.pace, base.outside, true);
+    const cons = factor * this._labModel(lab.speed, lab.temp, lab.climate);
+    return { cons, now: base.energy ? (base.energy / cons) * 100 : null, full: base.capacity ? (base.capacity / cons) * 100 : null, soc: base.soc };
+  }
+
+  _labOutHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const r = this._labResult();
+    if (!r) return "";
+    const shown = r.now ?? r.full;
+    return `<div class="rlbig">${shown != null ? this._num(shown) : "—"}<small>km</small></div>` +
+      `<div class="rlsub">${esc(r.now != null && r.soc != null ? t("rlNow", { p: this._num(r.soc) }) : t("rlFull"))}` +
+      `${r.now != null && r.full != null ? ` · <b>${this._num(r.full)} km</b> ${esc(t("rlFull"))}` : ""}</div>` +
+      `<div class="rlcons"><b>${this._num(r.cons, 1)}</b> kWh/100 km</div>`;
+  }
+
+  /** Range over steady speed for the chosen temperature, with the chosen speed marked. */
+  _labChartHtml() {
+    const base = this._labBase();
+    const lab = this._lab;
+    if (!base || !lab) return "";
+    const energy = base.energy || base.capacity;
+    if (!energy) return "";
+    const factor = base.own / this._labModel(base.pace, base.outside, true);
+    const range = (v) => (energy / (factor * this._labModel(v, lab.temp, lab.climate))) * 100;
+    const speeds = [];
+    for (let v = 30; v <= 130; v += 5) speeds.push(v);
+    const values = speeds.map(range);
+    const hi = Math.ceil(Math.max(...values) / 50) * 50;
+    const X = (v) => f1(((v - 30) / 100) * 1000), Y = (km) => f1((1 - km / hi) * 300);
+    const line = speeds.map((v, i) => `${i ? "L" : "M"}${X(v)} ${Y(values[i])}`).join("");
+    const now = range(lab.speed);
+    const yl = [0, hi / 2, hi].map((v) => `<span class="yl" style="top:${f1((1 - v / hi) * 118)}px">${this._num(v)}</span>`).join("");
+    return `<div class="spdbox">${yl}
+      <svg viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">
+        <defs><linearGradient id="lm-rla" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6a823" stop-opacity=".3"/><stop offset="1" stop-color="#f6a823" stop-opacity="0"/></linearGradient></defs>
+        <line x1="0" x2="1000" y1="300" y2="300" stroke="rgba(148,163,184,.25)" vector-effect="non-scaling-stroke"/>
+        <line x1="0" x2="1000" y1="150" y2="150" stroke="rgba(148,163,184,.08)" vector-effect="non-scaling-stroke"/>
+        <path d="${line}L1000 300L0 300Z" fill="url(#lm-rla)"/>
+        <path d="${line}" fill="none" stroke="#f6b13d" stroke-width="2.6" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+        <line x1="${X(lab.speed)}" x2="${X(lab.speed)}" y1="${Y(now)}" y2="300" stroke="#f6a823" stroke-width="1.2" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"/>
+      </svg>
+      <span class="cvdot" style="background:var(--lm-amber);box-shadow:0 0 10px var(--lm-amber);animation:none;left:calc(36px + (100% - 36px) * ${((lab.speed - 30) / 100).toFixed(3)});top:${f1((1 - now / hi) * 118)}px"></span>
+      <div class="xl"><span>30</span><span>80</span><span>130 km/h</span></div></div>`;
+  }
+
+  _rangelabHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const head = this._head(t("rlTitle"), "flask");
+    if (!this._labResult()) return `${head}<div class="empty">${esc(t("rlNeedData"))}</div>`;
+    const lab = this._lab;
+    return `${head}<div class="rl"><div class="rlout" id="rlout" aria-live="polite">${this._labOutHtml()}</div>
+      <div class="spd rlchart" id="rlchart">${this._labChartHtml()}</div>
+      <label class="rls"><span>${esc(t("rlSpeed"))}<b id="rlv-speed">${this._num(lab.speed)} km/h</b></span>
+        <input type="range" min="30" max="130" step="5" value="${lab.speed}" data-lab="speed" aria-label="${esc(t("rlSpeed"))}"></label>
+      <label class="rls"><span>${esc(t("rlTemp"))}<b id="rlv-temp">${this._num(lab.temp)} °C</b></span>
+        <input type="range" min="-15" max="35" step="1" value="${lab.temp}" data-lab="temp" aria-label="${esc(t("rlTemp"))}"></label>
+      <button type="button" class="rlt${lab.climate ? " on" : ""}" data-act="labclimate" aria-pressed="${lab.climate}">${icon("fan")}<span>${esc(t("rlClimate"))} · ${esc(lab.climate ? t("on") : t("off"))}</span></button>
+      <div class="foot">${esc(t("rlNote"))}</div></div>`;
+  }
+
+  _onInput(ev) {
+    const el = ev.composedPath().find((node) => node instanceof HTMLInputElement && (node.dataset?.lab || node.dataset?.replay));
+    if (!el) return;
+    if (el.dataset.replay) {
+      this._seekReplay(Number(el.value) / 1000);
+      return;
+    }
+    if (!this._lab) return;
+    this._lab[el.dataset.lab] = Number(el.value);
+    const out = this.shadowRoot.getElementById("rlout");
+    if (out) out.innerHTML = this._labOutHtml();
+    const chart = this.shadowRoot.getElementById("rlchart");
+    if (chart) chart.innerHTML = this._labChartHtml();
+    const label = this.shadowRoot.getElementById(`rlv-${el.dataset.lab}`);
+    if (label) label.textContent = el.dataset.lab === "speed" ? `${this._num(this._lab.speed)} km/h` : `${this._num(this._lab.temp)} °C`;
+  }
+
+  /* ----- trip replay on the map ----- */
+
+  /** Position and speed at a share (0…1) of the recorded route. */
+  _replayPoint(tr, share) {
+    const pts = tr.points;
+    const a = pts[0][0], b = pts[pts.length - 1][0];
+    const at = a + clamp(share, 0, 1) * Math.max(1, b - a);
+    let lat = pts[pts.length - 1][1], lon = pts[pts.length - 1][2];
+    for (let i = 1; i < pts.length; i++) {
+      if (pts[i][0] >= at) {
+        const k = pts[i][0] > pts[i - 1][0] ? (at - pts[i - 1][0]) / (pts[i][0] - pts[i - 1][0]) : 0;
+        lat = pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * k;
+        lon = pts[i - 1][2] + (pts[i][2] - pts[i - 1][2]) * k;
+        break;
+      }
+    }
+    return { at, lat, lon, speed: tr.speeds && tr.speeds.length ? valueAt(tr.speeds, at) : null };
+  }
+
+  _replayTrack() {
+    const tr = this._track;
+    return tr && tr.state === "ok" && tr.key === this._tripKey(this._mapSelected()) && tr.points.length >= 3 ? tr : null;
+  }
+
+  _replayHtml(tr) {
+    if (!tr || tr.state !== "ok" || tr.points.length < 3) return "";
+    const label = esc(this._tr("replay"));
+    return `<div class="replay"><button type="button" class="rpb" data-act="replay" aria-label="${label}">${icon("play")}<span>${label}</span></button>` +
+      `<input type="range" class="rps" min="0" max="1000" step="1" value="0" data-replay="1" aria-label="${label}"><span class="rpi" id="rpinfo"></span></div>`;
+  }
+
+  _toggleReplay() {
+    const tr = this._replayTrack();
+    if (!tr) return;
+    const state = this._replay && this._replay.key === tr.key ? this._replay : (this._replay = { key: tr.key, share: 0, playing: false, raf: 0, last: 0 });
+    if (state.playing) {
+      state.playing = false;
+      cancelAnimationFrame(state.raf);
+    } else {
+      if (state.share >= 1) state.share = 0;
+      state.playing = true;
+      state.last = 0;
+      const frame = (now) => {
+        if (!state.playing || this._replay !== state) return;
+        if (state.last) state.share = Math.min(1, state.share + (now - state.last) / 12000);
+        state.last = now;
+        this._applyReplay(tr, state.share);
+        if (state.share >= 1) {
+          state.playing = false;
+          this._replayButton(false);
+          return;
+        }
+        state.raf = requestAnimationFrame(frame);
+      };
+      state.raf = requestAnimationFrame(frame);
+    }
+    this._replayButton(state.playing);
+  }
+
+  _replayButton(playing) {
+    const button = this.shadowRoot.querySelector(".rpb");
+    if (!button) return;
+    const label = this._tr(playing ? "replayPause" : "replay");
+    button.innerHTML = `${icon(playing ? "pause" : "play")}<span>${esc(label)}</span>`;
+    button.setAttribute("aria-label", label);
+    button.classList.toggle("on", playing);
+  }
+
+  _seekReplay(share) {
+    const tr = this._replayTrack();
+    if (!tr) return;
+    if (!this._replay || this._replay.key !== tr.key) this._replay = { key: tr.key, share: 0, playing: false, raf: 0, last: 0 };
+    this._replay.share = clamp(share, 0, 1);
+    this._replay.last = 0;
+    this._applyReplay(tr, this._replay.share, true);
+  }
+
+  /** Move the marker on the map, the cursor in the speed chart and the read-out. */
+  _applyReplay(tr, share, fromSlider = false) {
+    const root = this.shadowRoot;
+    const box = root.getElementById("mapbox");
+    if (!box) return;
+    const p = this._replayPoint(tr, share);
+    const map = box.querySelector("ha-map");
+    const svg = box.querySelector(".routesvg");
+    try {
+      if (map && map.Leaflet && map.leafletMap) {
+        if (!box.__rpMarker) {
+          box.__rpMarker = map.Leaflet.circleMarker([p.lat, p.lon],
+            { radius: 8, color: "#0b1224", weight: 3, fillColor: "#ffffff", fillOpacity: 1, interactive: false }).addTo(map.leafletMap);
+        }
+        box.__rpMarker.setLatLng([p.lat, p.lon]);
+      } else if (svg && svg.dataset.proj) {
+        const j = JSON.parse(svg.dataset.proj);
+        let dot = svg.querySelector(".rpdot");
+        if (!dot) {
+          dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          dot.setAttribute("class", "rpdot");
+          dot.setAttribute("r", "8");
+          svg.appendChild(dot);
+        }
+        dot.setAttribute("cx", f1(j.ox + (p.lon * j.kx - j.minX) * j.scale));
+        dot.setAttribute("cy", f1(j.oy + (-p.lat - j.minY) * j.scale));
+      }
+    } catch (_e) {
+      // The map is not ready; the read-out below still follows.
+    }
+    const slider = root.querySelector(".rps");
+    if (slider && !fromSlider) slider.value = String(Math.round(share * 1000));
+    const info = root.getElementById("rpinfo");
+    if (info) info.textContent = `${this._time(new Date(p.at))}${p.speed != null ? ` · ${this._num(p.speed)} km/h` : ""}`;
+    const chart = root.querySelector(".map .spdbox");
+    if (chart && isFinite(tr.t0) && tr.t1 > tr.t0) {
+      let cursor = chart.querySelector(".rpcur");
+      if (!cursor) {
+        cursor = document.createElement("i");
+        cursor.className = "rpcur";
+        chart.appendChild(cursor);
+      }
+      cursor.style.left = `calc(36px + (100% - 36px) * ${clamp((p.at - tr.t0) / (tr.t1 - tr.t0), 0, 1).toFixed(4)})`;
+    }
+  }
+
+  _stopReplay() {
+    if (this._replay) cancelAnimationFrame(this._replay.raf);
+    this._replay = null;
+    const box = this.shadowRoot?.getElementById("mapbox");
+    if (box) {
+      try {
+        box.__rpMarker?.remove();
+      } catch (_e) { /* the map is already gone */ }
+      box.__rpMarker = null;
+      box.querySelector(".rpdot")?.remove();
+    }
+    this.shadowRoot?.querySelector(".rpcur")?.remove();
+  }
+
+  /* ----- trip log export ----- */
+
+  async _exportCsv() {
+    if (this._busy.csv) return;
+    this._busy.csv = true;
+    let trips = null;
+    try {
+      const res = await this._hass.callWS({
+        type: "call_service", domain: "leapmotor", service: "get_trips",
+        service_data: { entity_id: this._ids.lastTrip, limit: 500 }, return_response: true,
+      });
+      trips = res?.response?.trips;
+    } catch (_e) {
+      trips = null; // an older integration version: export what the card shows
+    }
+    if (!Array.isArray(trips) || !trips.length) trips = this._a("lastTrip", "recent_trips") || [];
+    delete this._busy.csv;
+    if (!trips.length) return;
+    const cols = ["start", "end", "from", "to", "distance_km", "duration_min", "energy_kwh", "consumption_kwh_100km",
+      "avg_speed_kmh", "max_speed_kmh", "start_soc", "end_soc", "outdoor_temp_c", "eco_score"];
+    const cell = (value) => {
+      if (value == null) return "";
+      if (typeof value === "number") return String(value);
+      // Text never starts a formula in a spreadsheet.
+      const text = /^[=+\-@\t\r]/.test(String(value)) ? `'${value}` : String(value);
+      return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    };
+    // Local date and time, in the form spreadsheets read as a date.
+    const stamp = (value) => {
+      const d = new Date(value);
+      if (!value || Number.isNaN(d.getTime())) return value;
+      const two = (n) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}`;
+    };
+    try {
+      const lines = [cols.join(","), ...trips.map((trip) => cols.map((c) => cell(c === "start" || c === "end" ? stamp(trip[c]) : trip[c])).join(","))];
+      const blob = new Blob(["﻿" + lines.join("\r\n") + "\r\n"], { type: "text/csv;charset=utf-8" });
+      const link = document.createElement("a");
+      const now = new Date();
+      link.href = URL.createObjectURL(blob);
+      link.download = `leapmotor-trips-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(link.href), 60 * 1000);
+      this._lastCsv = lines.join("\r\n");
+      this._toast(this._tr("exported", { n: trips.length }));
+    } catch (err) {
+      this._toast(this._tr("failed", { x: err?.message || String(err) }));
+    }
+  }
+
   /* ----- interaction ----- */
 
   _isArmed(key) {
@@ -3934,6 +5460,7 @@ class LeapmotorCard extends HTMLElement {
     const el = ev.composedPath().find((n) => n instanceof HTMLElement && (n.dataset?.act || n.dataset?.more || n.dataset?.trip));
     if (!el) return;
     if (el.dataset.trip) {
+      this._stopReplay();
       this._mapSel = el.dataset.trip === "live" ? "live" : Number(el.dataset.trip);
       this._renderSection("trips");
       this._renderSection("map");
@@ -3951,6 +5478,30 @@ class LeapmotorCard extends HTMLElement {
     if (act === "moretrips") {
       this._tripLimit += 10;
       this._renderSection("trips");
+      return;
+    }
+    if (act === "moretimeline") {
+      this._tlLimit += 10;
+      this._renderSection("timeline");
+      return;
+    }
+    if (act === "moresessions") {
+      this._sessLimit += 10;
+      this._renderSection("sessions");
+      return;
+    }
+    if (act === "moremessages") {
+      this._inboxLimit += 10;
+      this._renderSection("inbox");
+      return;
+    }
+    if (act === "replay") return this._toggleReplay();
+    if (act === "exportcsv") return this._exportCsv();
+    if (act === "labclimate") {
+      if (!this._lab) return;
+      this._lab.climate = !this._lab.climate;
+      this._sigs.rangelab = null;
+      this._renderSection("rangelab");
       return;
     }
     if (act === "tab") {
@@ -4098,7 +5649,7 @@ if (!customElements.get("leapmotor-card")) {
     name: "Leapmotor",
     description: "Dashboard for your Leapmotor in three looks (night sky, driver display, car app): remote controls, trips with maps, charging and vehicle care.",
     preview: true,
-    documentationURL: "https://github.com/sabotin/leapmotor/blob/main/docs/card.md",
+    documentationURL: "https://github.com/Sabotin/LeapBridge/blob/main/docs/card.md",
   });
   console.info(`%c LEAPMOTOR-CARD %c ${CARD_VERSION} `, "color:#1a1206;background:#f6a823;font-weight:700;border-radius:4px 0 0 4px;padding:2px 6px", "color:#f6a823;background:#0f1729;border-radius:0 4px 4px 0;padding:2px 6px");
 }

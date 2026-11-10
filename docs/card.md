@@ -19,17 +19,24 @@ follows the language and units of your Home Assistant profile.
 
 ## Pages
 
-The card is split into four pages with tabs at the top, plus a **Settings** tab. A dot on a tab shows
+The card is split into five pages with tabs at the top, plus a **Settings** tab. A dot on a tab shows
 when something on that page needs a look (open door, charging, driving,
-maintenance or tires).
+maintenance, tires, slow charging or a software update).
 
 | Page | Panels |
 | --- | --- |
-| **Overview** | Car and battery (with quick buttons), vehicle check, remote control |
-| **Trips** | Trip details (map, stats, speed chart), trip log grouped by day, last 7 days |
-| **Charging** | Charging with charge limit and charging controls, last 24 hours, battery & efficiency |
-| **Vehicle** | Maintenance, tires, insights |
+| **Overview** | Car and battery (with quick buttons), outlook, vehicle check, last 24 hours, remote control |
+| **Trips** | Trip details (map, replay, stats, speed chart), trip log grouped by day, last 7 days, frequent routes |
+| **Charging** | Charging with charge limit and charging controls, last 24 hours, battery & efficiency, charging curve, charging history |
+| **Vehicle** | Maintenance, tires, insights, car software, messages |
+| **Journey** | A year of driving, totals & records, range lab, achievements |
 | **Settings** (gear) | Theme, day or night, and language for you (see [Settings](#settings)) |
+
+<img src="images/en/journey.png" alt="Journey page: a year of driving, records, range lab and achievements" width="100%">
+
+On a new installation the panels that learn from your driving (outlook,
+frequent routes, records, achievements, the calendar) start with a short note
+and fill up over the first days and weeks.
 
 The card always opens on **Overview** (set `page` to start elsewhere). In the
 Leapmotor sidebar panel the tabs stay at the top while you scroll. Set
@@ -102,9 +109,9 @@ or pick just the parts you want with `sections` (see below).
 | --- | --- | --- |
 | `device_id` | first Leapmotor | Which vehicle to show when you have more than one. The visual editor offers a picker. |
 | `name` | `Leapmotor <model>` | Title shown in the hero. |
-| `sections` | all | Any of `hero`, `check`, `controls`, `map`, `trips`, `week`, `charging`, `chart`, `energy`, `maintenance`, `tires`, `insights`. Order is fixed; the list picks what is shown. Pages without a section are left out, and with only one page left there are no tabs. |
-| `tabs` | `true` | Split the card into the Overview, Trips, Charging and Vehicle pages. `false` shows everything on one page. |
-| `page` | `overview` | The page the card opens on: `overview`, `trips`, `charging`, `vehicle` or `settings`. |
+| `sections` | all | Any of `hero`, `outlook`, `check`, `timeline`, `controls`, `map`, `trips`, `week`, `routes`, `charging`, `chart`, `energy`, `curve`, `sessions`, `maintenance`, `tires`, `insights`, `software`, `inbox`, `calendar`, `records`, `rangelab`, `badges`. Order is fixed; the list picks what is shown. Pages without a section are left out, and with only one page left there are no tabs. |
+| `tabs` | `true` | Split the card into the Overview, Trips, Charging, Vehicle and Journey pages. `false` shows everything on one page. |
+| `page` | `overview` | The page the card opens on: `overview`, `trips`, `charging`, `vehicle`, `journey` or `settings`. |
 | `settings` | `true` | Show the **Settings** tab, where each user picks the theme, day or night, and language. Only on cards with tabs. |
 | `look` | `classic` | Default theme (see [Themes](#themes)): `classic` (night or day sky), `cluster` (driver display) or `console` (car app). Each user can change it in the Settings tab. |
 | `scene` | `auto` | Day or night: the sky in Classic, the display brightness in the other themes. `auto` follows `sun.sun`, or force `night` / `day`. Each user can change it in the Settings tab. |
@@ -135,6 +142,13 @@ type: custom:leapmotor-card
 sections: [map, trips, week]
 ```
 
+Just the outlook and the range lab, for a wall tablet:
+
+```yaml
+type: custom:leapmotor-card
+sections: [outlook, rangelab]
+```
+
 Second vehicle, always at night, without confirmation taps:
 
 ```yaml
@@ -151,18 +165,32 @@ confirm_actions: false
 | --- | --- | --- |
 | **Hero** | Overview | Your car in the chosen theme, with wallbox and animated cable while plugged in. The car shows its state: open doors, trunk, windows and sunroof, low tires, an amber ring when unlocked, a warm or cool glow while the climate runs, sentry, motion and headlights while driving, and a battery bar while plugged in. *Classic:* night or day sky, the battery as a large figure, lock and driving state, location, range, inside temperature and a metric strip (outside/inside temperature, odometer, charge limit, speed, speed limit, consumption). *Driver display:* battery gauge with range and the charge limit, speed gauge with the speed limit sign and gear (charging power and finish time while charging), warning lights (lock, doors, trunk, windows, tires, cable, climate, sentry) and a trip-computer strip (odometer, today, consumption, outside and inside temperature). *Car app:* range, a segmented battery bar with the charge limit, lock/driving/charging chips, tire pressures at the wheels and a strip with odometer, today, consumption and outside temperature. All three have the quick buttons (lock/unlock, quick heat, quick cool, open/close windows). |
 | **Vehicle check** | Overview | One glance answer: *All secure* or *Needs attention*, then a tile each for lock, doors, windows and sunroof, trunk, tires and data freshness (and the battery when it is below 20 %). Green is fine, amber needs a look, red is a problem. No buttons: unlock is in the hero, Find car in the remote control. |
+| **Outlook** | Overview | What the next day needs, learned from your own trips: *Enough battery* or *Plug in tonight* with the battery now and the battery needed, when the car usually leaves on that weekday and how reliable that is, the **real range** from your own consumption at the current temperature next to the car's figure, the next predicted departure, and **your usual week** with the typical distance and first departure of each weekday. Shows a short note while it is still learning. |
+| **Last 24 hours** (timeline) | Overview | A timeline of what happened: trips with distance and duration, charging with the percent gained, the cable plugged in and removed, and locking and unlocking. Read from Home Assistant's recorder. |
 | **Remote control** | Overview | Grouped into *Climate* (preheat, pre-cool and auto pre-condition with your presets, climate, quick heat/cool, defrost, steering wheel and mirror heating) and *Doors & security* (trunk, windows, sunroof, sunshade, sentry mode, find car) — only what your car supports. |
 | **Trip details** | Trips | The selected trip (or the live one): distance, day, time and duration, the route on a dark map coloured by speed (blue below the limit, amber close to it, red above; without a limit: up to 50, 50–90, over 90 km/h), energy, consumption, battery used, average and top speed, minutes above the limit, cost and outside temperature, and a speed chart with the limit as a dashed line. Built from the device tracker and speed history in the recorder. |
-| **Trip log** | Trips | Today and this month (distance, trips, energy, cost), then the last 30 trips grouped by day with the day's total. Each trip shows start and end time, distance, duration, energy, battery used and colour-coded consumption; the latest also how it compares with similar trips. Tap a trip to open it in the trip details. |
+| **Trip log** | Trips | Today and this month (distance, trips, energy, cost), then the last 30 trips grouped by day with the day's total. Each trip shows start and end time, distance, duration, energy, battery used, colour-coded consumption and its **eco score**; the latest also how it compares with similar trips. Tap a trip to open it in the trip details. **CSV** downloads the whole stored trip log (up to 500 trips) for a spreadsheet or a driver's logbook. |
+| **Frequent routes** | Trips | The routes you drive most, named after your zones (Home → Work), each with the number of trips, typical distance, time, consumption and cost, the usual departure time and your best run. |
 | **Last 7 days** | Trips | Total distance, driving days, energy and average consumption, and one bar per day with kilometres and kWh, from the Leapmotor cloud. |
 | **Charging** | Charging | State of charge and range, charging power, current, voltage and finish time, a battery bar with the charge limit and the part still to charge, the energy and cost to reach the limit, the charge limit with − / + and a **Set** button (tap twice), charging controls (start/stop charging, charge schedule, battery preheat, healthy charging, release cable), and the last session and this month. |
 | **Last 24 hours** | Charging | Battery, range or charging power now and its change over 24 hours, driven km and charged %, peak and lowest value, the curve with a scale, and a strip that shows when the car was parked, driving or charging. |
-| **Battery & efficiency** | Charging | Battery health, six-week average consumption on an efficiency scale and last week's driving/climate/other split. |
+| **Battery & efficiency** | Charging | Battery health, the **capacity trend** per year with the date the battery is expected to reach 90 %, six-week average consumption on an efficiency scale and last week's driving/climate/other split. |
+| **Charging curve** | Charging | Charging power over battery level for the session in progress (or the last fast charge) against your usual curve, with the peak power. A warning appears when an AC session is clearly slower than you usually get at that kind of place. |
+| **Charging history** | Charging | The sessions the Leapmotor cloud keeps for the last 60 days: this month's energy, sessions and cost, the share charged at home, and each session with energy, duration, average power, place, AC or DC and cost. |
 | **Maintenance** | Vehicle | The next six service items with status (OK / soon / overdue), km and days left, a progress bar and a **Done** button (tap twice) that logs the service. |
 | **Tires** | Vehicle | All four pressures around a drawing of the car, with low, uneven and slowly dropping tires marked. |
 | **Insights** | Vehicle | Driving cost this month and per 100 km, parked drain, last trip vs. your usual and consumption by outside temperature. |
+| **Car software** | Vehicle | *Up to date* or *Update available* with the new version and download size, the installed version and since when, the release notes, the car's own climate schedules with the next run, and what the account is allowed to do with the car (useful on a shared account). |
+| **Messages** | Vehicle | The latest messages from the Leapmotor app, unread ones marked. |
+| **A year of driving** | Journey | A calendar of the last twelve months with one square per day, darker for more kilometres, and a bar for each month. |
+| **Totals & records** | Journey | Odometer, this year with a projection, lifetime average consumption, energy used and distance per day; your longest day and trip, most efficient trip, longest driving streak, busiest month, top speed, biggest and fastest charge and coldest drive; and what you saved against a petrol car in money, fuel and CO₂. |
+| **Range lab** | Journey | Move the speed and outside temperature sliders and switch the climate on or off to see how far the battery takes you, now and from 100 %, with a curve of range over speed. The estimate is tuned to your own consumption. |
+| **Achievements** | Journey | Eleven badges in bronze, silver and gold with the progress to the next level. |
 
 Click any value to open Home Assistant's detail dialog for that entity.
+
+**Trip replay:** in the trip details, **Replay** drives a marker along the
+route at the speed the car had, and the slider jumps to any point of the trip.
 
 ## Safety
 

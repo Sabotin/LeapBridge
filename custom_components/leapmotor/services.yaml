@@ -1074,3 +1074,77 @@ precondition_cabin:
       description: Optional Leapmotor entity to resolve the target vehicle.
       selector:
         text:
+
+get_trips:
+  name: Get trips
+  description: Return the stored trip log (up to 500 trips) with times, distance, energy, consumption, speeds, eco score and zone names. Use it for exports and driver's logbooks.
+  fields:
+    limit:
+      name: Limit
+      description: How many of the newest trips to return.
+      default: 500
+      selector:
+        number:
+          min: 1
+          max: 500
+          mode: box
+    vin:
+      name: VIN
+      description: Target VIN. Required when multiple vehicles are configured.
+      selector:
+        text:
+    entity_id:
+      name: Entity ID
+      description: Optional Leapmotor entity to resolve the target vehicle.
+      selector:
+        text:
+
+get_charging_sessions:
+  name: Get charging sessions
+  description: Return the charging sessions recorded by the integration and the ones the Leapmotor cloud keeps.
+  fields:
+    limit:
+      name: Limit
+      description: How many of the newest sessions to return.
+      default: 500
+      selector:
+        number:
+          min: 1
+          max: 500
+          mode: box
+    vin:
+      name: VIN
+      description: Target VIN. Required when multiple vehicles are configured.
+      selector:
+        text:
+    entity_id:
+      name: Entity ID
+      description: Optional Leapmotor entity to resolve the target vehicle.
+      selector:
+        text:
+
+refresh_cloud_data:
+  name: Refresh cloud data
+  description: Read the software version, schedules, charging history and share invitations again now instead of waiting for their next scheduled refresh.
+
+accept_share_invitation:
+  name: Accept share invitation
+  description: Accept a car that was shared with the account this integration uses. The integration reloads afterwards and adds the car.
+  fields:
+    vin_tail:
+      name: End of the VIN
+      description: Last characters of the VIN. Only needed when several invitations are waiting.
+      example: "123456"
+      selector:
+        text:
+
+decline_share_invitation:
+  name: Decline share invitation
+  description: Decline a car-share invitation waiting for the account this integration uses.
+  fields:
+    vin_tail:
+      name: End of the VIN
+      description: Last characters of the VIN. Only needed when several invitations are waiting.
+      example: "123456"
+      selector:
+        text:

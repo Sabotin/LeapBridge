@@ -31,7 +31,7 @@
     <span>Look</span>
     <a href="?look=classic">Classic</a><a href="?look=cluster">Driver display</a><a href="?look=console">Car app</a>
     <span>Page</span>
-    <a href="?page=trips">Trips</a><a href="?page=charging">Charging</a><a href="?page=vehicle">Vehicle</a><a href="?page=settings">Settings</a><a href="?tabs=0">One page</a><a href="?panel=1">Sidebar panel</a>
+    <a href="?page=trips">Trips</a><a href="?page=charging">Charging</a><a href="?page=vehicle">Vehicle</a><a href="?page=journey">Journey</a><a href="?page=settings">Settings</a><a href="?tabs=0">One page</a><a href="?panel=1">Sidebar panel</a>
   </nav>
   <div class="wrap"><leapmotor-card id="card"></leapmotor-card></div>
 
@@ -223,13 +223,170 @@
       similar_trips: 6, usual_consumption_kwh_100km: 20.4, vs_usual_pct: -6.9,
       efficiency_by_temperature: [{ band: "below_0", trips: 4, consumption_kwh_100km: 21.6 }, { band: "0_10", trips: 19, consumption_kwh_100km: 18.4 },
                                   { band: "10_20", trips: 31, consumption_kwh_100km: 15.1 }, { band: "above_20", trips: 12, consumption_kwh_100km: 14.2 }] };
+    /* ---------- insights, journey and the extra cloud data ---------- */
+    const pad2 = (v) => String(v).padStart(2, "0");
+    const ymd = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+    const nowDate = new Date(now);
+    recent.forEach((tr, i) => { tr.eco_score = [86, 79, 71, 83, 77, 64, 81, 88, 58, 74, 80, 69][i]; });
+    const low = attention;
+    const realKm = Math.round(soc * 0.699 / 18.4 * 100);
+    add("sensor.c10_real_range", "real_range_km", realKm, u("km", { car_km: Math.round(soc * 4.45), delta_pct: -18,
+      full_km: 380, at_limit_km: 342, energy_kwh: +(soc * 0.699).toFixed(1), consumption_kwh_100km: 18.4, basis: "temperature", band: "0_10" }));
+    // The next weekday morning at 07:20 local.
+    const nextDep = new Date(now);
+    nextDep.setHours(7, 20, 0, 0);
+    while (nextDep.getTime() <= now || [0, 6].includes(nextDep.getDay())) nextDep.setDate(nextDep.getDate() + 1);
+    const pyDay = (d) => (d.getDay() + 6) % 7;
+    const habit = (time, confidence, kmTyp) => ({ minutes: +time.slice(0, 2) * 60 + +time.slice(3), time, confidence, samples: 7, spread_min: 12, typical_km: kmTyp });
+    const weekdays = [0, 1, 2, 3, 4, 5, 6].map((i) => (i < 5
+      ? { weekday: i, days_seen: 8, drive_probability: 1, typical_km: 46.4, high_km: 58, departures: [habit("07:20", 0.88, 23.4), habit("16:10", 0.75, 23.1)] }
+      : { weekday: i, days_seen: 8, drive_probability: i === 5 ? 0.5 : 0.13, typical_km: i === 5 ? 31.0 : null, high_km: i === 5 ? 64 : null, departures: [] }));
+    add("sensor.c10_next_departure", "next_departure", iso(nextDep.getTime()),
+      { ...meta, device_class: "timestamp", weekday: pyDay(nextDep), time: "07:20", confidence: 0.88, samples: 7, typical_km: 23.4, learned_from_weeks: 8, weekdays });
+    // As in the integration: about tomorrow, except between midnight and 04:00.
+    const outlookToday = nowDate.getHours() < 4;
+    const tomorrow = new Date(outlookToday ? now : now + DAY);
+    const tomorrowPattern = weekdays[pyDay(tomorrow)];
+    const need = tomorrowPattern.high_km ? +(tomorrowPattern.high_km * 0.184 / 69.9 * 100 + 15).toFixed(1) : null;
+    const lowSoc = 19;
+    const outlookSoc = low ? lowSoc : soc;
+    const reason = charging ? "plugged_in" : need == null ? "no_pattern" : outlookSoc < need ? "low_for_next_day" : "enough";
+    add("sensor.c10_next_day_distance", "next_day_distance_km", tomorrowPattern.high_km ?? "unknown", u("km", {
+      day: ymd(tomorrow), weekday: pyDay(tomorrow), is_today: outlookToday, drive_probability: tomorrowPattern.drive_probability,
+      typical_km: tomorrowPattern.typical_km, expected_kwh: tomorrowPattern.high_km ? +(tomorrowPattern.high_km * 0.184).toFixed(1) : null,
+      needed_soc: need, reserve_soc: 15, soc: outlookSoc, charge_limit: 90, plugged_in: charging,
+      enough: need == null ? null : outlookSoc >= need, limit_ok: need == null ? null : 90 >= need,
+      charge_recommended: reason === "low_for_next_day", reason,
+      departure: tomorrowPattern.departures[0] ? { time: "07:20", confidence: 0.88 } : null }));
+    add("binary_sensor.c10_charge_recommended", "charge_recommended", reason === "low_for_next_day" ? "on" : "off",
+      { ...meta, reason, day: ymd(tomorrow), expected_km: tomorrowPattern.high_km, needed_soc: need, soc: outlookSoc });
+    add("sensor.c10_eco_score", "eco_score", recent[0].eco_score, { ...meta, average: 78, best: 96, trips: 28, previous_average: 74, last_vs_usual_pct: -7 });
+    const place = (id, name, home = false, rank = null) => ({ id, name, home, zone: !!name, lat: 46.05, lon: 14.5, rank });
+    const routes = [
+      { from: place("zone:Home", "Home", true), to: place("zone:Work", "Work"), trips: 23, distance_km: 23.4, duration_min: 31, best_duration_min: 24,
+        consumption_kwh_100km: 17.9, best_consumption_kwh_100km: 14.2, energy_kwh: 4.19, cost: 0.84, usual_departure: "07:20", last: iso(now - 15 * HOUR) },
+      { from: place("zone:Work", "Work"), to: place("zone:Home", "Home", true), trips: 21, distance_km: 23.1, duration_min: 34, best_duration_min: 25,
+        consumption_kwh_100km: 16.4, best_consumption_kwh_100km: 13.6, energy_kwh: 3.79, cost: 0.76, usual_departure: "16:10", last: iso(now - 6 * HOUR) },
+      { from: place("zone:Home", "Home", true), to: place("place:1", null, false, 1), trips: 9, distance_km: 6.3, duration_min: 12, best_duration_min: 10,
+        consumption_kwh_100km: 19.6, best_consumption_kwh_100km: 16.8, energy_kwh: 1.23, cost: 0.25, usual_departure: "17:45", last: iso(now - 27 * HOUR) },
+    ];
+    add("sensor.c10_frequent_routes", "frequent_routes", routes.length, { ...meta, routes, places: [], place_count: 6 });
+    add("sensor.c10_battery_capacity_trend", "battery_capacity_trend", -1.6, u("%/y", { soh_pct: 97.8, soh_in_1_year: 96.2, samples: 21,
+      span_days: 214, confidence: "medium", stable: false, reaches_90: `${nowDate.getFullYear() + 4}-06`, reaches_80: null }));
+    add("sensor.c10_fuel_savings_this_month", "fuel_savings_month", 27.49, u("EUR", { device_class: "monetary" }));
+    add("sensor.c10_fuel_savings_total", "fuel_savings_total", 1218.88, u("EUR", { device_class: "monetary", km: 18450, fuel_litres: 1199.2, fuel_cost: 1798.88, ev_cost: 580, co2_saved_kg: 2045.2 }));
+    add("sensor.c10_co2_saved_total", "co2_saved_total", 2045.2, u("kg", { fuel_l_100km: 6.5, fuel_price: 1.5, grid_co2_g_kwh: 250, fuel_co2_kg_l: 2.31 }));
+    add("sensor.c10_co2_saved_this_month", "co2_saved_month", 46.1, u("kg"));
+    add("sensor.c10_fuel_not_burned", "fuel_avoided_total_l", 1199.2, u("L"));
+    add("sensor.c10_lifetime_average_consumption", "lifetime_consumption_kwh_100km", 15.7, u("kWh/100 km"));
+    add("sensor.c10_available_energy", "available_energy_kwh", +(soc * 0.699).toFixed(1), u("kWh"));
+    /* a year of driving, per day */
+    const calStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate() - 370, 12);
+    calStart.setDate(calStart.getDate() - ((calStart.getDay() + 6) % 7));
+    const calKm = [];
+    const monthMap = {};
+    for (let d = new Date(calStart); d.getTime() <= now + HOUR; d.setDate(d.getDate() + 1)) {
+      const n = Math.round((d.getTime() - calStart.getTime()) / DAY);
+      const r = Math.abs(Math.sin(n * 12.9898) * 43758.5453) % 1;
+      const weekend = d.getDay() === 0 || d.getDay() === 6;
+      let v = weekend ? (r > 0.55 ? Math.round(20 + r * 120) : 0) : (r > 0.08 ? Math.round(40 + r * 28) : 0);
+      if (n % 53 === 17) v = Math.round(260 + r * 190);
+      if (n < 60) v = -1; // before the car arrived
+      calKm.push(v);
+      if (v >= 0) {
+        const key = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+        const m = monthMap[key] || (monthMap[key] = { month: key, km: 0, kwh: 0, driving_days: 0, days: 0 });
+        m.km += v; m.kwh += +(v * 0.168).toFixed(1); m.days += 1; if (v >= 1) m.driving_days += 1;
+      }
+    }
+    const months = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(nowDate.getFullYear(), nowDate.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+      const m = monthMap[key] || { month: key, km: 0, kwh: null, driving_days: 0, days: 0 };
+      months.push({ ...m, km: Math.round(m.km), kwh: m.kwh ? Math.round(m.kwh) : null });
+    }
+    const yearKm = months.filter((m) => m.month.startsWith(String(nowDate.getFullYear()))).reduce((a, m) => a + m.km, 0);
+    const longDay = new Date(now - 34 * DAY);
+    add("sensor.c10_distance_this_year", "distance_this_year", yearKm, u("km", {
+      year: { year: nowDate.getFullYear(), km: yearKm, kwh: Math.round(yearKm * 0.168), projected_km: Math.round(yearKm * 1.14) },
+      totals: { tracked_km: 15210, tracked_kwh: 2555, driving_days: 251, days: 311, since: ymd(new Date(now - 311 * DAY)), odometer_km: Math.round(odo),
+        lifetime_energy_kwh: 2898, delivery_days: 412, km_per_day: 44.8, earth_laps: 0.46, trips: 684, charging_sessions: 96, charged_kwh: 3120 },
+      records: { longest_day: { date: ymd(longDay), km: 438 }, busiest_month: months.reduce((a, m) => (m.km > a.km ? { month: m.month, km: m.km } : a), { month: months[0].month, km: 0 }),
+        best_streak_days: 12, current_streak_days: 3, longest_trip: { km: 286.4, date: ymd(longDay) },
+        most_efficient_trip: { kwh_100km: 12.1, km: 41.6, date: ymd(new Date(now - 96 * DAY)) }, top_speed: { kmh: 151, date: ymd(longDay) },
+        biggest_charge: { kwh: 58.7, date: ymd(new Date(now - 35 * DAY)) }, fastest_charge: { kw: 168.4, date: ymd(new Date(now - 34 * DAY)) }, coldest_drive_c: -7.5 },
+      months, calendar: { start: ymd(calStart), km: calKm } }));
+    const badge = (id, level, value, next, progress) => ({ id, level, value, next, progress, reached_at: level ? iso(now - 20 * DAY) : null });
+    const badges = [badge("distance", 2, Math.round(odo), 50000, 0.21), badge("long_day", 2, 438, 500, 0.69), badge("long_trip", 2, 286.4, 300, 0.91),
+      badge("eco_driver", 2, 78, 90, 0.2), badge("streak", 2, 12, 20, 0.2), badge("explorer", 1, 6, 8, 0.6), badge("frost", 2, -7.5, -10, 0.5),
+      badge("full_cycles", 1, 44.6, 50, 0.87), badge("low_tariff", 0, 3, 5, 0.6), badge("co2", 2, 2045, 5000, 0.26), badge("anniversary", 3, 412, null, 1)];
+    add("sensor.c10_achievements", "achievements", badges.filter((b) => b.level).length, { ...meta, badges });
+    /* charging: curve, slow charging, cloud history */
+    const dcCurve = [];
+    for (let s2 = 12; s2 <= 80; s2 += 2) {
+      const k = s2 < 22 ? 0.72 + (s2 - 12) * 0.028 : s2 < 46 ? 1 : Math.max(0.2, 1 - (s2 - 46) * 0.021);
+      dcCurve.push([s2, +(168 * k).toFixed(1)]);
+    }
+    const usualCurve = dcCurve.map(([s2, kw]) => [s2, +(kw * (s2 < 40 ? 0.9 : 0.97)).toFixed(1)]);
+    const liveCurve = [];
+    const slow = q.get("slow") === "1";
+    if (charging) for (let s2 = 44; s2 <= 70; s2 += 2) liveCurve.push([s2, +((slow && s2 > 60 ? 3.5 : 10.6) + ((s2 * 7) % 5) * 0.08).toFixed(1)]);
+    add("sensor.c10_charging_curve", "charging_curve", charging ? 10.9 : 168.4, u("kW", {
+      current: charging ? { points: liveCurve, dc: false, start: iso(now - 1.8 * HOUR) } : null,
+      last: { points: dcCurve, dc: true, start: iso(now - 34 * DAY), end: iso(now - 34 * DAY + 31 * MIN) },
+      usual: charging ? liveCurve.map(([s2]) => [s2, 10.8]) : usualCurve, sessions: 9, usual_power_kw: 10.8 }));
+    add("binary_sensor.c10_slow_charging", "slow_charging", slow ? "on" : "off",
+      { ...meta, device_class: "problem", now_kw: slow ? 3.6 : 10.8, usual_kw: 10.8, tier: "home", samples: 6 });
+    const cs = (daysAgo, hour, minutes, kwh, type, tier, placeName, cost) => {
+      const startAt = new Date(now - daysAgo * DAY); startAt.setHours(hour, 12, 0, 0);
+      return { start: iso(startAt.getTime()), end: iso(startAt.getTime() + minutes * MIN), duration_min: minutes, energy_kwh: kwh, type,
+        avg_power_kw: +(kwh / (minutes / 60)).toFixed(1), tier, place: placeName, cost, lat: 46.05, lon: 14.5 };
+    };
+    const cloudSessions = [cs(1, 18, 182, 31.6, "ac", "home", "Home", 6.32), cs(4, 19, 205, 35.9, "ac", "home", "Home", 7.18),
+      cs(8, 12, 28, 41.2, "dc", "public_dc", null, 24.3), cs(9, 20, 148, 25.1, "ac", "home", "Home", 5.02),
+      cs(13, 9, 190, 17.5, "ac", "public_ac", "Work", 7.0), cs(17, 18, 221, 38.4, "ac", "home", "Home", 7.68),
+      cs(22, 21, 164, 27.9, "ac", "home", "Home", 5.58), cs(34, 13, 31, 58.7, "dc", "public_dc", null, 34.63), cs(41, 19, 176, 30.2, "ac", "home", "Home", 6.04)];
+    add("sensor.c10_cloud_charging_sessions", "cloud_charging_sessions", cloudSessions.length, { ...meta, window_days: 60,
+      month: { sessions: 4, energy_kwh: 92.1, cost: 18.4, home_energy_kwh: 74.6, public_energy_kwh: 17.5 }, sessions: cloudSessions });
+    /* car software, schedules, permissions, inbox */
+    const hasUpdate = q.get("update") !== "0";
+    add("update.c10_software", "vehicle_software", hasUpdate ? "on" : "off", { ...meta, installed_version: "1.03.12",
+      latest_version: hasUpdate ? "1.04.01" : "1.03.12", release_summary: "Charging screen", installed_at: iso(now - 71 * DAY),
+      update_size_mb: hasUpdate ? 812 : null, update_packages: hasUpdate ? 6 : 0, release_notes_language: "en-US", release_notes_for: hasUpdate ? "latest" : "installed",
+      notes: [{ title: "Charging screen", content: "The charging screen now shows the remaining time and the power at a glance." },
+        { title: "Navigation", content: "Faster route calculation and updated maps." },
+        { title: "Improvements", content: "General stability improvements." }] });
+    add("sensor.c10_software_version", "software_version", "1.03.12", meta);
+    const schedAt = new Date(nextDep.getTime() - 15 * MIN);
+    add("sensor.c10_next_scheduled_preconditioning", "next_scheduled_preconditioning", iso(schedAt.getTime()), { ...meta, device_class: "timestamp",
+      schedules: { climate: [{ kind: "climate", enabled: true, time: "07:05", days: [1, 2, 3, 4, 5], id: "a", mode: "heat", temperature: 22, fan_speed: 7 },
+        { kind: "climate", enabled: false, time: "16:00", days: [5], id: "b", mode: "cool", temperature: 20, fan_speed: 5 }], battery_heating: null, prepare_car: [] } });
+    const shared = q.get("shared") === "1";
+    add("sensor.c10_remote_permissions", "remote_permissions", 6, { ...meta, shared,
+      rights: ["lock", "find_car", "trunk", "climate", "quick_climate", "windows", "start_stop_charging"], modules: ["basic", "vehicle_control"], abilities: [] });
+    const msg = (id, title, message, hoursAgo, read) => ({ id: String(id), title, message, time: iso(now - hoursAgo * HOUR), ts: (now - hoursAgo * HOUR) / 1000, read, type: 1 });
+    add("sensor.c10_unread_message_count", "unread_message_count", 1, { ...meta, messages: [
+      msg(41, "Charging complete", "Your vehicle has finished charging. The battery is at 90 %.", 26, false),
+      msg(40, "Software update available", "Version 1.04.01 is ready to install.", 70, true),
+      msg(39, "Vehicle not locked", "Your vehicle has been unlocked for more than 10 minutes.", 122, true),
+      msg(38, "Tire pressure", "The pressure of the rear left tire is low.", 190, true),
+      msg(37, "Welcome", "Your vehicle is now connected to your account.", 400, true)] });
     if (q.get("pic")) add("image.c10_vehicle_picture", "vehicle_picture", iso(now - DAY), { ...meta, entity_picture: q.get("pic") });
     S["sun.sun"] = { entity_id: "sun.sun", state: scene === "day" ? "above_horizon" : "below_horizon", attributes: {}, last_updated: iso(now) };
     S["zone.home"] = { entity_id: "zone.home", state: "0", attributes: { friendly_name: "Home" }, last_updated: iso(now) };
 
+    const lockSeries = series.driving.map(([t2, on], i) => {
+      // Unlocked a little before each drive and while driving, locked a few minutes after parking.
+      const ahead = series.driving[Math.min(series.driving.length - 1, i + 1)][1];
+      const behind = series.driving[Math.max(0, i - 1)][1];
+      return [t2, on || ahead || behind ? "unlocked" : "locked"];
+    });
+    const plugSeries = series.charging.map(([t2, on], i) => [t2, on || !!series.charging[Math.min(series.charging.length - 1, i + 2)][1]]);
     const histIds = {
       "sensor.c10_battery": series.battery, "sensor.c10_range": series.range, "sensor.c10_charging_power": series.power,
       "sensor.c10_odometer": series.odometer, "binary_sensor.c10_charging": series.charging, "binary_sensor.c10_is_driving": series.driving,
+      "lock.c10_lock": lockSeries, "binary_sensor.c10_charge_cable_plugged_in": plugSeries,
     };
 
     /* ---------- GPS route and speed for the trip map (synthetic, around Ljubljana) ---------- */
@@ -264,6 +421,7 @@
           try { localStorage.setItem(`preview-user-data-${msg.key}`, JSON.stringify(msg.value)); } catch (_e) {}
           return null;
         }
+        if (msg.type === "call_service" && msg.service === "get_trips") return { response: { count: recent.length, trips: recent.map((tr) => ({ ...tr, from: "Home", to: "Work" })) } };
         if (msg.type !== "history/history_during_period") return {};
         const out = {};
         const from = Date.parse(msg.start_time) / 1000, to = Date.parse(msg.end_time) / 1000;

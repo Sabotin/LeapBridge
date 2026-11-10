@@ -8,7 +8,7 @@ contents, precise home location, or other personal data.
 Recommended files:
 
 - `01-hacs-custom-repository.png`: HACS custom repository dialog with
-  `https://github.com/sabotin/leapmotor` and type `Integration`.
+  `https://github.com/Sabotin/LeapBridge` and type `Integration`.
 - `02-hacs-leapmotor-installed.png`: Leapmotor visible as installed in HACS.
 - `03-add-integration.png`: Home Assistant add-integration search result for
   `Leapmotor`.

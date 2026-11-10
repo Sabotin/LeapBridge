@@ -282,6 +282,31 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(state["buffer"], [])
         self.assertEqual(len(state["trips"]), 1)
 
+    def test_insight_state_survives_a_restart_and_old_storage_gets_an_empty_one(self) -> None:
+        import json
+
+        engine = da.DriveAnalytics({"vins": {"VIN1": {"trips": []}, "VIN2": {"extra": "broken"}}})
+        # Storage written before the insights existed, or damaged: start empty.
+        self.assertEqual(engine.extra("VIN1"), {})
+        self.assertEqual(engine.extra("VIN2"), {})
+        extra = engine.extra("VIN1")
+        extra["days"] = {"2026-11-09": {"km": 42.5, "kwh": 6.4}}
+        extra["flags"] = {"charging": True, "event_id": 7}
+        extra["badges"] = {"distance": 2}
+        # What Home Assistant writes to disk is JSON; a restart reads the same values back.
+        restored = da.DriveAnalytics(json.loads(json.dumps(engine.as_storage())))
+        self.assertEqual(restored.extra("VIN1"), extra)
+        self.assertEqual(restored.extra("VIN2"), {})
+        # One car's state never leaks into another, and unknown cars start empty.
+        self.assertEqual(restored.extra("VIN3"), {})
+        restored.extra("VIN3")["flags"] = {"plugged": True}
+        self.assertNotIn("flags", restored.extra("VIN2"))
+        # The accessors hand out the live lists the engine appends to.
+        self.assertIs(restored.trips("VIN1"), restored.trips("VIN1"))
+        self.assertEqual(restored.sessions("VIN1"), [])
+        self.assertEqual(restored.buffer("VIN1"), [])
+        self.assertEqual(restored.full_charges("VIN1"), {})
+
 
 
 # --- Stage 2 and extras -------------------------------------------------------

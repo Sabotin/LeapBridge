@@ -5,8 +5,8 @@
     "@sabotin"
   ],
   "config_flow": true,
-  "documentation": "https://github.com/sabotin/leapmotor",
-  "issue_tracker": "https://github.com/sabotin/leapmotor/issues",
+  "documentation": "https://github.com/Sabotin/LeapBridge",
+  "issue_tracker": "https://github.com/Sabotin/LeapBridge/issues",
   "iot_class": "cloud_polling",
   "requirements": [
     "cryptography>=42.0.0",
