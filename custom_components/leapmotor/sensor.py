@@ -1438,7 +1438,8 @@ SENSOR_DESCRIPTIONS: tuple[LeapmotorSensorEntityDescription, ...] = (
         extra_attrs_fn=lambda data: {
             "window_days": (data.get("cloud_charging") or {}).get("window_days"),
             "month": (data.get("cloud_charging") or {}).get("month"),
-            "sessions": (data.get("cloud_charging") or {}).get("sessions") or [],
+            # Not "sessions": that name is the session count of another sensor.
+            "cloud_sessions": (data.get("cloud_charging") or {}).get("sessions") or [],
         },
     ),
     LeapmotorSensorEntityDescription(
@@ -1495,7 +1496,7 @@ class LeapmotorSensor(CoordinatorEntity[LeapmotorDataUpdateCoordinator], SensorE
         "efficiency_by_temperature",
         # Lists and tables the dashboard reads; they do not belong in the recorder.
         "weekdays", "routes", "places", "months", "calendar", "totals", "records", "badges",
-        "current", "last", "usual", "messages", "sessions", "schedules", "departure",
+        "current", "last", "usual", "messages", "cloud_sessions", "schedules", "departure",
         "rights", "modules", "abilities",
     })
 
@@ -1558,7 +1559,11 @@ class LeapmotorSensor(CoordinatorEntity[LeapmotorDataUpdateCoordinator], SensorE
         period = _analytics(self.vehicle_data, "period") or {}
         if key in YEAR_TOTAL_KEYS:
             start = _iso_datetime(period.get("month_start"))
-            return start.replace(month=1) if start is not None else None
+            if start is None:
+                return None
+            # Local midnight on 1 January with January's own UTC offset, so the
+            # value does not move when summer time starts or ends.
+            return dt_util.start_of_local_day(datetime(start.year, 1, 1))
         value = period.get("day_start" if key in DAY_TOTAL_KEYS else "month_start")
         try:
             return datetime.fromisoformat(value) if value else None

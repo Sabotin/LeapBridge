@@ -17,7 +17,7 @@ e-mail address or a phone number.
 from __future__ import annotations
 
 import math
-from datetime import UTC, datetime, time as dt_time, timedelta
+from datetime import UTC, date, datetime, time as dt_time, timedelta
 from typing import Any
 
 MAX_MESSAGES = 30
@@ -451,6 +451,17 @@ def _schedule_time(value: Any) -> str | None:
     return f"{hours:02d}:{minutes:02d}"
 
 
+def _schedule_date(value: Any) -> str | None:
+    """'YYYY-MM-DD' from the app's '2026-01-31 07:10:00', or None for a bare time."""
+    text = _text(value, 40)
+    if not text or len(text) < 10:
+        return None
+    try:
+        return date.fromisoformat(text[:10]).isoformat()
+    except ValueError:
+        return None
+
+
 def _enabled(*values: Any) -> bool | None:
     for value in values:
         if isinstance(value, bool):
@@ -472,6 +483,7 @@ def normalize_schedule(controls: Any, kind: str) -> list[dict[str, Any]]:
             "kind": kind,
             "enabled": _enabled(item.get("on"), item.get("enable")),
             "time": _schedule_time(item.get("start_time")),
+            "date": _schedule_date(item.get("start_time")),
             "days": _schedule_days(item.get("days")),
             "id": _text(item.get("set_id"), 80),
         }
@@ -491,7 +503,8 @@ def next_schedule_run(
 ) -> dict[str, Any] | None:
     """The next time an enabled entry runs, in ``now``'s timezone.
 
-    An entry without days runs once, at its next start time.
+    An entry without days runs once: on its own date when the cloud gives
+    one (it is skipped once that has passed), else at its next start time.
     """
     best: tuple[datetime, dict[str, Any]] | None = None
     for entry in entries or []:
@@ -499,6 +512,17 @@ def next_schedule_run(
             continue
         hours, minutes = (int(part) for part in entry["time"].split(":"))
         days = entry.get("days") or []
+        if not days and entry.get("date"):
+            try:
+                once = datetime.combine(
+                    date.fromisoformat(entry["date"]), dt_time(hours, minutes), tzinfo=now.tzinfo
+                )
+            except (TypeError, ValueError):
+                once = None
+            if once is not None:
+                if once > now and (best is None or once < best[0]):
+                    best = (once, entry)
+                continue
         for offset in range(8):
             day = now.date() + timedelta(days=offset)
             # Python: Monday = 0. App: Sunday = 0.
