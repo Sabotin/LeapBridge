@@ -1038,21 +1038,47 @@ async function trimCarPicture(img, flip) {
   ctx.drawImage(img, 0, 0, w, h);
   const data = ctx.getImageData(0, 0, w, h).data; // throws for a picture from another site
   const alpha = (x, y) => data[(y * w + x) * 4 + 3];
-  let cols = new Uint32Array(w);
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (alpha(x, y) > 40) cols[x]++;
+  const countCols = (y0, y1) => {
+    const out = new Uint32Array(w);
+    for (let y = y0; y < y1; y++) for (let x = 0; x < w; x++) if (alpha(x, y) > 40) out[x]++;
+    return out;
+  };
+  const countRows = (x0, x1) => {
+    const out = new Uint32Array(h);
+    for (let y = 0; y < h; y++) for (let x = x0; x < x1; x++) if (alpha(x, y) > 40) out[y]++;
+    return out;
+  };
+  let cols = countCols(0, h);
   let cx = longestRun(cols);
   if (!cx) return null;
-  const rows = new Uint32Array(h);
-  for (let y = 0; y < h; y++) for (let x = cx[0]; x < cx[1]; x++) if (alpha(x, y) > 40) rows[y]++;
-  const cy = longestRun(rows);
+  let rows = countRows(cx[0], cx[1]);
+  let cy = longestRun(rows);
   if (!cy) return null;
+  if (cx[1] - cx[0] >= w && cy[1] - cy[0] >= h) {
+    // Lines along two edges cross and tie the whole picture together. Look
+    // for the car among the columns and rows that hold more than a line does.
+    const thin = Math.max(2, Math.round(Math.min(w, h) * 0.01));
+    const thick = (counts) => counts.map((n) => (n > thin ? n : 0));
+    const tx = longestRun(thick(cols));
+    const ty = tx && longestRun(thick(countRows(tx[0], tx[1])));
+    if (tx && ty) {
+      cx = tx;
+      cy = ty;
+    }
+  }
   // A line across the picture has a pixel in every column: count the columns again inside the car's own rows.
-  const inner = new Uint32Array(w);
-  for (let y = cy[0]; y < cy[1]; y++) for (let x = 0; x < w; x++) if (alpha(x, y) > 40) inner[x]++;
+  const inner = countCols(cy[0], cy[1]);
   const ix = longestRun(inner);
   if (ix) {
     cols = inner;
     cx = ix;
+    // The same for the rows, inside the car's own columns.
+    const within = countRows(cx[0], cx[1]);
+    const iy = longestRun(within);
+    if (iy) {
+      rows = within;
+      cy = iy;
+    }
   }
 
   // A little air around the car, never reaching into other content (the hairline).
@@ -4917,7 +4943,7 @@ class LeapmotorCard extends HTMLElement {
     const t = (k, v) => this._tr(k, v);
     const s = this._s("cloudCharging");
     const a = s?.attributes || {};
-    const sessions = objs(a.sessions);
+    const sessions = objs(a.cloud_sessions);
     const head = this._head(t("chTitle"), "plug",
       a.window_days ? `<span class="meta">${esc(t("chMeta", { n: a.window_days }))}</span>` : "");
     if (!sessions.length) return `${head}<div class="empty">${esc(t("chEmpty"))}</div>`;
@@ -4976,10 +5002,10 @@ class LeapmotorCard extends HTMLElement {
     const entries = [...objs(schedules.climate), ...objs(schedules.prepare_car)];
     if (this._s("nextSchedule")) {
       const next = this._ts("nextSchedule");
-      const dayList = (days) => {
+      const dayList = (days, date) => {
         const list = Array.isArray(days) ? days.filter((d) => Number.isFinite(Number(d))) : [];
-        // An entry without days runs once.
-        if (!list.length) return t("schedOnce");
+        // An entry without days runs once, on its date when the car gave one.
+        if (!list.length) return isFinite(this._day(date)) ? `${t("schedOnce")} · ${this._date(this._day(date))}` : t("schedOnce");
         if (list.length === 7) return t("schedDaily");
         // The app counts Sunday as 0.
         return list.map((d) => this._weekday((Number(d) + 6) % 7, "short").replace(".", "")).join(" ");
@@ -4989,7 +5015,7 @@ class LeapmotorCard extends HTMLElement {
           ? [{ heat: t("modeHeat"), cool: t("modeCool"), fan: t("modeFan") }[e.mode], e.temperature != null ? `${this._num(e.temperature)} °C` : null].filter(Boolean).join(" ")
           : (e.name || t("autoCabin"));
         return `<div class="schrow${e.enabled === false ? " off" : ""}"><b>${esc(e.time ? this._clock(e.time) : "—")}</b>` +
-          `<span>${esc([dayList(e.days), what].filter(Boolean).join(" · "))}</span>${e.enabled === false ? `<span class="pill warn">${esc(t("schedOff"))}</span>` : ""}</div>`;
+          `<span>${esc([dayList(e.days, e.date), what].filter(Boolean).join(" · "))}</span>${e.enabled === false ? `<span class="pill warn">${esc(t("schedOff"))}</span>` : ""}</div>`;
       });
       body += `<div class="subh clickable" data-more="nextSchedule">${esc(t("schedTitle"))}${next ? `<span class="subm">${esc(t("schedNext", { t: `${this._weekday((new Date(next).getDay() + 6) % 7, "short")} ${this._time(new Date(next))}` }))}</span>` : ""}</div>` +
         (rows.length ? `<div class="schrows">${rows.join("")}</div>` : `<div class="foot" style="margin-top:0">${esc(t("schedNone"))}</div>`);

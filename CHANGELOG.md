@@ -5,7 +5,9 @@
 Everything that existed before works as before: the regular poll is unchanged,
 no remote command was added or altered, and every new cloud read is optional,
 cached and kept apart, so a failing read keeps its last value and never stops
-an update. Card version 1.2.0.
+an update. The new reads also have a time limit — 20 seconds each and 45
+seconds for all of them in one update — so a slow cloud cannot hold the
+regular update back. Card version 1.2.0.
 
 ### New from the Leapmotor cloud (read only)
 
@@ -111,9 +113,12 @@ an update. Card version 1.2.0.
 
 ### Fixes
 
-- **Car picture:** a thin vertical line next to some official car pictures is
-  gone, and the charging cable now ends at the car instead of beside it. The
-  card measures where the car really is in the picture.
+- **Car picture:** a thin line next to some official car pictures (along the
+  side, the bottom or both) is gone, and the charging cable now ends at the
+  car instead of beside it. The card measures where the car really is in the
+  picture.
+- **One part of the card can no longer take the rest down:** if a panel
+  cannot be drawn, it says so and the other panels keep working.
 - **Home Assistant 2026.12:** entering a new password (re-login or
   *Reconfigure*) reloaded the integration twice in a way Home Assistant stops
   accepting in 2026.12. It now reloads exactly once.
@@ -130,9 +135,12 @@ ships commands that are known to work.
 
 ### Checked with
 
-231 unit tests and 27 runtime tests on Home Assistant 2025.3.0, 2026.2 and
-2026.11, and every card page in all three themes, three languages and five
-screen widths.
+246 unit tests and 27 runtime tests on Home Assistant 2025.3.0, 2026.2 and
+2026.11, and every card page in all three themes, three languages and six
+screen widths (1,200 renders). The new cloud reads are tested against the
+answer formats that leapmotor-api 0.6.0 reads, not against the real Leapmotor
+cloud: if the cloud answers differently, the affected entity stays unknown
+and everything else keeps working.
 
 ## Unreleased — charging shows on the T03, green glow while charging
 

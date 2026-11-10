@@ -12,6 +12,7 @@ from homeassistant.components.repairs import RepairsFlow
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
+from .coordinator import async_reload_after_share_accept
 from .leap_api import LeapmotorApiError
 
 
@@ -44,8 +45,9 @@ class ShareInvitationRepairFlow(RepairsFlow):
                 )
             except LeapmotorApiError:
                 return self.async_abort(reason="share_accept_failed")
-            # The shared car needs its own entities: load the entry again.
-            self.hass.async_create_task(self.hass.config_entries.async_reload(self._entry_id))
+            # The shared car needs its own entities: load the entry again,
+            # a moment later, when the cloud lists the car.
+            async_reload_after_share_accept(self.hass, self._entry_id)
             return self.async_create_entry(title="", data={})
         return self.async_show_form(step_id="confirm", data_schema=vol.Schema({}))
 

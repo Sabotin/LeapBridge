@@ -6,6 +6,7 @@ all vehicle data is synthetic.
 """
 import asyncio
 from copy import deepcopy
+from datetime import datetime, timedelta
 import json
 from pathlib import Path
 import shutil
@@ -13,6 +14,7 @@ import sys
 import tempfile
 import types
 import unittest
+from zoneinfo import ZoneInfo
 from unittest.mock import AsyncMock, Mock, patch
 
 from homeassistant import auth, config_entries, loader
@@ -20,6 +22,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import area_registry, device_registry, entity_registry, frame
 from homeassistant.setup import async_setup_component
+from homeassistant.util import dt as dt_util
 
 ROOT = Path(__file__).resolve().parents[1]
 VIN = "SYNTHETIC-VIN-123456"
@@ -817,7 +820,7 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
 
         sessions = self.state_of("sensor", "cloud_charging_sessions")
         self.assertEqual(sessions.state, "2")
-        dc, ac = sessions.attributes["sessions"]
+        dc, ac = sessions.attributes["cloud_sessions"]
         self.assertEqual((ac["tier"], ac["cost"], ac["type"]), ("home", 4.32, "ac"))
         self.assertEqual((dc["tier"], dc["cost"], dc["type"]), ("public_dc", 18.0, "dc"))
         month = sessions.attributes["month"]
@@ -836,7 +839,7 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(coordinator.data["vehicles"][VIN]["cloud_charging"], before)
         await coordinator.async_refresh()
         await self.hass.async_block_till_done()
-        again = self.state_of("sensor", "cloud_charging_sessions").attributes["sessions"]
+        again = self.state_of("sensor", "cloud_charging_sessions").attributes["cloud_sessions"]
         self.assertEqual(again[1]["lon"], -117.2274)
         self.assertEqual(again[1]["cost"], 4.32)
 
@@ -851,6 +854,25 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
                     "distance_this_year", "charging_curve", "battery_capacity_trend"):
             self.assertIsNotNone(self.state_of("sensor", key))
         self.assertEqual(self.state_of("sensor", "real_range_km").state, "253")  # 40 kWh at 15.8 kWh/100 km
+        # The yearly total restarts at local midnight on 1 January, with
+        # January's own UTC offset (not the offset of the current month).
+        year_reset = self.state_of("sensor", "distance_this_year").attributes.get("last_reset")
+        self.assertIsNotNone(year_reset)
+        local_zone = ZoneInfo(self.hass.config.time_zone)
+        self.assertEqual(
+            datetime.fromisoformat(year_reset),
+            datetime(dt_util.now().year, 1, 1, tzinfo=local_zone),
+        )
+        # In a zone with summer time, a reading taken in July still gives
+        # midnight in winter time.
+        from custom_components.leapmotor import sensor as sensor_module
+        description = next(d for d in sensor_module.SENSOR_DESCRIPTIONS if d.key == "distance_this_year")
+        summer = Mock(entity_description=description, vehicle_data={
+            "analytics": {"period": {"month_start": "2026-07-01T00:00:00+02:00"}}})
+        ljubljana = ZoneInfo("Europe/Ljubljana")
+        with patch.object(dt_util, "DEFAULT_TIME_ZONE", ljubljana):
+            reset = sensor_module.LeapmotorSensor.last_reset.fget(summer)
+        self.assertEqual(reset.isoformat(), "2026-01-01T00:00:00+01:00")
         self.assertEqual(self.state_of("binary_sensor", "charge_recommended").state, "off")
         self.assertEqual(self.state_of("binary_sensor", "slow_charging").state, "off")
 
@@ -1054,11 +1076,35 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
         form = await flow.async_step_init()
         self.assertEqual((form["type"].value, form["step_id"]), ("form", "confirm"))
         self.client.answer_share_invitation.assert_not_called()  # nothing before confirming
-        with patch.object(self.hass.config_entries, "async_reload", new=AsyncMock()) as reload:
+        from custom_components.leapmotor import coordinator as coordinator_module
+        # The entry is loaded again a few seconds later, when the cloud lists
+        # the car; the wait itself is skipped here.
+        self.assertGreater(coordinator_module.SHARE_RELOAD_DELAY_SECONDS, 0)
+        with patch.object(self.hass.config_entries, "async_reload", new=AsyncMock()) as reload, \
+                patch.object(coordinator_module, "SHARE_RELOAD_DELAY_SECONDS", 0):
             done = await flow.async_step_confirm({})
             await self.hass.async_block_till_done()
         self.assertEqual(done["type"].value, "create_entry")
         self.client.answer_share_invitation.assert_called_once_with("777777", accept=True)
+        reload.assert_awaited_once_with(entry.entry_id)
+        # With the real delay nothing is reloaded at once.
+        with patch.object(self.hass.config_entries, "async_reload", new=AsyncMock()) as reload, \
+                patch.object(coordinator_module, "async_call_later") as later:
+            coordinator_module.async_reload_after_share_accept(self.hass, entry.entry_id)
+            await self.hass.async_block_till_done()
+            reload.assert_not_awaited()
+            (_hass, delay, fire), _kwargs = later.call_args
+            self.assertEqual(delay, coordinator_module.SHARE_RELOAD_DELAY_SECONDS)
+            fire(None)
+            await self.hass.async_block_till_done()
+            reload.assert_awaited_once_with(entry.entry_id)
+        # Accepting through the service waits the same way.
+        self.client.answer_share_invitation = Mock(return_value={"accepted": True})
+        with patch.object(self.hass.config_entries, "async_reload", new=AsyncMock()) as reload, \
+                patch.object(coordinator_module, "SHARE_RELOAD_DELAY_SECONDS", 0):
+            await self.hass.services.async_call("leapmotor", "accept_share_invitation",
+                                                {"vin_tail": "777777"}, blocking=True)
+            await self.hass.async_block_till_done()
         reload.assert_awaited_once_with(entry.entry_id)
 
         # Declining through the service; a failure is reported, not swallowed.
@@ -1077,8 +1123,23 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
         await coordinator.async_refresh()
         await self.hass.async_block_till_done()
         self.assertIsNone(registry.async_get_issue("leapmotor", issue_id))
+        # No poll has seen an invitation: the cloud is still asked, because an
+        # invitation may be newer than the last poll.
+        self.client.answer_share_invitation = Mock(
+            side_effect=self.api.LeapmotorApiError("No matching car-share invitation is waiting."))
         with self.assertRaisesRegex(HomeAssistantError, "No matching"):
             await self.hass.services.async_call("leapmotor", "accept_share_invitation", {}, blocking=True)
+        self.client.answer_share_invitation.assert_called_once_with(None, accept=True)
+        self.client.answer_share_invitation = Mock(return_value={"accepted": True})
+        with patch.object(self.hass.config_entries, "async_reload", new=AsyncMock()) as reload, \
+                patch.object(coordinator_module, "SHARE_RELOAD_DELAY_SECONDS", 0):
+            answer = await self.hass.services.async_call(
+                "leapmotor", "accept_share_invitation", {"vin_tail": "888888"},
+                blocking=True, return_response=True)
+            await self.hass.async_block_till_done()
+        self.assertEqual(answer, {"accepted": True})
+        self.client.answer_share_invitation.assert_called_once_with("888888", accept=True)
+        reload.assert_awaited_once_with(entry.entry_id)
         coordinator.cancel_scheduled_followup_refreshes()
 
     async def test_setup_offers_to_accept_a_shared_car(self):

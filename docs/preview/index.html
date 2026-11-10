@@ -348,7 +348,7 @@
       cs(13, 9, 190, 17.5, "ac", "public_ac", "Work", 7.0), cs(17, 18, 221, 38.4, "ac", "home", "Home", 7.68),
       cs(22, 21, 164, 27.9, "ac", "home", "Home", 5.58), cs(34, 13, 31, 58.7, "dc", "public_dc", null, 34.63), cs(41, 19, 176, 30.2, "ac", "home", "Home", 6.04)];
     add("sensor.c10_cloud_charging_sessions", "cloud_charging_sessions", cloudSessions.length, { ...meta, window_days: 60,
-      month: { sessions: 4, energy_kwh: 92.1, cost: 18.4, home_energy_kwh: 74.6, public_energy_kwh: 17.5 }, sessions: cloudSessions });
+      month: { sessions: 4, energy_kwh: 92.1, cost: 18.4, home_energy_kwh: 74.6, public_energy_kwh: 17.5 }, cloud_sessions: cloudSessions });
     /* car software, schedules, permissions, inbox */
     const hasUpdate = q.get("update") !== "0";
     add("update.c10_software", "vehicle_software", hasUpdate ? "on" : "off", { ...meta, installed_version: "1.03.12",
