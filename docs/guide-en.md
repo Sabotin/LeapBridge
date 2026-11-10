@@ -24,7 +24,7 @@ setting, service and known limitation. For a short overview see
 | --- | --- |
 | **Home Assistant 2025.3 or newer** | Older versions don't support the vehicle settings (config sub-entries). |
 | **Leapmotor account e-mail and password** | Your login details. |
-| **App certificate:** `app_cert.pem` and `app_key.pem` | Two files needed to log in to the EU server. They are not part of this repository; see [below](#about-app_certpem-and-app_keypem). |
+| **App certificate:** `app_cert.pem` and `app_key.pem` | Two files needed to log in to the EU server. Setup downloads them for you; see [below](#about-app_certpem-and-app_keypem). |
 | **Vehicle PIN** *(optional)* | Only needed for remote control (locking, climate …). Prefilled with the factory PIN `0000`. |
 
 > [!TIP]
@@ -514,8 +514,8 @@ state, charging, `evcc_status`, charging power/current/voltage, odometer and
 | Problem | Fix |
 | --- | --- |
 | HACS can't install | Add the repository as type **Integration**, then restart. |
-| Certificate or login errors | Upload/paste both PEM files, or place them as `/config/leapmotor/app_cert.pem` and `app_key.pem`. |
-| *Certificate and key don't match* | The files are not a pair from the same source; get a matching pair. |
+| Certificate or login errors | Switch on **Download the app certificates from GitHub** in the integration's options, upload/paste both PEM files, or place them as `/config/leapmotor/app_cert.pem` and `app_key.pem`. |
+| *Certificate and key don't match* | The files are not a pair from the same source; download the pair from GitHub (integration options) or get a matching pair. |
 | Login `code 21` / wrong account or password | If the same credentials work in the app: log out fully, change/reset the password once in the official app, retry. |
 | Phone app keeps logging out | Use a second account with shared vehicle access. |
 | Stale or wrong values | Press **Refresh data**, check **Last refresh**, then run `leapmotor.export_diagnostics`. |

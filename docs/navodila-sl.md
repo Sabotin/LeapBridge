@@ -21,7 +21,7 @@ od začetka do delujoče nadzorne plošče. Za angleška navodila glej
 | --- | --- |
 | **Home Assistant 2025.3 ali novejši** | Starejše različice ne podpirajo nastavitev vozila. |
 | **E-pošta in geslo računa Leapmotor** | Tvoji podatki za prijavo. |
-| **Certifikat aplikacije:** `app_cert.pem` in `app_key.pem` | Dve datoteki, potrebni za prijavo na evropski strežnik. Nista del tega repozitorija, glej [spodaj](#o-certifikatu-app_certpem-in-app_keypem). |
+| **Certifikat aplikacije:** `app_cert.pem` in `app_key.pem` | Dve datoteki, potrebni za prijavo na evropski strežnik. Namestitev ju prenese sama, glej [spodaj](#o-certifikatu-app_certpem-in-app_keypem). |
 | **PIN vozila** *(neobvezno)* | Potreben samo za daljinsko upravljanje (zaklepanje, klima …). |
 
 > [!TIP]
@@ -39,15 +39,16 @@ Za prijavo na evropski strežnik Leapmotor sta potrebni dve datoteki:
 - **`app_key.pem`:** pripadajoči zasebni ključ.
 
 To **nista** tvoje uporabniško ime in geslo in nista osebna podatka vozila, ampak sta
-gradivo na ravni aplikacije. Zaradi tega **nista vključena v ta repozitorij** in
-ju integracija ne more ustvariti ali prenesti sama. Vsak uporabnik mora datoteki
-priskrbeti sam.
+gradivo na ravni aplikacije. Shranjeni sta v mapi [`certs`](../certs) tega
+repozitorija. Namestitev ponudi **Prenesi z GitHuba**: obe datoteki prenese,
+preveri, ali sodita skupaj, in ju shrani v `/config/leapmotor/`. Isto stikalo
+najdeš pozneje pod **Nastavitve → Naprave in storitve → Leapmotor →
+Konfiguriraj**, manjkajoč par pa se pokaže pod **Nastavitve → Popravila**, kjer
+ga preneseš z enim klikom. Še vedno lahko naložiš ali prilepiš tudi svoji
+datoteki.
 
-Datoteki shraniš **samo v svoj Home Assistant**, nikoli v GitHub. Repozitorij
-ima samodejni pregled, ki zavrne vsako objavo z zasebnim ključem ali
-certifikatom, prav zato da po nesreči ne pristaneta na spletu.
-
-Ko imaš obe datoteki, nadaljuj z namestitvijo.
+Nameščena integracija sama ne vsebuje certifikata; datoteki se preneseta šele,
+ko to zahtevaš.
 
 ---
 
@@ -116,7 +117,8 @@ Ta mapa je zunaj `custom_components`, zato je posodobitve nikoli ne izbrišejo.
 ## 4. Nastavitev integracije
 
 1. **Nastavitve → Naprave in storitve → + Dodaj integracijo → Leapmotor**.
-2. **Certifikati:** naloži ali prilepi `app_cert.pem` in `app_key.pem`.
+2. **Certifikati:** izberi **Prenesi z GitHuba (priporočeno)** ali sam naloži
+   oziroma prilepi `app_cert.pem` in `app_key.pem`.
    (Ta korak se preskoči, če sta datoteki že v `/config/leapmotor/`.)
 3. **Račun:** e-pošta, geslo, neobvezni PIN vozila in interval posodabljanja.
 4. Končano. Vozilo se pojavi kot naprava z vsemi entitetami.
@@ -314,8 +316,8 @@ Ti podatki se berejo iz Leapmotorjevega oblaka redkeje kot stanje vozila
 | Težava | Rešitev |
 | --- | --- |
 | HACS ne namesti | Repozitorij dodaj kot vrsto **Integration**, nato znova zaženi. |
-| Napaka certifikata ali prijave | Naloži/prilepi obe datoteki PEM ali ju shrani kot `/config/leapmotor/app_cert.pem` in `app_key.pem`. |
-| *Certifikat in ključ se ne ujemata* | Datoteki nista par iz istega vira. Priskrbi ujemajoč se par. |
+| Napaka certifikata ali prijave | V možnostih integracije vklopi **Prenesi certifikata aplikacije z GitHuba**, naloži/prilepi obe datoteki PEM ali ju shrani kot `/config/leapmotor/app_cert.pem` in `app_key.pem`. |
+| *Certifikat in ključ se ne ujemata* | Datoteki nista par iz istega vira. Prenesi par z GitHuba (možnosti integracije) ali priskrbi ujemajoč se par. |
 | Prijava `code 21` / napačen račun ali geslo | Če isti podatki delujejo v uradni aplikaciji: popolnoma se odjavi, enkrat spremeni/ponastavi geslo v aplikaciji in poskusi znova. |
 | Aplikacija te odjavlja | Uporabi drugi račun z deljenim vozilom. |
 | Zastarele ali napačne vrednosti | Pritisni **Osveži podatke**, preveri **Zadnja osvežitev**, nato zaženi `leapmotor.export_diagnostics`. |

@@ -1327,6 +1327,489 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.state_of("sensor", "fuel_avoided_total_l").state, "1199.2")
         coordinator.cancel_scheduled_followup_refreshes()
 
+    # ------------------------------------------------------------------
+    # Certificate download: setup menu, options switch and repair
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def certificate_pair(name="synthetic"):
+        """A fresh certificate and its key as PEM; nothing real is used here."""
+        from datetime import timezone
+
+        from cryptography import x509
+        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives.asymmetric import ec
+        from cryptography.x509.oid import NameOID
+
+        key = ec.generate_private_key(ec.SECP256R1())
+        subject = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, name)])
+        now = datetime.now(timezone.utc)
+        certificate = (x509.CertificateBuilder().subject_name(subject).issuer_name(subject)
+                       .public_key(key.public_key()).serial_number(x509.random_serial_number())
+                       .not_valid_before(now - timedelta(days=1)).not_valid_after(now + timedelta(days=30))
+                       .sign(key, hashes.SHA256()))
+        return (certificate.public_bytes(serialization.Encoding.PEM),
+                key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
+                                  serialization.NoEncryption()))
+
+    def certificate_files(self):
+        folder = Path(self.hass.config.path("leapmotor"))
+        return folder / "app_cert.pem", folder / "app_key.pem"
+
+    def download_answers(self, *answers):
+        """Stand in for GitHub: each download gets the next answer (the last one repeats).
+
+        An answer is a (certificate, key) pair to serve, "missing" (HTTP 404
+        everywhere) or "offline". Only the HTTP session is replaced; reading,
+        checking and installing the pair run for real.
+        """
+        import requests
+
+        from custom_components.leapmotor import cert_download
+
+        queue = list(answers)
+        downloads = Mock()
+
+        class Response:
+            def __init__(self, status, body=b""):
+                self.status_code, self.body = status, body
+
+            def iter_content(self, chunk_size=8192):
+                yield self.body
+
+            def close(self):
+                pass
+
+        class Session:
+            def __init__(self):
+                downloads()
+                self.answer = queue.pop(0) if len(queue) > 1 else queue[0]
+
+            def get(self, url, **kwargs):
+                if self.answer == "offline":
+                    raise requests.ConnectionError("synthetic: no route to host")
+                if self.answer == "missing" or not url.endswith(("/app_cert.pem", "/app_key.pem")):
+                    return Response(404)
+                return Response(200, self.answer[url.endswith("/app_key.pem")])
+
+            def close(self):
+                pass
+
+        for target, replacement in ((cert_download.requests, Session), (cert_download.time, Mock())):
+            patcher = patch.object(target, "Session" if target is cert_download.requests else "sleep",
+                                   replacement)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        return downloads
+
+    async def test_setup_menu_downloads_the_certificates_or_takes_them_by_hand(self):
+        from custom_components.leapmotor import cert_download
+
+        pair = self.certificate_pair()
+        cert_file, key_file = self.certificate_files()
+        fetch = self.download_answers("offline", pair)
+        flows = self.hass.config_entries.flow
+
+        # Without certificates setup starts with the choice, not with the account.
+        result = await flows.async_init("leapmotor", context={"source": "user"})
+        self.assertEqual((result["type"].value, result["step_id"]), ("menu", "certificate_source"))
+        self.assertEqual(list(result["menu_options"]), ["download_certificates", "certificates"])
+        self.assertEqual(result["description_placeholders"],
+                         {"repository": cert_download.CERT_REPOSITORY_URL})
+        fetch.assert_not_called()  # nothing is downloaded before the user chooses
+
+        # A failed download offers another try and the manual way on one form.
+        result = await flows.async_configure(result["flow_id"], {"next_step_id": "download_certificates"})
+        self.assertEqual((result["type"].value, result["step_id"]), ("form", "certificates"))
+        self.assertEqual(result["errors"], {"base": "cert_download_cannot_connect"})
+        fields = {str(key): key for key in result["data_schema"].schema}
+        self.assertTrue(fields["download_certificates"].default())
+        self.assertFalse(cert_file.exists() or key_file.exists())
+        result = await flows.async_configure(result["flow_id"], {"download_certificates": True})
+        self.assertEqual((result["type"].value, result["step_id"]), ("form", "account"))
+        self.assertEqual(fetch.call_count, 2)
+        self.assertEqual((cert_file.read_bytes(), key_file.read_bytes()), pair)
+        self.assertEqual(key_file.stat().st_mode & 0o777, 0o600)
+        flows.async_abort(result["flow_id"])
+
+        # With usable certificates in place the next setup goes straight to the account.
+        result = await flows.async_init("leapmotor", context={"source": "user"})
+        self.assertEqual((result["type"].value, result["step_id"]), ("form", "account"))
+        flows.async_abort(result["flow_id"])
+
+        # A direct download from the menu.
+        cert_file.unlink()
+        key_file.unlink()
+        result = await flows.async_init("leapmotor", context={"source": "user"})
+        self.assertEqual(result["step_id"], "certificate_source")
+        result = await flows.async_configure(result["flow_id"], {"next_step_id": "download_certificates"})
+        self.assertEqual((result["type"].value, result["step_id"]), ("form", "account"))
+        self.assertEqual(cert_file.read_bytes(), pair[0])
+        flows.async_abort(result["flow_id"])
+
+        # By hand: nothing given, a key of another certificate, then the right pair.
+        cert_file.unlink()
+        key_file.unlink()
+        fetch.reset_mock()
+        other = self.certificate_pair("other")
+        result = await flows.async_init("leapmotor", context={"source": "user"})
+        result = await flows.async_configure(result["flow_id"], {"next_step_id": "certificates"})
+        self.assertEqual((result["type"].value, result["step_id"], result["errors"]),
+                         ("form", "certificates", {}))
+        self.assertFalse({str(key): key for key in result["data_schema"].schema}
+                         ["download_certificates"].default())
+        result = await flows.async_configure(result["flow_id"], {})
+        self.assertEqual(result["errors"], {"base": "missing_app_cert"})
+        result = await flows.async_configure(result["flow_id"], {
+            "app_cert_pem": pair[0].decode(), "app_key_pem": other[1].decode()})
+        self.assertEqual(result["errors"], {"base": "certificate_key_mismatch"})
+        # Files given by hand win over the download switch.
+        result = await flows.async_configure(result["flow_id"], {
+            "download_certificates": True,
+            "app_cert_pem": other[0].decode(), "app_key_pem": other[1].decode()})
+        self.assertEqual((result["type"].value, result["step_id"]), ("form", "account"))
+        fetch.assert_not_called()
+        self.assertEqual(cert_file.read_text().strip(), other[0].decode().strip())
+        flows.async_abort(result["flow_id"])
+
+        # Every text of the new steps exists in English, Slovenian and German.
+        from homeassistant.helpers import translation
+        for language in ("en", "sl", "de"):
+            strings = await translation.async_get_translations(self.hass, language, "config", ["leapmotor"])
+            prefix = "component.leapmotor.config"
+            for key in ("step.certificate_source.title", "step.certificate_source.description",
+                        "step.certificate_source.menu_options.download_certificates",
+                        "step.certificate_source.menu_options.certificates",
+                        "step.certificates.data.download_certificates",
+                        *(f"error.{reason}" for reason in (
+                            cert_download.REASON_CANNOT_CONNECT, cert_download.REASON_NOT_FOUND,
+                            cert_download.REASON_INVALID, cert_download.REASON_WRITE_FAILED))):
+                self.assertIn(f"{prefix}.{key}", strings, language)
+
+    async def test_options_download_switch_installs_and_never_damages_certificates(self):
+        from custom_components.leapmotor import cert_download
+
+        entry = await self.load_entry()
+        old = self.certificate_pair("old")
+        new = self.certificate_pair("new")
+        cert_file, key_file = self.certificate_files()
+        cert_file.parent.mkdir(parents=True, exist_ok=True)
+        cert_file.write_bytes(old[0])
+        key_file.write_bytes(old[1])
+        broken = (new[0], old[1])  # a key that does not belong to the certificate
+        fetch = self.download_answers(broken, new)
+        options = self.hass.config_entries.options
+
+        result = await options.async_init(entry.entry_id)
+        fields = {str(key): key for key in result["data_schema"].schema}
+        self.assertFalse(fields["download_certificates"].default())
+        self.assertEqual(result["description_placeholders"],
+                         {"repository": cert_download.CERT_REPOSITORY_URL})
+
+        # Saving the options without the switch downloads nothing.
+        result = await options.async_configure(result["flow_id"], {})
+        await self.hass.async_block_till_done()
+        self.assertEqual(result["type"].value, "create_entry")
+        fetch.assert_not_called()
+        self.assertNotIn("download_certificates", entry.options)
+
+        # An unusable download is refused and the working files stay as they are.
+        result = await options.async_init(entry.entry_id)
+        result = await options.async_configure(result["flow_id"], {"download_certificates": True})
+        self.assertEqual((result["type"].value, result["errors"]),
+                         ("form", {"base": "cert_download_invalid"}))
+        self.assertTrue({str(key): key for key in result["data_schema"].schema}
+                        ["download_certificates"].default())
+        self.assertEqual((cert_file.read_bytes(), key_file.read_bytes()), old)
+
+        # The next try installs the new pair; the switch itself is not stored.
+        seen = self.watch_reloads()
+        result = await options.async_configure(result["flow_id"], {"download_certificates": True})
+        await self.hass.async_block_till_done()
+        self.assertEqual(result["type"].value, "create_entry")
+        self.assertEqual((cert_file.read_bytes(), key_file.read_bytes()), new)
+        self.assertEqual(key_file.stat().st_mode & 0o777, 0o600)
+        self.assertNotIn("download_certificates", entry.options)
+        self.assertNotIn("download_certificates", result["data"])
+        self.assertEqual(entry.state, config_entries.ConfigEntryState.LOADED)
+        self.assertEqual(seen["reports"], [])
+        self.assertLessEqual(seen["reloads"], 1)
+
+        for language in ("en", "sl", "de"):
+            from homeassistant.helpers import translation
+            strings = await translation.async_get_translations(self.hass, language, "options", ["leapmotor"])
+            self.assertIn("component.leapmotor.options.step.init.data.download_certificates", strings, language)
+            self.assertIn("component.leapmotor.options.error.cert_download_cannot_connect", strings, language)
+        self.hass.data["leapmotor"][entry.entry_id].cancel_scheduled_followup_refreshes()
+
+    async def test_missing_certificates_are_offered_as_a_repair_that_downloads_them(self):
+        from homeassistant.helpers import issue_registry
+
+        from custom_components.leapmotor import cert_download, repairs
+        from custom_components.leapmotor.coordinator import missing_certificates_issue_id
+
+        vehicle = self.api.Vehicle(VIN, "private-car-123456", "T03", "Private Owner", False)
+        self.client._find_vehicle_by_vin.return_value = vehicle
+        good = {"vehicles": {VIN: self.api.normalize_vehicle(vehicle, {"data": {
+            "signal": {"1204": 75, "1939": 0}, "chargesocSetting": 95}}, None)}}
+        self.client.fetch_data.side_effect = self.api.LeapmotorMissingAppCertError("missing app certificate")
+        entry = config_entries.ConfigEntry(
+            domain="leapmotor", title="Private Account Title", version=1, minor_version=1,
+            data={"username": "synthetic", "password": "private-password", "device_id": "synthetic",
+                  "operation_password": "1234"}, options={}, unique_id="synthetic",
+            source="user", discovery_keys=types.MappingProxyType({}), subentries_data=None,
+        )
+        await self.hass.config_entries.async_add(entry)
+        await self.hass.async_block_till_done()
+        # Setup waits for the certificates; it does not ask for the password.
+        self.assertEqual(entry.state, config_entries.ConfigEntryState.SETUP_RETRY)
+        self.assertEqual(self.hass.config_entries.flow.async_progress(), [])
+        registry = issue_registry.async_get(self.hass)
+        issue_id = missing_certificates_issue_id(entry.entry_id)
+        issue = registry.async_get_issue("leapmotor", issue_id)
+        self.assertIsNotNone(issue)
+        self.assertTrue(issue.is_fixable)
+        self.assertEqual(issue.translation_key, "missing_app_cert")
+        self.assertEqual(issue.translation_placeholders, {"repository": cert_download.CERT_REPOSITORY_URL})
+
+        pair = self.certificate_pair()
+        cert_file, key_file = self.certificate_files()
+        fetch = self.download_answers("missing", pair)
+        flow = await repairs.async_create_fix_flow(self.hass, issue_id, issue.data)
+        self.assertIsInstance(flow, repairs.MissingCertificatesRepairFlow)
+        flow.hass = self.hass
+        form = await flow.async_step_init()
+        self.assertEqual((form["type"].value, form["step_id"]), ("form", "confirm"))
+        self.assertEqual(form["description_placeholders"], {"repository": cert_download.CERT_REPOSITORY_URL})
+        fetch.assert_not_called()  # nothing before confirming
+        failed = await flow.async_step_confirm({})
+        self.assertEqual((failed["type"].value, failed["errors"]),
+                         ("form", {"base": "cert_download_not_found"}))
+        self.assertFalse(cert_file.exists())
+
+        # The download works: the files are installed and the entry starts at once.
+        self.client.fetch_data.side_effect = None
+        self.client.fetch_data.return_value = good
+        seen = self.watch_reloads()
+        done = await flow.async_step_confirm({})
+        await self.hass.async_block_till_done()
+        self.assertEqual(done["type"].value, "create_entry")
+        self.assertEqual((cert_file.read_bytes(), key_file.read_bytes()), pair)
+        self.assertEqual(entry.state, config_entries.ConfigEntryState.LOADED)
+        self.assertEqual(seen["reloads"], 1)
+        self.assertEqual(seen["reports"], [])
+        self.assertIsNone(registry.async_get_issue("leapmotor", issue_id))
+
+        # Certificates that disappear later bring the repair back, and a good poll clears it.
+        coordinator = self.hass.data["leapmotor"][entry.entry_id]
+        self.client.fetch_data.side_effect = self.api.LeapmotorMissingAppCertError("missing app certificate")
+        await coordinator.async_refresh()
+        await self.hass.async_block_till_done()
+        self.assertIsNotNone(registry.async_get_issue("leapmotor", issue_id))
+        self.client.fetch_data.side_effect = None
+        await coordinator.async_refresh()
+        await self.hass.async_block_till_done()
+        self.assertIsNone(registry.async_get_issue("leapmotor", issue_id))
+
+        from homeassistant.helpers import translation
+        for language in ("en", "sl", "de"):
+            strings = await translation.async_get_translations(self.hass, language, "issues", ["leapmotor"])
+            prefix = "component.leapmotor.issues.missing_app_cert"
+            for key in ("title", "fix_flow.step.confirm.title", "fix_flow.step.confirm.description",
+                        "fix_flow.error.cert_download_cannot_connect", "fix_flow.error.cert_download_not_found"):
+                self.assertIn(f"{prefix}.{key}", strings, language)
+        coordinator.cancel_scheduled_followup_refreshes()
+
+    # ------------------------------------------------------------------
+    # Charging schedule: action and the two time entities
+    # ------------------------------------------------------------------
+
+    PLAN = {"isEnable": 1, "percent": 90, "beginTime": "23:00", "endTime": "06:00",
+            "cycles": "1,2,3,4,5", "circulation": 1, "recharge": 0}
+
+    async def load_entry_with_plan(self, model="B10"):
+        """A car whose status carries a whole charging schedule."""
+        entry = await self.load_entry(model)
+        vehicle = self.api.Vehicle(VIN, "private-car-123456", model, "Private Owner", False)
+        status = {"data": {"signal": {"1204": 75, "1939": 0}, "config": {"3": dict(self.PLAN)}}}
+        self.client.fetch_data.return_value = {
+            "vehicles": {VIN: self.api.normalize_vehicle(vehicle, status, None)}}
+        self.client.get_vehicle_status = Mock(return_value=status)
+        self.client.get_charge_schedule = Mock(return_value={})
+        self.client.token = "synthetic-token"
+        self.client._ensure_account_cert_files = Mock()
+        coordinator = self.hass.data["leapmotor"][entry.entry_id]
+        await coordinator.async_refresh()
+        await self.hass.async_block_till_done()
+        return entry, coordinator
+
+    def sent_plan(self):
+        kwargs = self.client._remote_control_raw.call_args.kwargs
+        self.assertEqual((kwargs["cmd_id"], kwargs["action_label"]), ("190", "set_charging_schedule"))
+        return kwargs["cmd_content"]
+
+    async def test_charging_schedule_action_sends_one_command_and_keeps_what_is_left_out(self):
+        import voluptuous as vol
+
+        entry, coordinator = await self.load_entry_with_plan()
+        self.assertTrue(self.hass.services.has_service("leapmotor", "set_charging_schedule"))
+
+        async def call(**data):
+            coordinator._last_remote_results.clear()  # skip the remote-action cooldown
+            self.client._sent_charge_plans.clear()  # read the car, not the last command
+            self.client._remote_control_raw.reset_mock()
+            self.client.get_vehicle_status.reset_mock()
+            await self.hass.services.async_call(
+                "leapmotor", "set_charging_schedule", {"vin": VIN, **data}, blocking=True)
+
+        # Everything given: the payload of LeapConnect, and the car is not read first.
+        await call(start_time="22:30:00", end_time="05:45", days=["wed", "mon"], enabled=True,
+                   charge_limit_percent=80, repeat_weekly=False, auto_recharge=True)
+        self.assertEqual(self.sent_plan(),
+                         '{"chargeEnable":1,"chargesoc":80,"circulation":0,"cycles":"1,3",'
+                         '"endtime":"05:45","recharge":1,"starttime":"22:30"}')
+        self.client.get_vehicle_status.assert_not_called()
+        self.assertEqual(self.client._remote_control_raw.call_count, 1)
+        self.assertTrue(coordinator.data["vehicles"][VIN]["remote_control"]["success"])
+
+        # Only the days: the times, limit and switches stay as the car has them.
+        await call(days=[6, 7])
+        self.assertEqual(self.sent_plan(),
+                         '{"chargeEnable":1,"chargesoc":90,"circulation":1,"cycles":"6,7",'
+                         '"endtime":"06:00","recharge":0,"starttime":"23:00"}')
+        self.client.get_vehicle_status.assert_called_once()
+
+        # Switching the schedule off keeps its values.
+        await call(enabled=False, charge_limit_percent=85)
+        self.assertEqual(json.loads(self.sent_plan()), {
+            "chargeEnable": 0, "chargesoc": 85, "circulation": 1, "cycles": "1,2,3,4,5",
+            "endtime": "06:00", "recharge": 0, "starttime": "23:00"})
+
+        # A second change right after the first builds on what was just sent,
+        # because the car's status lags behind. The action switches the
+        # schedule on unless it is told not to.
+        coordinator._last_remote_results.clear()
+        self.client.get_vehicle_status.reset_mock()
+        await self.hass.services.async_call(
+            "leapmotor", "set_charging_schedule", {"vin": VIN, "end_time": "07:15"}, blocking=True)
+        self.assertEqual(json.loads(self.sent_plan()), {
+            "chargeEnable": 1, "chargesoc": 85, "circulation": 1, "cycles": "1,2,3,4,5",
+            "endtime": "07:15", "recharge": 0, "starttime": "23:00"})
+        self.client.get_vehicle_status.assert_not_called()
+
+        # The cooldown of remote commands applies here too.
+        with self.assertRaises(HomeAssistantError) as caught:
+            await self.hass.services.async_call(
+                "leapmotor", "set_charging_schedule", {"vin": VIN, "enabled": True}, blocking=True)
+        self.assertEqual(caught.exception.translation_key, "remote_cooldown")
+
+        # Wrong values are refused before anything is sent.
+        for bad in ({"start_time": "25:00"}, {"days": ["someday"]}, {"days": []},
+                    {"charge_limit_percent": 0}):
+            with self.subTest(bad=bad), self.assertRaises(vol.Invalid):
+                await call(**bad)
+            self.client._remote_control_raw.assert_not_called()
+
+        from homeassistant.helpers import translation
+        for language in ("en", "sl", "de"):
+            strings = await translation.async_get_translations(self.hass, language, "services", ["leapmotor"])
+            prefix = "component.leapmotor.services.set_charging_schedule"
+            for key in ("name", "description", *(f"fields.{field}.name" for field in (
+                    "start_time", "end_time", "days", "enabled", "charge_limit_percent",
+                    "repeat_weekly", "auto_recharge"))):
+                self.assertIn(f"{prefix}.{key}", strings, language)
+            days = await translation.async_get_translations(self.hass, language, "selector", ["leapmotor"])
+            for day in ("mon", "tue", "wed", "thu", "fri", "sat", "sun"):
+                self.assertIn(f"component.leapmotor.selector.charging_days.options.{day}", days, language)
+        coordinator.cancel_scheduled_followup_refreshes()
+
+    async def test_t03_charging_schedule_uses_the_cloud_schedule_and_its_limit_range(self):
+        entry = await self.load_entry()
+        coordinator = self.hass.data["leapmotor"][entry.entry_id]
+        self.client.get_charge_schedule = Mock(return_value={
+            "chargeEnable": 1, "chargesoc": 95, "starttime": "23:00", "endtime": "08:00",
+            "cycles": "1,2,3,4,5,6,7", "circulation": 0, "recharge": 0})
+        await self.hass.services.async_call(
+            "leapmotor", "set_charging_schedule", {"vin": VIN, "start_time": "01:00"}, blocking=True)
+        self.assertEqual(self.sent_plan(),
+                         '{"chargeEnable":1,"chargesoc":95,"circulation":0,"cycles":"1,2,3,4,5,6,7",'
+                         '"endtime":"08:00","recharge":0,"starttime":"01:00"}')
+        self.client.get_vehicle_status.assert_not_called()  # the T03 status has no usable plan
+        coordinator._last_remote_results.clear()
+        self.client._remote_control_raw.reset_mock()
+        with self.assertRaisesRegex(HomeAssistantError, "50-100"):
+            await self.hass.services.async_call(
+                "leapmotor", "set_charging_schedule", {"vin": VIN, "charge_limit_percent": 40}, blocking=True)
+        self.client._remote_control_raw.assert_not_called()
+        coordinator.cancel_scheduled_followup_refreshes()
+
+    async def test_charging_schedule_time_entities_show_and_change_the_window(self):
+        entry, coordinator = await self.load_entry_with_plan()
+        start, end = self.state_of("time", "charging_schedule_start"), self.state_of("time", "charging_schedule_end")
+        self.assertEqual((start.state, end.state), ("23:00:00", "06:00:00"))
+        self.assertTrue(start.entity_id.startswith("time.") and end.entity_id.startswith("time."))
+        self.assertNotEqual(start.entity_id, end.entity_id)
+        # The dashboard reads the whole schedule from the start entity.
+        self.assertEqual({key: start.attributes[key] for key in (
+            "vin", "schedule_enabled", "schedule_start", "schedule_end", "schedule_days",
+            "repeat_weekly", "auto_recharge", "charge_limit_percent", "operation_password_configured")}, {
+            "vin": VIN, "schedule_enabled": True, "schedule_start": "23:00", "schedule_end": "06:00",
+            "schedule_days": ["mon", "tue", "wed", "thu", "fri"], "repeat_weekly": True,
+            "auto_recharge": False, "charge_limit_percent": 90, "operation_password_configured": True})
+        registry = entity_registry.async_get(self.hass)
+        self.assertEqual(registry.async_get(start.entity_id).entity_category.value, "config")
+
+        # Changing one time sends the whole schedule with only that time changed.
+        await self.hass.services.async_call(
+            "time", "set_value", {"entity_id": start.entity_id, "time": "21:15:00"}, blocking=True)
+        self.assertEqual(json.loads(self.sent_plan()), {
+            "chargeEnable": 1, "chargesoc": 90, "circulation": 1, "cycles": "1,2,3,4,5",
+            "endtime": "06:00", "recharge": 0, "starttime": "21:15"})
+        self.client._sent_charge_plans.clear()
+        await self.hass.services.async_call(
+            "time", "set_value", {"entity_id": end.entity_id, "time": "05:30:00"}, blocking=True)
+        self.assertEqual(json.loads(self.sent_plan()), {
+            "chargeEnable": 1, "chargesoc": 90, "circulation": 1, "cycles": "1,2,3,4,5",
+            "endtime": "05:30", "recharge": 0, "starttime": "23:00"})
+
+        # The dashboard card saves its editor with exactly this call: the start
+        # entity names the car; the charge limit and auto recharge are left to the car.
+        coordinator._last_remote_results.clear()
+        self.client._sent_charge_plans.clear()
+        await self.hass.services.async_call("leapmotor", "set_charging_schedule", {
+            "entity_id": start.entity_id, "start_time": "22:30", "end_time": "05:45", "days": ["sat", "sun"],
+            "enabled": False, "repeat_weekly": False}, blocking=True)
+        self.assertEqual(json.loads(self.sent_plan()), {
+            "chargeEnable": 0, "chargesoc": 90, "circulation": 0, "cycles": "6,7",
+            "endtime": "05:45", "recharge": 0, "starttime": "22:30"})
+
+        # A car that reports no schedule: unknown, not an error.
+        data = deepcopy(self.client.fetch_data.return_value)
+        for key in list(data["vehicles"][VIN]["charging"]):
+            if key.startswith("charging_planned_"):
+                data["vehicles"][VIN]["charging"][key] = None
+        self.client.fetch_data.return_value = data
+        await coordinator.async_refresh()
+        await self.hass.async_block_till_done()
+        empty = self.state_of("time", "charging_schedule_start")
+        self.assertEqual(empty.state, "unknown")
+        self.assertIsNone(empty.attributes["schedule_days"])
+        self.assertIsNone(empty.attributes["schedule_enabled"])
+
+        # Without the vehicle PIN the times cannot be changed.
+        subentry = next(iter(entry.subentries.values()))
+        self.hass.config_entries.async_update_subentry(
+            entry, subentry, data={**subentry.data, "operation_password": ""})
+        await self.hass.async_block_till_done()
+        self.assertEqual(self.state_of("time", "charging_schedule_start").state, "unavailable")
+
+        from homeassistant.helpers import translation
+        for language in ("en", "sl", "de"):
+            strings = await translation.async_get_translations(self.hass, language, "entity", ["leapmotor"])
+            for key in ("charging_schedule_start", "charging_schedule_end"):
+                self.assertIn(f"component.leapmotor.entity.time.{key}.name", strings, language)
+        self.hass.data["leapmotor"][entry.entry_id].cancel_scheduled_followup_refreshes()
+
 
 if __name__ == "__main__":
     unittest.main()

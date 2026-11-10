@@ -23,6 +23,7 @@
   <nav class="bar">
     <span>Scenario</span>
     <a href="?state=charging">Charging · night</a>
+    <a href="?state=plugged&page=charging">Plugged in · waiting for the schedule</a>
     <a href="?state=parked&scene=day">Parked · day</a>
     <a href="?state=attention">Needs attention</a>
     <a href="?state=driving">Driving · too fast</a>
@@ -56,6 +57,7 @@
     const charging = scenario === "charging";
     const attention = scenario === "attention";
     const driving = scenario === "driving";
+    const waiting = scenario === "plugged"; // plugged in, the charging schedule has not started yet
 
     /* ---------- 24 h timeline (hours ago) ---------- */
     const events = [
@@ -117,7 +119,7 @@
     add("sensor.c10_charging_power", "charging_power_kw", charging ? 10.8 : 0, u("kW"));
     add("sensor.c10_charging_current", "charging_current_a", charging ? -15.6 : 0, u("A"));
     add("sensor.c10_charging_voltage", "charging_voltage_v", charging ? 401 : 0, u("V"));
-    add("sensor.c10_charging_connection", "charging_connection_state", charging ? "charging" : "unplugged", meta);
+    add("sensor.c10_charging_connection", "charging_connection_state", charging ? "charging" : waiting ? "plugged_in" : "unplugged", meta);
     add("sensor.c10_vehicle_state", "vehicle_state", driving ? "driving" : "parked", meta);
     add("sensor.c10_last_vehicle_update", "last_vehicle_update", iso(now - 3 * MIN), meta);
     add("sensor.c10_last_7_days_mileage", "last_7_days_mileage_km", km.reduce((a, b) => a + b, 0), u("km", { daily_detail: daily }));
@@ -131,7 +133,7 @@
     add("sensor.c10_rear_left_tire_pressure", "tire_pressure_rear_left_bar", attention ? 1.8 : 2.4, u("bar"));
     add("sensor.c10_rear_right_tire_pressure", "tire_pressure_rear_right_bar", 2.4, u("bar"));
     add("binary_sensor.c10_charging", "is_charging", charging ? "on" : "off", meta);
-    add("binary_sensor.c10_charge_cable_plugged_in", "is_plugged_in", charging ? "on" : "off", meta);
+    add("binary_sensor.c10_charge_cable_plugged_in", "is_plugged_in", charging || waiting ? "on" : "off", meta);
     add("binary_sensor.c10_is_driving", "is_driving", driving ? "on" : "off", meta);
     add("binary_sensor.c10_driver_door", "driver_door_open", attention ? "on" : "off", meta);
     add("binary_sensor.c10_passenger_door", "passenger_door_open", "off", meta);
@@ -154,6 +156,9 @@
     add("switch.c10_steering_wheel_heating", "steering_wheel_heat", "off", meta);
     add("switch.c10_mirror_heating", "rearview_mirror_heat", "off", meta);
     add("switch.c10_charging_schedule", "charging_schedule", "on", meta);
+    add("time.c10_set_charging_schedule_start", "charging_schedule_start", "23:00:00", { ...meta, schedule_enabled: true,
+      schedule_start: "23:00", schedule_end: "06:00", schedule_days: ["mon", "tue", "wed", "thu", "fri"],
+      repeat_weekly: true, auto_recharge: false, charge_limit_percent: 90, operation_password_configured: true });
     for (const [slug, tk] of [["refresh_data", "refresh_data"], ["unlock_charger", "unlock_charger"], ["open_trunk", "open_trunk"],
       ["close_trunk", "close_trunk"], ["find_vehicle", "find_vehicle"], ["open_windows", "open_windows"], ["close_windows", "close_windows"],
       ["quick_cool", "quick_cool"], ["quick_heat", "quick_heat"], ["windshield_defrost", "windshield_defrost"],
@@ -440,6 +445,17 @@
       },
       callService: async (domain, service, data) => {
         console.log("callService", domain, service, data);
+        (window.__calls ||= []).push({ domain, service, data });
+        if (q.get("fail")) throw new Error("demo: the car did not answer");
+        if (service === "set_charging_schedule") {
+          // Show the saved schedule the way the integration does after the command.
+          const id = "time.c10_set_charging_schedule_start";
+          S[id] = { ...S[id], state: `${data.start_time}:00`, last_updated: iso(Date.now()), attributes: { ...S[id].attributes,
+            schedule_enabled: data.enabled, schedule_start: data.start_time, schedule_end: data.end_time,
+            schedule_days: data.days, repeat_weekly: data.repeat_weekly } };
+          const el = window.__card || window.__panel;
+          if (el) el.hass = { ...hass, states: { ...S } };
+        }
       },
     };
 

@@ -9,7 +9,7 @@
  * setup is needed. Add the card with:  type: custom:leapmotor-card
  */
 
-const CARD_VERSION = "1.2.0";
+const CARD_VERSION = "1.3.0";
 const MODULE_BASE = new URL(".", import.meta.url);
 
 /* ------------------------------------------------------------------ */
@@ -305,6 +305,11 @@ Object.assign(STRINGS.en, {
   rlNow: "with {p} % now", rlFull: "from 100 %", rlNote: "An estimate tuned to your own consumption: air drag grows with the square of speed, and heating or cooling costs more the further it is from 20 °C.",
   rlNeedData: "The range lab needs your average consumption first.",
   fcTitle: "Capacity trend", fcStable: "stable", fcSub: "{x} % per year · {n} full charges", fc90: "90 % around {d}",
+  schEdit: "Edit", schStart: "Start", schEnd: "End", schDays: "Days", schOn: "Schedule on",
+  schRepeat: "Repeat weekly", schRecharge: "Auto recharge", schSave: "Save", schNone: "No schedule set",
+  schWeekly: "every week", schOnce: "once", schNeedTime: "Set the start and the end.", schNeedDay: "Choose at least one day.",
+  schWaiting: "Plugged in, waiting for the schedule.", schChargeNow: "Charge now", schStartsAt: "Charging starts at {t}",
+  schRechargeOff: "Switched off in this card for now: what it does in the car is not confirmed yet. Saving keeps the car's setting.",
 });
 Object.assign(STRINGS.sl, {
   pageJourney: "Pot", sectionFailed: "Tega dela trenutno ni mogoče prikazati.", schedOnce: "enkrat", rlNowPlain: "s trenutno baterijo",
@@ -362,6 +367,11 @@ Object.assign(STRINGS.sl, {
   rlNow: "s trenutnimi {p} %", rlFull: "s 100 %", rlNote: "Ocena, umerjena na tvojo porabo: zračni upor raste s kvadratom hitrosti, gretje in hlajenje pa staneta več, čim dlje je od 20 °C.",
   rlNeedData: "Laboratorij dosega najprej potrebuje tvojo povprečno porabo.",
   fcTitle: "Trend kapacitete", fcStable: "stabilno", fcSub: "{x} % na leto · {n} polnih polnjenj", fc90: "90 % okoli {d}",
+  schEdit: "Uredi", schStart: "Začetek", schEnd: "Konec", schDays: "Dnevi", schOn: "Urnik vklopljen",
+  schRepeat: "Ponovi vsak teden", schRecharge: "Samodejno dopolnjevanje", schSave: "Shrani", schNone: "Urnik ni nastavljen",
+  schWeekly: "vsak teden", schOnce: "enkrat", schNeedTime: "Nastavi začetek in konec.", schNeedDay: "Izberi vsaj en dan.",
+  schWaiting: "Priključen, čaka na urnik.", schChargeNow: "Polni zdaj", schStartsAt: "Polnjenje se začne ob {t}",
+  schRechargeOff: "V tej kartici za zdaj onemogočeno: ni še potrjeno, kaj stikalo naredi v avtu. Shranjevanje ohrani nastavitev avta.",
 });
 Object.assign(STRINGS.de, {
   pageJourney: "Reise", sectionFailed: "Dieser Teil kann gerade nicht angezeigt werden.", schedOnce: "einmalig", rlNowPlain: "mit dem aktuellen Akkustand",
@@ -419,6 +429,11 @@ Object.assign(STRINGS.de, {
   rlNow: "mit {p} % jetzt", rlFull: "ab 100 %", rlNote: "Eine Schätzung, abgestimmt auf deinen eigenen Verbrauch: Der Luftwiderstand wächst mit dem Quadrat des Tempos, Heizen und Kühlen kosten umso mehr, je weiter es von 20 °C entfernt ist.",
   rlNeedData: "Das Reichweiten-Labor braucht zuerst deinen Durchschnittsverbrauch.",
   fcTitle: "Kapazitätstrend", fcStable: "stabil", fcSub: "{x} % pro Jahr · {n} Vollladungen", fc90: "90 % etwa {d}",
+  schEdit: "Bearbeiten", schStart: "Beginn", schEnd: "Ende", schDays: "Tage", schOn: "Ladeplan ein",
+  schRepeat: "Jede Woche wiederholen", schRecharge: "Automatisch nachladen", schSave: "Speichern", schNone: "Kein Ladeplan eingestellt",
+  schWeekly: "jede Woche", schOnce: "einmalig", schNeedTime: "Beginn und Ende festlegen.", schNeedDay: "Mindestens einen Tag wählen.",
+  schWaiting: "Angesteckt, wartet auf den Ladeplan.", schChargeNow: "Jetzt laden", schStartsAt: "Laden beginnt um {t}",
+  schRechargeOff: "In dieser Karte vorerst deaktiviert: Was der Schalter im Auto bewirkt, ist noch nicht bestätigt. Beim Speichern bleibt die Einstellung des Autos erhalten.",
 });
 
 /** What a shared account may do, in words (rights the cloud lists for the car). */
@@ -578,6 +593,8 @@ const SPEC = {
   speeding: ["binary_sensor", "speeding", "speeding"],
   climateMode: ["sensor", "climate_mode", "climate_mode"],
   chargeLimitSet: ["number", "charge_limit_setting", "charge_limit_setting"],
+  // Its attributes carry the whole charging schedule.
+  schedStart: ["time", "charging_schedule_start", "set_charging_schedule_start"],
   // Insights and the extra cloud data
   realRange: ["sensor", "real_range_km", "real_range"],
   nextDeparture: ["sensor", "next_departure", "next_departure"],
@@ -610,6 +627,8 @@ const DOORS = [
   ["doorRearLeft", "rearLeftDoor"], ["doorRearRight", "rearRightDoor"],
 ];
 const WINDOWS = ["winFL", "winFR", "winRL", "winRR", "skylight"];
+/** Weekdays as `leapmotor.set_charging_schedule` names them, Monday first. */
+const SCHED_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const TIRES = [["tireFL", "FL"], ["tireFR", "FR"], ["tireRL", "RL"], ["tireRR", "RR"]];
 /** Pages of the card: the first page holds the car, its status and the remote controls. */
 const PAGES = [
@@ -1649,6 +1668,41 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .stepper .stp:hover{background:rgba(246,168,35,.22)}
 .stepper .stp:disabled{opacity:.35;cursor:default}
 .lset{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:8px;margin-top:8px}
+.btn:disabled{opacity:.45;cursor:default}
+.lrow.sch{margin-top:8px}
+.lrow.sch>div{min-width:0}
+.lrow.sch b{white-space:nowrap}
+.lrow.sch .btn{flex:none;min-height:44px;padding:8px 14px}
+.schnow{display:flex;align-items:center;justify-content:space-between;gap:10px 12px;flex-wrap:wrap;margin-top:8px;padding:10px 14px;border-radius:15px;background:rgba(246,168,35,.06);border:1px solid rgba(246,168,35,.28);font-size:13.5px;color:var(--lm-soft)}
+.schnow>span{display:inline-flex;align-items:center;gap:8px;min-width:0}
+.schnow>span .ic{color:var(--lm-amber-2)}
+.schnow.hs{margin:0 auto 12px;max-width:560px;text-align:left;background:rgba(10,14,24,.55)}
+.look-classic .schnow.hs{margin:14px 0 0;max-width:440px}
+.schnow .btn{flex:none;min-height:44px;padding:8px 14px}
+.schnow .btn.busy{opacity:.55;pointer-events:none}
+.schsub{display:block;font-size:13px;color:var(--lm-muted);margin-top:3px}
+.sched{display:grid;gap:14px;margin-top:8px;padding:14px;border-radius:15px;background:rgba(255,255,255,.035);border:1px solid var(--lm-line-2)}
+.sched.busy{opacity:.6;pointer-events:none}
+.sched .lset{margin-top:0}
+.sched small{display:block;font-size:13px;color:var(--lm-muted)}
+.schgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.schf{display:grid;gap:6px;min-width:0}
+.schf input{width:100%;min-width:0;min-height:46px;padding:8px 10px;border-radius:13px;border:1px solid var(--lm-line);background:rgba(255,255,255,.04);color:var(--lm-text);font:600 16px var(--lm-mono);color-scheme:dark}
+.schf input:focus-visible,.dchip:focus-visible,.tgl:focus-visible{outline:2px solid var(--lm-amber);outline-offset:1px}
+.schdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:6px}
+.dchip{min-height:44px;padding:0;border-radius:12px;border:1px solid var(--lm-line);background:rgba(255,255,255,.04);font-size:13.5px;font-weight:600;color:var(--lm-muted);transition:color .2s,background .2s,border-color .2s}
+.dchip.on{color:var(--lm-amber-2);background:rgba(246,168,35,.16);border-color:rgba(246,168,35,.5)}
+.schtg{display:grid;gap:8px}
+.tgl{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:46px;padding:8px 12px;border-radius:13px;border:1px solid var(--lm-line-2);background:rgba(255,255,255,.03);font-size:14.5px;font-weight:600;text-align:left}
+.tgl i{position:relative;flex:none;width:42px;height:24px;border-radius:999px;background:rgba(148,163,184,.28);transition:background .2s}
+.tgl i::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s}
+.tgl.on i{background:var(--lm-amber)}
+.tgl.on i::after{transform:translateX(18px)}
+.tgl:disabled{opacity:.45;cursor:default}
+.schinfo{display:flex;align-items:flex-start;gap:8px;margin:-2px 2px 0;font-size:13px;line-height:1.45;color:var(--lm-muted)}
+.schinfo b{flex:none;width:18px;height:18px;border-radius:50%;border:1px solid currentColor;display:grid;place-items:center;font:italic 700 12px/1 Georgia,serif}
+.schhint{font-size:13px;color:var(--lm-amber-2)}
+.schhint:empty{display:none}
 .csum{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
 .csum .stat b{font-size:18px}
 .cnone{margin-top:14px;padding:12px 14px;border-radius:13px;font-size:13.5px;color:var(--lm-muted);background:rgba(255,255,255,.025);border:1px dashed var(--lm-line)}
@@ -2196,6 +2250,7 @@ class LeapmotorCard extends HTMLElement {
     this._tlLimit = 7;
     this._lab = null;
     this._replay = null;
+    this._sched = null;
     this._failed = new Set();
   }
 
@@ -2721,8 +2776,8 @@ class LeapmotorCard extends HTMLElement {
       chart: () => this._chartSig(),
       week: () => this._sig(["week"]),
       charging: () => this._sig(["battery", "chargeLimit", "chargeLimitSet", "isCharging", "isPlugged", "connection", "finish", "remaining", "power", "current", "voltage", "lastCharge", "range", "lastSession", "lastSessionCost", "monthCost", "monthEnergy", "toLimit",
-        "chargeSchedule", "preheat", "healthyCharging", "startChargeBtn", "stopChargeBtn", "unlockCharger"])
-        + Math.floor(Date.now() / MIN) + `|${this._limitPending ?? ""}|${JSON.stringify(this._armed)}|${JSON.stringify(this._busy)}`,
+        "schedStart", "chargeSchedule", "preheat", "healthyCharging", "startChargeBtn", "stopChargeBtn", "unlockCharger"])
+        + Math.floor(Date.now() / MIN) + `|${this._limitPending ?? ""}|${JSON.stringify(this._armed)}|${JSON.stringify(this._busy)}|${JSON.stringify(this._sched)}`,
       energy: () => this._sig(["avg", "lwDriving", "lwClimate", "lwOther", "health", "capacityTrend"]),
       trips: () => this._sig(["lastTrip", "todayDistance", "monthDistance", "tripConsumption", "driveCost"]) + Math.floor(Date.now() / MIN) + `|${this._tripKey(this._mapSelected())}|${this._tripLimit}`,
       map: () => this._mapSig(),
@@ -2773,6 +2828,8 @@ class LeapmotorCard extends HTMLElement {
       delete this._sigs[name];
       return;
     }
+    // New data must not replace a time field of the schedule editor while it is being typed in.
+    if (name === "charging" && this.shadowRoot.activeElement?.dataset?.sched) return;
     const sig = `${this._lang}|${map[name]()}`;
     // Only the chart is redrawn on force (resize, new history); everything else is signature-driven.
     if (this._sigs[name] === sig && !(force && name === "chart")) return;
@@ -2848,7 +2905,7 @@ class LeapmotorCard extends HTMLElement {
       this._sig(DOORS.map(([k]) => k)), this._sig(WINDOWS), this._sig(["trunk"]),
       this._sig(["speeding", "speedLimit", "speedLimitOn", "climateOn", "climateMode", "climateSwitch", "sentry"]), this._sig(TIRES.map(([k]) => k)),
       this._sceneMode(), Math.floor(Date.now() / MIN), JSON.stringify(this._armed), JSON.stringify(this._busy),
-      this._sig(["quickHeatBtn", "quickCoolBtn", "windowsOpenBtn", "windowsCloseBtn"]),
+      this._sig(["quickHeatBtn", "quickCoolBtn", "windowsOpenBtn", "windowsCloseBtn", "schedStart", "startChargeBtn"]),
     ].join("#");
   }
 
@@ -3060,7 +3117,7 @@ class LeapmotorCard extends HTMLElement {
       hleft: left,
       hcar: this._heroCarHtml(d, { floor: true }),
       hright: right,
-      hquick: this._quickHtml(),
+      hquick: this._schedNowHtml(true) + this._quickHtml(),
       hstrip: this._cellsHtml(cells),
     };
   }
@@ -3121,7 +3178,7 @@ class LeapmotorCard extends HTMLElement {
       hleft: left,
       hcar: this._heroCarHtml(d, { tireTags: true }),
       hright: "",
-      hquick: this._quickHtml(),
+      hquick: this._schedNowHtml(true) + this._quickHtml(),
       hstrip: this._cellsHtml(cells),
     };
   }
@@ -3235,7 +3292,7 @@ class LeapmotorCard extends HTMLElement {
         <div class="sub">${esc(dateStr)}${loc ? ` · ${icon("pin")}${esc(loc)}` : ""}</div>
         <div class="big clickable" data-more="battery">${socTxt}<span class="u">%</span></div>
         <div class="state">${icon(stateIcon)}${esc(stateBits.join(" · "))}</div>
-        <div class="metaline">${meta.join("")}</div>${this._quickHtml()}`,
+        <div class="metaline">${meta.join("")}</div>${this._schedNowHtml(true)}${this._quickHtml()}`,
       hcar: this._heroCarHtml({ charging, plugged, night, driving, locked }),
       hstrip: cells.length ? `<div class="strip">${cells.slice(0, 7).join("")}</div>` : "",
     };
@@ -3732,7 +3789,8 @@ class LeapmotorCard extends HTMLElement {
         ${target != null ? `<div class="lim${edge}" style="left:${clamp(target, 0, 100)}%"><b>${esc(t("limit"))} ${this._num(target)} %</b></div>` : ""}
       </div>`;
 
-    const tiles = this._groupTilesHtml("charging");
+    // "Start charging" sits next to the schedule while the car waits for it.
+    const tiles = this._groupTilesHtml("charging", undefined, this._schedWaiting() ? ["charge"] : []);
     return `
       ${this._head(t("chargingTitle"), "bolt", chip)}
       <div class="ctop">
@@ -3742,6 +3800,7 @@ class LeapmotorCard extends HTMLElement {
       ${bar}
       ${this._toLimitHtml()}
       ${this._limitHtml(limit)}
+      ${this._schedHtml()}
       ${tiles ? `<div class="subh">${esc(t("groupCharging"))}</div>${tiles}` : ""}
       ${this._chargeSummaryHtml()}`;
   }
@@ -4232,6 +4291,194 @@ class LeapmotorCard extends HTMLElement {
   /* ----- charge limit ----- */
 
   /** − / + only change the value shown; nothing is sent until Set is confirmed. */
+  /* ----- charging schedule editor ----- */
+
+  /** The car's schedule from the attributes of the schedule-start time entity; null without that entity. */
+  _schedNow() {
+    const s = this._s("schedStart");
+    if (!s || s.state === "unavailable") return null;
+    const a = s.attributes || {};
+    const hhmm = (v) => (/^\d{2}:\d{2}$/.test(String(v ?? "")) ? String(v) : "");
+    const flag = (v) => (typeof v === "boolean" ? v : null);
+    return {
+      start: hhmm(a.schedule_start), end: hhmm(a.schedule_end),
+      days: Array.isArray(a.schedule_days) ? SCHED_DAYS.filter((d) => a.schedule_days.includes(d)) : null,
+      enabled: flag(a.schedule_enabled), repeat: flag(a.repeat_weekly), recharge: flag(a.auto_recharge),
+    };
+  }
+
+  /** Plugged in with the schedule on and not charging: charging can be started by hand. */
+  _schedWaiting() {
+    const now = this._schedNow();
+    const { charging, plugged } = this._chargeState();
+    return !!(now && now.enabled === true && plugged && !charging && this._ids.startChargeBtn);
+  }
+
+  /** When the schedule starts next; null while its window is running or when it is not known. */
+  _schedNextStart() {
+    const now = this._schedNow();
+    if (!now || !now.start) return null;
+    const days = now.days && now.days.length ? now.days : SCHED_DAYS;
+    const at = (offset, hhmm) => {
+      const date = new Date();
+      date.setDate(date.getDate() + offset);
+      date.setHours(+hhmm.slice(0, 2), +hhmm.slice(3, 5), 0, 0);
+      return date;
+    };
+    const onDay = (date) => days.includes(SCHED_DAYS[(date.getDay() + 6) % 7]);
+    const time = Date.now();
+    if (now.end) {
+      // A window that began yesterday or today and has not ended yet.
+      for (const offset of [-1, 0]) {
+        const begin = at(offset, now.start);
+        const end = at(offset, now.end);
+        if (end <= begin) end.setDate(end.getDate() + 1);
+        if (onDay(begin) && begin <= time && time < end) return null;
+      }
+    }
+    for (let offset = 0; offset < 8; offset += 1) {
+      const begin = at(offset, now.start);
+      if (begin > time && onDay(begin)) return begin;
+    }
+    return null;
+  }
+
+  /** "Charging starts at 23:00" with Charge now, while the plugged-in car waits for its schedule. */
+  _schedNowHtml(hero = false) {
+    if (!this._schedWaiting()) return "";
+    const t = (k, v) => this._tr(k, v);
+    const next = this._schedNextStart();
+    let text = t("schWaiting");
+    if (next) {
+      const today = next.toDateString() === new Date().toDateString();
+      text = t("schStartsAt", { x: "", t: this._time(next) }) + (today ? "" : ` · ${this._weekday((next.getDay() + 6) % 7, "short").replace(/\.$/, "")}`);
+    }
+    const armed = this._isArmed("charge");
+    return `<div class="schnow${hero ? " hs" : ""}"><span>${icon("calendar")}${esc(text)}</span>
+        <button class="btn primary${armed ? " armed" : ""}${this._busy.charge ? " busy" : ""}" data-act="ctl" data-key="charge">${icon("bolt")}${esc(armed ? t("tapConfirm") : t("schChargeNow"))}</button></div>`;
+  }
+
+  /** "Mon–Fri", "Sat Sun" or "every day". */
+  _schedDaysText(days) {
+    if (!days || !days.length) return "";
+    if (days.length === 7) return this._tr("schedDaily");
+    const idx = days.map((d) => SCHED_DAYS.indexOf(d));
+    const name = (i) => this._weekday(i, "short").replace(/\.$/, "");
+    const run = idx.every((v, i) => i === 0 || v === idx[i - 1] + 1);
+    return run && idx.length > 2 ? `${name(idx[0])}–${name(idx[idx.length - 1])}` : idx.map(name).join(" ");
+  }
+
+  _schedProblem(d) {
+    if (!d.start || !d.end) return this._tr("schNeedTime");
+    if (!d.days.length) return this._tr("schNeedDay");
+    return "";
+  }
+
+  /** The schedule in one row with Edit; the editor while it is open. Saved with one command. */
+  _schedHtml() {
+    const t = (k, v) => this._tr(k, v);
+    const now = this._schedNow();
+    if (!now) {
+      this._sched = null;
+      return "";
+    }
+    const d = this._sched;
+    if (!d) {
+      const known = now.start && now.end;
+      const state = now.enabled == null ? "" : ` · ${now.enabled ? t("on") : t("off")}`;
+      const sub = [this._schedDaysText(now.days), now.repeat == null ? "" : now.repeat ? t("schWeekly") : t("schOnce")].filter(Boolean).join(" · ");
+      return `<div class="lrow sch">
+        <div><small>${esc(t("schedule") + state)}</small>${known
+          ? `<b>${esc(this._clock(now.start))} – ${esc(this._clock(now.end))}</b>${sub ? `<span class="schsub">${esc(sub)}</span>` : ""}`
+          : `<span class="schsub">${esc(t("schNone"))}</span>`}</div>
+        <button class="btn" data-act="schededit">${icon("calendar")}${esc(t("schEdit"))}</button>
+      </div>${this._schedNowHtml()}`;
+    }
+    const armed = this._isArmed("schedSave");
+    const problem = this._schedProblem(d);
+    const time = (key, label) => `<label class="schf"><small>${esc(t(label))}</small><input type="time" data-sched="${key}" value="${esc(d[key])}" required></label>`;
+    const toggle = (key, label, off = false) => `<button class="tgl${d[key] ? " on" : ""}" data-act="schedflag" data-flag="${key}" role="switch" aria-checked="${d[key] ? "true" : "false"}"${off ? ' disabled aria-describedby="schedinfo"' : ""}>${esc(t(label))}<i></i></button>`;
+    return `<div class="sched${this._busy.sched ? " busy" : ""}">
+        <small>${esc(t("schedule"))}</small>
+        <div class="schgrid">${time("start", "schStart")}${time("end", "schEnd")}</div>
+        <div><small>${esc(t("schDays"))}</small><div class="schdays">${SCHED_DAYS.map((day, i) => {
+          const on = d.days.includes(day);
+          return `<button class="dchip${on ? " on" : ""}" data-act="schedday" data-day="${day}" aria-pressed="${on ? "true" : "false"}" aria-label="${esc(this._weekday(i))}">${esc(this._weekday(i, "short").replace(/\.$/, ""))}</button>`;
+        }).join("")}</div></div>
+        <div class="schtg">${toggle("enabled", "schOn")}${toggle("repeat", "schRepeat")}${toggle("recharge", "schRecharge", true)}
+          <div class="schinfo" id="schedinfo"><b aria-hidden="true">i</b><span>${esc(t("schRechargeOff"))}</span></div></div>
+        <div class="schhint" id="schedhint">${esc(problem)}</div>
+        <div class="lset">
+          <button class="btn primary${armed ? " armed" : ""}" id="schedsave" data-act="schedsave"${problem ? " disabled" : ""}>${icon("check")}${esc(armed ? t("tapConfirm") : t("schSave"))}</button>
+          <button class="btn" data-act="schedcancel">${esc(t("cancel"))}</button></div>
+      </div>`;
+  }
+
+  /** Open the editor with the car's values; what the car does not report starts from a usual default. */
+  _editSched() {
+    const now = this._schedNow();
+    if (!now) return;
+    this._sched = {
+      start: now.start, end: now.end, days: now.days && now.days.length ? [...now.days] : [...SCHED_DAYS],
+      enabled: now.enabled ?? true, repeat: now.repeat ?? true, recharge: now.recharge ?? false,
+    };
+    this._renderSection("charging");
+  }
+
+  _closeSched() {
+    this._sched = null;
+    if (this._armed?.key === "schedSave") this._armed = null;
+    this._renderSection("charging");
+  }
+
+  /** A change in the editor; nothing is sent before Save. */
+  _changeSched(change) {
+    const d = this._sched;
+    if (!d || this._busy.sched) return;
+    change(d);
+    if (this._armed?.key === "schedSave") this._armed = null;
+    this._renderSection("charging");
+  }
+
+  /** A time typed into the editor: kept without redrawing, so the field keeps the focus. */
+  _typeSched(el) {
+    const d = this._sched;
+    if (!d || !["start", "end"].includes(el.dataset.sched)) return;
+    d[el.dataset.sched] = /^\d{2}:\d{2}/.test(el.value) ? el.value.slice(0, 5) : "";
+    const problem = this._schedProblem(d);
+    const hint = this.shadowRoot.getElementById("schedhint");
+    if (hint) hint.textContent = problem;
+    const save = this.shadowRoot.getElementById("schedsave");
+    if (save) save.disabled = !!problem;
+  }
+
+  async _saveSched() {
+    const d = this._sched;
+    const id = this._ids.schedStart;
+    if (!d || !id || this._busy.sched || this._schedProblem(d)) return;
+    if (this._config.confirm_actions && !this._isArmed("schedSave")) {
+      this._arm("schedSave");
+      return;
+    }
+    this._armed = null;
+    this._busy.sched = true;
+    this._renderSection("charging");
+    try {
+      // The charge limit and auto recharge are left out: the car keeps what it has.
+      await this._hass.callService("leapmotor", "set_charging_schedule", {
+        entity_id: id, start_time: d.start, end_time: d.end, days: SCHED_DAYS.filter((day) => d.days.includes(day)),
+        enabled: d.enabled, repeat_weekly: d.repeat,
+      });
+      this._toast(this._tr("sent", { x: this._tr("schedule") }));
+      this._sched = null;
+    } catch (err) {
+      // The editor stays open with what was entered.
+      this._toast(this._tr("failed", { x: err?.message || String(err) }));
+    }
+    delete this._busy.sched;
+    this._renderSection("charging");
+  }
+
   _bumpLimit(delta) {
     const n = this._s("chargeLimitSet");
     if (!n || !delta || this._busy.limit) return;
@@ -4653,8 +4900,8 @@ class LeapmotorCard extends HTMLElement {
   }
 
   /** Tiles of one group, leaving out the actions that already sit in the hero as quick buttons. */
-  _groupTilesHtml(group, defs = this._controlDefs()) {
-    const skip = new Set(this._quickKeys(defs));
+  _groupTilesHtml(group, defs = this._controlDefs(), hide = []) {
+    const skip = new Set([...this._quickKeys(defs), ...hide]);
     const tiles = Object.entries(defs).filter(([k, d]) => d.group === group && !skip.has(k)).map(([k, d]) => this._tileHtml(k, d));
     return tiles.length ? `<div class="tiles">${tiles.join("")}</div>` : "";
   }
@@ -5412,8 +5659,9 @@ class LeapmotorCard extends HTMLElement {
   }
 
   _onInput(ev) {
-    const el = ev.composedPath().find((node) => node instanceof HTMLInputElement && (node.dataset?.lab || node.dataset?.replay));
+    const el = ev.composedPath().find((node) => node instanceof HTMLInputElement && (node.dataset?.lab || node.dataset?.replay || node.dataset?.sched));
     if (!el) return;
+    if (el.dataset.sched) return this._typeSched(el);
     if (el.dataset.replay) {
       this._seekReplay(Number(el.value) / 1000);
       return;
@@ -5661,6 +5909,20 @@ class LeapmotorCard extends HTMLElement {
     if (act === "limit") return this._bumpLimit(Number(el.dataset.delta) || 0);
     if (act === "limitset") return this._confirmLimit();
     if (act === "limitcancel") return this._cancelLimit();
+    if (act && act.startsWith("sched")) {
+      // A time field that still has the focus would hold back the redraw.
+      const focused = this.shadowRoot.activeElement;
+      if (focused?.dataset?.sched) {
+        this._typeSched(focused);
+        focused.blur();
+      }
+      if (act === "schededit") return this._editSched();
+      if (act === "schedcancel") return this._closeSched();
+      if (act === "schedsave") return this._saveSched();
+      if (act === "schedday") return this._changeSched((d) => { d.days = d.days.includes(el.dataset.day) ? d.days.filter((x) => x !== el.dataset.day) : [...d.days, el.dataset.day]; });
+      if (act === "schedflag") return this._changeSched((d) => { if (["enabled", "repeat"].includes(el.dataset.flag)) d[el.dataset.flag] = !d[el.dataset.flag]; });
+      return;
+    }
     if (act === "moretrips") {
       this._tripLimit += 10;
       this._renderSection("trips");

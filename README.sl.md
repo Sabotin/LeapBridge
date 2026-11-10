@@ -51,7 +51,7 @@
 
 - Home Assistant 2025.3 ali novejši in [HACS](https://hacs.xyz/).
 - E-pošto in geslo za račun Leapmotor. Priporočam uporabo drugega računa, s katerim si deliš vozilo, da te uradna aplikacija ne odjavlja.
-- Certifikata aplikacije: `app_cert.pem` in `app_key.pem`. Datoteki nista vključeni v repozitorij, priskrbeti ju moraš sam.
+- Certifikata aplikacije: `app_cert.pem` in `app_key.pem`. Namestitev ju prenese sama iz mape [`certs`](certs) tega repozitorija; lahko pa naložiš tudi svoja.
 - PIN vozila je privzeto nastavljen na `0000`. Če si ga v vozilu spremenil, ga spremeni tudi tukaj.
 
 ### Namestitev prek HACS
@@ -62,7 +62,7 @@
 2. Dodaj `https://github.com/Sabotin/LeapBridge` in izberi vrsto **Integration**.
 3. Poišči **Leapmotor**, klikni **Prenesi** in znova zaženi Home Assistant.
 4. Odpri **Nastavitve → Naprave in storitve → Dodaj integracijo → Leapmotor**.
-5. Naloži oba certifikata in vnesi podatke računa. Po končani namestitvi se v stranski vrstici pojavi Leapmotor.
+5. Pri certifikatih izberi **Prenesi z GitHuba** (ali naloži svoja) in vnesi podatke računa. Po končani namestitvi se v stranski vrstici pojavi Leapmotor.
 
 **Posodobitev:** HACS namesti zadnjo izdajo (prva je 0.7.5). Ko izide nova izdaja, se posodobitev pokaže v HACS in med posodobitvami v nastavitvah Home Assistanta; prenesi jo in znova zaženi Home Assistant. Če je še ne vidiš, odpri Leapmotor v HACS in izberi **⋮ → Posodobi informacije** (*Update information*). Če si integracijo namestil pred prvo izdajo, enkrat izberi **Prenesi znova** (*Redownload*) in znova zaženi Home Assistant. Če je kartica še vedno stara, osveži brskalnik s **Ctrl + F5**.
 
@@ -179,7 +179,7 @@ Za nekatere pogoste stvari so že pripravljene avtomatizacije. Uvoziš jih nepos
 
 | Težava | Kaj poskusiti |
 | --- | --- |
-| Napaka pri certifikatu | Sporočilo pove, katera datoteka je napačna. Preveri, ali uporabljaš ustrezen par certifikatov. |
+| Napaka pri certifikatu | Sporočilo pove, katera datoteka je napačna. V možnostih integracije vklopi **Prenesi certifikata aplikacije z GitHuba** ali naloži ustrezen par certifikatov. Če certifikata manjkata, ju z enim klikom preneseš tudi v **Nastavitve → Popravila**. |
 | Napačno geslo (`code 21`) | Če prijava deluje v aplikaciji, se odjavi, enkrat spremeni geslo v aplikaciji in poskusi znova. |
 | Aplikacija te odjavlja | Poskusi z drugim računom, ki ima vozilo deljeno z glavnim računom. |
 | Ukaz ne deluje | Preveri PIN vozila in pravice deljenega računa. |

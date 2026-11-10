@@ -51,7 +51,7 @@
 
 - Home Assistant 2025.3 oder neuer und [HACS](https://hacs.xyz/).
 - E-Mail und Passwort deines Leapmotor-Kontos. Ich empfehle ein zweites Konto, mit dem das Auto geteilt ist, damit dich die offizielle App nicht abmeldet.
-- Die Zertifikate der App: `app_cert.pem` und `app_key.pem`. Sie sind nicht im Repository enthalten; du musst sie dir selbst besorgen.
+- Die Zertifikate der App: `app_cert.pem` und `app_key.pem`. Die Einrichtung lädt sie für dich aus dem Ordner [`certs`](certs) dieses Repositorys; du kannst auch eigene hochladen.
 - Die Fahrzeug-PIN ist standardmäßig `0000`. Wenn du sie im Auto geändert hast, ändere sie auch hier.
 
 ### Installation mit HACS
@@ -62,7 +62,7 @@
 2. Füge `https://github.com/Sabotin/LeapBridge` hinzu und wähle den Typ **Integration**.
 3. Suche nach **Leapmotor**, klicke auf **Herunterladen** und starte Home Assistant neu.
 4. Öffne **Einstellungen → Geräte & Dienste → Integration hinzufügen → Leapmotor**.
-5. Lade beide Zertifikate hoch und gib deine Kontodaten ein. Nach der Einrichtung erscheint Leapmotor in der Seitenleiste.
+5. Wähle bei den Zertifikaten **Von GitHub herunterladen** (oder lade eigene hoch) und gib deine Kontodaten ein. Nach der Einrichtung erscheint Leapmotor in der Seitenleiste.
 
 **Aktualisieren:** HACS installiert die neueste Veröffentlichung (die erste ist 0.7.5). Sobald es eine neue gibt, erscheint das Update in HACS und bei den Updates in den Einstellungen von Home Assistant; lade es herunter und starte Home Assistant neu. Wenn du es noch nicht siehst, öffne Leapmotor in HACS und wähle **⋮ → Informationen aktualisieren** (*Update information*). Wenn du die Integration vor der ersten Veröffentlichung installiert hast, wähle einmal **Erneut herunterladen** (*Redownload*) und starte Home Assistant neu. Wenn die Karte noch alt aussieht, lade den Browser mit **Strg + F5** neu.
 
@@ -179,7 +179,7 @@ Für einige häufige Aufgaben gibt es fertige Automatisierungen. Importiere sie 
 
 | Problem | Was du versuchen kannst |
 | --- | --- |
-| Zertifikatsfehler | Die Meldung sagt dir, welche Datei falsch ist. Prüfe, ob du ein zusammengehöriges Zertifikatspaar verwendest. |
+| Zertifikatsfehler | Die Meldung sagt dir, welche Datei falsch ist. Schalte in den Optionen der Integration **App-Zertifikate von GitHub herunterladen** ein oder lade ein zusammengehöriges Zertifikatspaar hoch. Fehlen die Zertifikate, kannst du sie auch unter **Einstellungen → Reparaturen** mit einem Klick herunterladen. |
 | Falsches Passwort (`code 21`) | Wenn die Anmeldung in der App funktioniert: abmelden, das Passwort einmal in der App ändern und erneut versuchen. |
 | Die App meldet dich immer wieder ab | Versuche ein zweites Konto, mit dem das Auto von deinem Hauptkonto aus geteilt ist. |
 | Ein Befehl funktioniert nicht | Prüfe die Fahrzeug-PIN und die Berechtigungen des geteilten Kontos. |

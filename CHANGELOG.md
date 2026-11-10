@@ -4,7 +4,7 @@
 below; from this release on, HACS installs releases instead of the latest
 commit.
 
-## Unreleased: certificate download and the full charging schedule
+## 0.7.6: certificate download and the full charging schedule
 
 - **Certificates download themselves.** Setup starts with **Download from
   GitHub (recommended)**: both files are fetched from the `certs` folder of
@@ -18,15 +18,20 @@ commit.
   `leapmotor.set_charging_schedule` sets the time window, weekdays, charge
   limit, weekly repetition and auto recharge in one command; fields you leave
   out keep the car's value. Two new entities, *Set charging schedule start*
-  and *Set charging schedule end* (`time.<model>_charging_schedule_start` /
-  `_end`), change one time and keep the rest. Works on the T03 as well, where
+  and *Set charging schedule end*, change one time and keep the rest. Works on the T03 as well, where
   the schedule is read from the cloud because the status does not carry it.
 - A second charging-plan change within five minutes now builds on the first
   one instead of on the car's status, which lags behind; before, changing the
   limit right after another change could undo it. The confirmed plan is shown
   at once.
-- Not yet in the dashboard card: the schedule is edited through the action or
-  the two time entities.
+- **Schedule editor in the dashboard card.** The Charging section shows the
+  schedule in one row (window, days, on or off) with **Edit**: start and end,
+  weekdays, schedule on/off and repeat weekly, saved with one command by
+  **Save** (tap twice, as for other remote actions). *Auto recharge* is shown
+  but switched off in the card for now, because what it does in the car is not
+  confirmed; saving keeps the car's setting. While the car is plugged in and
+  waits for the schedule, the first card and the Charging section show when
+  charging starts, with **Charge now** next to it. In English, Slovenian and German, in all three looks.
 
 ## 0.7.5: the car learns your routine, a Journey page, software and messages
 
