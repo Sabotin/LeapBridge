@@ -4,6 +4,12 @@
 below; from this release on, HACS installs releases instead of the latest
 commit.
 
+## 0.7.7: the card at three quarters on phones
+
+- **Phones:** on screens up to 600 px wide the dashboard card is drawn at
+  three quarters of its size, so more fits on the screen; the layout uses the
+  extra room.
+
 ## 0.7.6: certificate download and the full charging schedule
 
 - **Certificates download themselves.** Setup starts with **Download from

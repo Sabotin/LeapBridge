@@ -9,7 +9,7 @@
  * setup is needed. Add the card with:  type: custom:leapmotor-card
  */
 
-const CARD_VERSION = "1.3.0";
+const CARD_VERSION = "1.3.1";
 const MODULE_BASE = new URL(".", import.meta.url);
 
 /* ------------------------------------------------------------------ */
@@ -2225,6 +2225,15 @@ input[type=range]:focus-visible{outline:2px solid var(--lm-amber-2);outline-offs
 @keyframes lm-tw{0%,100%{opacity:.9}50%{opacity:.15}}
 .tw{animation:lm-tw 4s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* Phones: the whole card at three quarters, so more fits on the screen. The
+   layout then has a third more room and picks its breakpoints from that. */
+@media (max-width:600px){
+  :host{zoom:.75}
+  /* The map library needs an unscaled box for touch positions. */
+  .mapbox{zoom:calc(1 / .75)}
+  /* Below 16 px on screen, iOS zooms the page when a field gets the focus. */
+  .schf input{font-size:22px}
+}
 `;
 
 /* ------------------------------------------------------------------ */
