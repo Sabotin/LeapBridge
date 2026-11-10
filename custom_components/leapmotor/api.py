@@ -81,6 +81,7 @@ from .leap_api import (
 )
 from .charging_schedule import (
     apply_cloud_schedule,
+    apply_vehicle_start,
     build_schedule_command,
     plan_is_reported,
 )
@@ -114,6 +115,7 @@ from .signal_helpers import (
     nonzero_state,
     stationary_charge_inflow,
     steering_wheel_heating_state,
+    t03_cable_connected,
     vehicle_precludes_charging,
     window_open_state,
 )
@@ -1122,12 +1124,8 @@ class LeapmotorApiClient:
             if not isinstance(charging, dict):
                 return
             # A plan the car confirmed a moment ago counts until the status shows it.
-            apply_cloud_schedule(
-                charging,
-                self._recently_sent_charge_plan(vehicle.vin),
-                replace=True,
-                source="last_command",
-            )
+            recent = self._recently_sent_charge_plan(vehicle.vin)
+            apply_cloud_schedule(charging, recent, replace=True, source="last_command")
             if plan_is_reported(charging):
                 return
             apply_cloud_schedule(
@@ -1140,6 +1138,12 @@ class LeapmotorApiClient:
                     fallback=None,
                 ),
             )
+            if recent is None:
+                # The start time set in the car wins over the cloud's copy.
+                apply_vehicle_start(
+                    charging,
+                    (vehicle_data.get("diagnostics") or {}).get("charging_plan_start_raw"),
+                )
         except Exception:  # noqa: BLE001 - optional data must never break polling
             _LOGGER.debug("Leapmotor charging schedule could not be completed", exc_info=True)
 
@@ -2858,17 +2862,16 @@ def normalize_vehicle(
     charge_plan = config.get("3") or _charge_plan_from_named_status(status_data)
     charge_plan = charge_plan if isinstance(charge_plan, dict) else {}
     t03 = str(vehicle.car_type or "").strip().upper() == "T03"
-    paused_connector = (
-        t03 and not _vehicle_precludes_charging(signal)
-        and _safe_int(signal.get("1149")) == 0
-        and _safe_int(signal.get("1197")) == 1
-        and _safe_float(signal.get("1178")) == 0
-        and _safe_int(signal.get("1200")) == 0
-    )
+    # The regular checks take a T03 for unplugged while it is switched on and
+    # in the charge states only this model reports with the cable in.
+    cable_in = t03 and t03_cable_connected(signal)
     # On the T03 the charge-state code can read "not charging" with the cable
     # in (#75) and the car may be switched on while it charges. Either makes
     # the regular checks deny a real session, so measured inflow decides.
     measured_charge = t03 and stationary_charge_inflow(signal)
+    connection_state = "charging" if measured_charge else _charging_connection_state(signal)
+    if cable_in and connection_state in (None, "unplugged"):
+        connection_state = "plugged_in"
     schedule_enabled = _safe_int(charge_plan.get("isEnable"))
     schedule_enabled = schedule_enabled if schedule_enabled in (0, 1) else None
     mileage_data = (mileage_json or {}).get("data") or {}
@@ -2985,14 +2988,10 @@ def normalize_vehicle(
         "charging": {
             "is_charging": True if measured_charge else _is_charging(signal),
             "is_plugged_in": (
-                True if paused_connector or measured_charge else _is_plugged_in(signal)
+                True if cable_in or measured_charge else _is_plugged_in(signal)
             ),
             "is_regening": _is_regening(signal),
-            "connection_state": (
-                "charging" if measured_charge
-                else "plugged_in" if paused_connector
-                else _charging_connection_state(signal)
-            ),
+            "connection_state": connection_state,
             "charge_limit_percent": charge_plan.get("percent"),
             "charge_limit_source": "config_3" if config.get("3") else "named_status",
             "charge_limit_reliability": "unverified" if t03 else "reported",

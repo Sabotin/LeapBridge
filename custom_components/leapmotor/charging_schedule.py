@@ -278,6 +278,41 @@ def apply_cloud_schedule(
     return filled
 
 
+#: What only the cloud's schedule says about a plan; the start time and the
+#: on/off state are left out.
+_CLOUD_ONLY_KEYS = (
+    "charging_planned_end",
+    "charging_planned_cycles",
+    "charging_planned_circulation",
+    "charging_planned_recharge",
+)
+
+
+def apply_vehicle_start(charging: dict[str, Any], vehicle_start: Any) -> bool:
+    """Show the start time the car itself reports instead of the cloud's copy.
+
+    A T03 reports the start time set on its own screen (its schedule is a
+    switch and a start time) but not whether the schedule is on, so the time
+    is only shown once the cloud's schedule has supplied that. The cloud keeps
+    the plan of the last command it was sent and does not follow a change made
+    in the car. When its start time differs from the car's, it is not the plan
+    the car runs: its end time and weekdays are then not shown as the car's.
+    Returns whether anything changed.
+    """
+    start = parse_time(vehicle_start)
+    if start is None or charging.get("charging_planned_enabled") in (None, ""):
+        return False
+    shown = charging.get("charging_planned_start")
+    if parse_time(shown) == start:
+        return False
+    charging["charging_planned_start"] = start.strftime("%H:%M")
+    if shown not in (None, ""):
+        for key in _CLOUD_ONLY_KEYS:
+            charging[key] = None
+    charging["charging_plan_source"] = "vehicle_start"
+    return True
+
+
 #: Without these the schedule of a car is not known from its status alone.
 PLAN_KEYS = (
     "charging_planned_enabled",
@@ -297,6 +332,7 @@ __all__ = [
     "ALL_DAYS",
     "DAY_NAMES",
     "apply_cloud_schedule",
+    "apply_vehicle_start",
     "plan_is_reported",
     "build_schedule_command",
     "format_cycles",

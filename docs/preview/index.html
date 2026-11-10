@@ -24,6 +24,7 @@
     <span>Scenario</span>
     <a href="?state=charging">Charging · night</a>
     <a href="?state=plugged&page=charging">Plugged in · waiting for the schedule</a>
+    <a href="?state=plugged&page=charging&schedule=start">Plugged in · start time only (T03)</a>
     <a href="?state=parked&scene=day">Parked · day</a>
     <a href="?state=attention">Needs attention</a>
     <a href="?state=driving">Driving · too fast</a>
@@ -58,6 +59,7 @@
     const attention = scenario === "attention";
     const driving = scenario === "driving";
     const waiting = scenario === "plugged"; // plugged in, the charging schedule has not started yet
+    const startOnly = q.get("schedule") === "start"; // a T03: the schedule is a switch and a start time
 
     /* ---------- 24 h timeline (hours ago) ---------- */
     const events = [
@@ -157,8 +159,10 @@
     add("switch.c10_mirror_heating", "rearview_mirror_heat", "off", meta);
     add("switch.c10_charging_schedule", "charging_schedule", "on", meta);
     add("time.c10_set_charging_schedule_start", "charging_schedule_start", "23:00:00", { ...meta, schedule_enabled: true,
-      schedule_start: "23:00", schedule_end: "06:00", schedule_days: ["mon", "tue", "wed", "thu", "fri"],
-      repeat_weekly: true, auto_recharge: false, charge_limit_percent: 90, operation_password_configured: true });
+      schedule_start: "23:00", schedule_end: startOnly ? null : "06:00",
+      schedule_days: startOnly ? null : ["mon", "tue", "wed", "thu", "fri"],
+      repeat_weekly: startOnly ? null : true, auto_recharge: startOnly ? null : false,
+      charge_limit_percent: 90, operation_password_configured: true });
     for (const [slug, tk] of [["refresh_data", "refresh_data"], ["unlock_charger", "unlock_charger"], ["open_trunk", "open_trunk"],
       ["close_trunk", "close_trunk"], ["find_vehicle", "find_vehicle"], ["open_windows", "open_windows"], ["close_windows", "close_windows"],
       ["quick_cool", "quick_cool"], ["quick_heat", "quick_heat"], ["windshield_defrost", "windshield_defrost"],

@@ -115,6 +115,32 @@ def stationary_charge_inflow(signals: dict[str, object]) -> bool:
     return voltage is not None and abs(current * voltage) / 1000.0 >= 1.0
 
 
+#: Charge states of a T03 that has a connector in, as leapmotor-api 0.6.0 reads
+#: them: charging, finished, error, waiting for the schedule, paused.
+T03_CONNECTED_STATES = frozenset({1, 2, 3, 4, 6})
+
+
+def t03_cable_connected(signals: dict[str, object]) -> bool:
+    """Return whether a standing T03 has a charge cable in.
+
+    The T03 has no cable signal of its own. Some charge states only occur
+    with a connector in; in state 0 ("not charging": a paused session, or one
+    that waits for the schedule, #75) flag 1197 is the only sign of it, and
+    state 5 is regeneration. A car that is switched on with the cable in draws from the
+    pack (0.9 A with only its screens on) and reports READY, so neither the
+    pack current nor the READY flag says anything about the cable. A gear or
+    motion does.
+    """
+    gear = _safe_int(signals.get("1010"))
+    speed = _safe_float(signals.get("1319"))
+    if gear in {1, 2, 3} or (speed is not None and speed > 0):
+        return False
+    state = _safe_int(signals.get("1149"))
+    if state in T03_CONNECTED_STATES:
+        return True
+    return state == 0 and _safe_int(signals.get("1197")) == 1
+
+
 def _safe_int(raw: object) -> int | None:
     """Return a status value as int or None."""
     if raw is None:

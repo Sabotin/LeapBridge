@@ -229,15 +229,63 @@ class OctoberChargingTests(unittest.TestCase):
         self.assertFalse(result["is_charging"])
         self.assertIsNone(result["dc_cable_connected"])
 
-    def test_pause_exception_requires_every_reported_field(self):
+    def test_t03_pause_needs_the_connector_flag_and_a_standing_car(self):
         baseline = {"1149": 0, "1178": 0, "1197": 1, "1200": 0}
-        for key, bad_value in (("1197", 0), ("1197", 2), ("1178", 4), ("1200", 10),
-                               ("1010", 1), ("1319", 50)):
+        for key, bad_value in (("1197", 0), ("1197", 2), ("1149", 5), ("1010", 1), ("1319", 50)):
             with self.subTest(key=key, value=bad_value):
                 self.assertFalse(self.normalize(**{**baseline, key: bad_value})["is_plugged_in"])
-        for key in baseline:
+        for key in ("1149", "1197"):
             with self.subTest(missing=key):
                 self.assertIsNot(self.normalize(**{k: v for k, v in baseline.items() if k != key})["is_plugged_in"], True)
+
+    def test_t03_waiting_for_its_schedule_stays_connected(self):
+        """Cable in, charging set for 23:00: locked and asleep, or switched on (0.9 A leaves the pack)."""
+        standing = {"1010": 0, "1319": 0, "1177": 368, "1200": 0}
+        for extra in (
+            {"1149": 0, "1197": 1, "1178": 0.9},
+            {"1149": 0, "1197": 1, "1178": 0.9, "1258": 1},
+            {"1149": 0, "1197": 1, "1178": 6, "1258": 1},
+            {"1149": 0, "1197": 1, "1178": 0, "1200": 45},
+            {"1149": 0, "1197": 1},
+            # The charge states leapmotor-api 0.6.0 reads as connected on a T03.
+            {"1149": 4, "1197": 0, "1178": 0.9, "1258": 1},
+            {"1149": 6, "1197": 0, "1178": 0},
+            {"1149": 6, "1197": 0, "1178": 0.9, "1258": 1},
+            {"1149": 3, "1197": 0, "1178": 0, "1258": 1},
+        ):
+            with self.subTest(extra=extra):
+                result = self.normalize(**{**standing, **extra})
+                self.assertEqual(
+                    tuple(result[k] for k in ("is_plugged_in", "is_charging", "connection_state")),
+                    (True, False, "plugged_in"))
+        # Switched on without any sign of a connector: unplugged, as before.
+        for extra in ({"1149": 0, "1197": 0, "1178": 0.9, "1258": 1}, {"1149": 0, "1178": 0.9}):
+            with self.subTest(extra=extra):
+                result = self.normalize(**{**standing, **extra})
+                self.assertEqual((result["is_plugged_in"], result["connection_state"]), (False, "unplugged"))
+
+    def test_t03_plug_in_wait_charge_sequence_never_reads_unplugged(self):
+        """Plugged in at 19:58, schedule at 23:00: no "unplugged" in between."""
+        standing = {"1010": 0, "1319": 0, "1177": 368}
+        for signals, expected in (
+            ({"1149": 0, "1197": 1, "1178": 0, "1200": 0}, (True, False, "plugged_in")),
+            ({"1149": 0, "1197": 1, "1178": 0.4, "1200": 0}, (True, False, "plugged_in")),
+            ({"1149": 6, "1197": 0, "1178": 0, "1200": 0}, (True, False, "plugged_in")),
+            ({"1149": 2, "1197": 0, "1178": -8, "1200": 120}, (True, True, "charging")),
+            ({"1149": 0, "1197": 0, "1178": 0, "1200": 0}, (False, False, "unplugged")),
+        ):
+            with self.subTest(signals=signals):
+                result = self.normalize(**{**standing, **signals})
+                self.assertEqual(
+                    tuple(result[k] for k in ("is_plugged_in", "is_charging", "connection_state")), expected)
+
+    def test_other_models_do_not_get_the_t03_cable_rule(self):
+        for model in ("B10", "C10", "B05"):
+            for signals in ({"1149": 6, "1178": 0}, {"1149": 4, "1178": 0.9, "1258": 1}):
+                with self.subTest(model=model, signals=signals):
+                    result = self.normalize(model, **{"1010": 0, "1319": 0, **signals})
+                    self.assertFalse(result["is_plugged_in"])
+                    self.assertEqual(result["connection_state"], "unplugged")
 
     def test_other_models_keep_authoritative_connection_and_dc_state(self):
         for model in ("B10", "C10", "B05"):

@@ -403,7 +403,7 @@ class ExtrasTests(unittest.TestCase):
     def test_a_status_without_the_plan_is_completed_from_the_cloud_schedule(self):
         self.owner.car_type = "T03"
         self.client.get_vehicle_status.return_value = {"data": {
-            "signal": {"1204": 60}, "chargesocSetting": 95, "chargeTimeSetting": "00:00"}}
+            "signal": {"1204": 60}, "chargesocSetting": 95, "chargeTimeSetting": "23:00"}}
         schedule = {"chargeEnable": 1, "chargesoc": 80, "starttime": "23:00", "endtime": "06:30",
                     "cycles": "1,2,3,4,5", "circulation": 1, "recharge": 0}
         self.cloud.answers[APPOINTMENT] = (
@@ -419,6 +419,29 @@ class ExtrasTests(unittest.TestCase):
         self.assertEqual(charging["charging_plan_source"], "cloud_schedule")
         # What the status reported is never replaced.
         self.assertEqual(charging["charge_limit_percent"], 95)
+
+    def test_the_start_time_set_in_the_car_wins_over_the_cloud_copy(self):
+        """Car screen: 23:00. Cloud: the plan of an old command, 23:55 to 09:37."""
+        self.owner.car_type = "T03"
+        self.client.get_vehicle_status.return_value = {"data": {
+            "signal": {"1204": 43}, "chargesocSetting": 80, "chargeTimeSetting": "23:00"}}
+        schedule = {"chargeEnable": 1, "chargesoc": 80, "starttime": "23:55", "endtime": "09:37",
+                    "cycles": "1,2,3,4,5,6,7", "circulation": 0, "recharge": 0}
+        self.cloud.answers[APPOINTMENT] = (
+            lambda data: json.dumps(schedule if data.endswith("cmdId=190") else {"controls": []}))
+        charging = self.poll()["vehicles"][VIN]["charging"]
+        self.assertEqual(
+            [charging[key] for key in ("charging_planned_enabled", "charging_planned_start",
+                                       "charging_planned_end", "charging_planned_cycles",
+                                       "charging_planned_circulation", "charging_planned_recharge",
+                                       "charging_plan_source", "charge_limit_percent")],
+            [1, "23:00", None, None, None, None, "vehicle_start", 80])
+        # Without the cloud's on/off state the car's start time alone is no schedule.
+        self.cloud.fail[APPOINTMENT] = (1, "No such permission")
+        self.client.invalidate_extras("charging_schedule")
+        charging = self.poll()["vehicles"][VIN]["charging"]
+        self.assertIsNone(charging["charging_planned_enabled"])
+        self.assertIsNone(charging["charging_planned_start"])
 
     def test_a_schedule_change_is_shown_at_once_and_read_back_later(self):
         self.poll()

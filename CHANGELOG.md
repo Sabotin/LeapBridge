@@ -4,6 +4,31 @@
 below; from this release on, HACS installs releases instead of the latest
 commit.
 
+## 0.7.8: T03 plugged in and waiting for its schedule
+
+- **T03: a plugged-in car that waits for its schedule is no longer shown as
+  unplugged.** The cable was recognised when it went in and lost a few
+  minutes later, or as soon as the car was switched on: the pause was only
+  accepted with a battery current of exactly 0 A, and a switched-on car counted
+  as unplugged. The T03 now counts as connected whenever it stands still and
+  either reports one of the charge states it only has with a cable in
+  (charging, finished, error, waiting for the schedule, paused) or reports
+  "not charging" with the connector flag set. The pack current and the READY
+  flag no longer decide this. Other models are unchanged.
+- **T03: the schedule shows the start time set in the car.** The cloud keeps
+  the plan of the last command it was sent and does not follow a change made
+  on the car's screen, so the card could show an old window. The start time
+  the car itself reports now wins; when it differs from the cloud's copy, the
+  cloud's end time and weekdays are not shown as the car's
+  (`charging_plan_source: vehicle_start` in the diagnostics). Commands still
+  build on the cloud's schedule, as before.
+- **Card:** while the car is plugged in and waits for its schedule, the
+  Charging page and the overview say **Charging not started yet · starts at
+  23:00**; this no longer appears after a finished charge or at the charge
+  limit, and it is shown without *Charge now* when the car has no such
+  button. The car picture gets a clock with the start time above the wallbox.
+  A schedule that is a start time only is shown as **from 23:00**.
+
 ## 0.7.7: the card at three quarters on phones
 
 - **Phones:** on screens up to 600 px wide the dashboard card is drawn at

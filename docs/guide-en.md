@@ -323,9 +323,12 @@ copied to every car, so set it on the intended vehicle.
 - **T03:** daily energy is reported in Wh and converted to kWh
   (`daily_detail.energy_raw` keeps the source value). Charging-schedule writes
   are not supported; use the car or the official app. Read-only charge-limit
-  values can be stale (`reliability: unverified`). Wallbox pauses with the
-  observed idle signal are reported as connected (`plugged_in`, EVCC `B`);
-  signal 1197 alone cannot identify DC on T03. Standing in Park with about
+  values can be stale (`reliability: unverified`). A standing T03 with the
+  cable in and no charge running (a wallbox pause, or waiting for its
+  schedule) is reported as connected (`plugged_in`, EVCC `B`), also while it
+  is switched on. The schedule shows the start time set in the car; the
+  cloud's end time and weekdays are only shown while its start time is the
+  same. Signal 1197 alone cannot identify DC on T03. Standing in Park with about
   1 kW or more flowing into the battery counts as charging, whatever the
   charge-state code or the READY flag report.
 - **A10:** steering-wheel heating levels 1/2 and remote mode 3 are detected;

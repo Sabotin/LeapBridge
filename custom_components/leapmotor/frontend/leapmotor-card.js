@@ -9,7 +9,7 @@
  * setup is needed. Add the card with:  type: custom:leapmotor-card
  */
 
-const CARD_VERSION = "1.3.1";
+const CARD_VERSION = "1.3.2";
 const MODULE_BASE = new URL(".", import.meta.url);
 
 /* ------------------------------------------------------------------ */
@@ -308,7 +308,7 @@ Object.assign(STRINGS.en, {
   schEdit: "Edit", schStart: "Start", schEnd: "End", schDays: "Days", schOn: "Schedule on",
   schRepeat: "Repeat weekly", schRecharge: "Auto recharge", schSave: "Save", schNone: "No schedule set",
   schWeekly: "every week", schOnce: "once", schNeedTime: "Set the start and the end.", schNeedDay: "Choose at least one day.",
-  schWaiting: "Plugged in, waiting for the schedule.", schChargeNow: "Charge now", schStartsAt: "Charging starts at {t}",
+  schWaiting: "Charging not started yet, waiting for the schedule.", schChargeNow: "Charge now", schStartsAt: "Charging not started yet · starts at {t}", schFrom: "from {t}",
   schRechargeOff: "Switched off in this card for now: what it does in the car is not confirmed yet. Saving keeps the car's setting.",
 });
 Object.assign(STRINGS.sl, {
@@ -370,7 +370,7 @@ Object.assign(STRINGS.sl, {
   schEdit: "Uredi", schStart: "Začetek", schEnd: "Konec", schDays: "Dnevi", schOn: "Urnik vklopljen",
   schRepeat: "Ponovi vsak teden", schRecharge: "Samodejno dopolnjevanje", schSave: "Shrani", schNone: "Urnik ni nastavljen",
   schWeekly: "vsak teden", schOnce: "enkrat", schNeedTime: "Nastavi začetek in konec.", schNeedDay: "Izberi vsaj en dan.",
-  schWaiting: "Priključen, čaka na urnik.", schChargeNow: "Polni zdaj", schStartsAt: "Polnjenje se začne ob {t}",
+  schWaiting: "Polnjenje se še ni začelo, čaka na urnik.", schChargeNow: "Polni zdaj", schStartsAt: "Polnjenje se še ni začelo · začetek ob {t}", schFrom: "od {t}",
   schRechargeOff: "V tej kartici za zdaj onemogočeno: ni še potrjeno, kaj stikalo naredi v avtu. Shranjevanje ohrani nastavitev avta.",
 });
 Object.assign(STRINGS.de, {
@@ -432,7 +432,7 @@ Object.assign(STRINGS.de, {
   schEdit: "Bearbeiten", schStart: "Beginn", schEnd: "Ende", schDays: "Tage", schOn: "Ladeplan ein",
   schRepeat: "Jede Woche wiederholen", schRecharge: "Automatisch nachladen", schSave: "Speichern", schNone: "Kein Ladeplan eingestellt",
   schWeekly: "jede Woche", schOnce: "einmalig", schNeedTime: "Beginn und Ende festlegen.", schNeedDay: "Mindestens einen Tag wählen.",
-  schWaiting: "Angesteckt, wartet auf den Ladeplan.", schChargeNow: "Jetzt laden", schStartsAt: "Laden beginnt um {t}",
+  schWaiting: "Laden noch nicht gestartet, wartet auf den Ladeplan.", schChargeNow: "Jetzt laden", schStartsAt: "Laden noch nicht gestartet · Start um {t}", schFrom: "ab {t}",
   schRechargeOff: "In dieser Karte vorerst deaktiviert: Was der Schalter im Auto bewirkt, ist noch nicht bestätigt. Beim Speichern bleibt die Einstellung des Autos erhalten.",
 });
 
@@ -2191,6 +2191,9 @@ input[type=range]:focus-visible{outline:2px solid var(--lm-amber-2);outline-offs
 .fxbeam{position:absolute;left:96%;top:46%;width:30%;height:28%;background:linear-gradient(90deg,rgba(255,243,214,.6),rgba(255,243,214,0));clip-path:polygon(0 38%,100% 0,100% 100%,0 62%);filter:blur(2px);pointer-events:none}
 .fxsentry{position:absolute;left:3%;top:-4%;display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#fecdd3;line-height:1}
 .fxsentry i{width:8px;height:8px;border-radius:50%;background:#f43f5e;box-shadow:0 0 10px #f43f5e;animation:lm-pulse 1.2s ease-in-out infinite}
+.fxsched{position:absolute;left:-40px;bottom:84px;display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 6px;border-radius:999px;font-size:12.5px;font-weight:700;line-height:1;color:#fff3d6;background:rgba(9,15,33,.86);border:1px solid rgba(246,168,35,.6);box-shadow:0 0 16px rgba(246,168,35,.22);white-space:nowrap;pointer-events:none;z-index:2}
+.fxsched .ic{width:18px;height:18px;color:var(--lm-amber-2)}
+.fxsched b{font-weight:700;font-variant-numeric:tabular-nums}
 .fxpin{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none;line-height:1;z-index:2}
 .fxpin b{font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:999px;color:#fff3d6;background:rgba(9,15,33,.8);border:1px solid rgba(246,168,35,.55);white-space:nowrap}
 .fxpin i{width:10px;height:10px;border-radius:50%;background:var(--lm-amber);box-shadow:0 0 0 4px rgba(246,168,35,.25),0 0 14px var(--lm-amber);animation:lm-pulse 1.4s ease-in-out infinite}
@@ -2914,7 +2917,7 @@ class LeapmotorCard extends HTMLElement {
       this._sig(DOORS.map(([k]) => k)), this._sig(WINDOWS), this._sig(["trunk"]),
       this._sig(["speeding", "speedLimit", "speedLimitOn", "climateOn", "climateMode", "climateSwitch", "sentry"]), this._sig(TIRES.map(([k]) => k)),
       this._sceneMode(), Math.floor(Date.now() / MIN), JSON.stringify(this._armed), JSON.stringify(this._busy),
-      this._sig(["quickHeatBtn", "quickCoolBtn", "windowsOpenBtn", "windowsCloseBtn", "schedStart", "startChargeBtn"]),
+      this._sig(["quickHeatBtn", "quickCoolBtn", "windowsOpenBtn", "windowsCloseBtn", "schedStart", "startChargeBtn", "chargeLimitSet"]),
     ].join("#");
   }
 
@@ -3799,7 +3802,7 @@ class LeapmotorCard extends HTMLElement {
       </div>`;
 
     // "Start charging" sits next to the schedule while the car waits for it.
-    const tiles = this._groupTilesHtml("charging", undefined, this._schedWaiting() ? ["charge"] : []);
+    const tiles = this._groupTilesHtml("charging", undefined, this._schedWaiting() && this._ids.startChargeBtn ? ["charge"] : []);
     return `
       ${this._head(t("chargingTitle"), "bolt", chip)}
       <div class="ctop">
@@ -4294,6 +4297,9 @@ class LeapmotorCard extends HTMLElement {
     if (tirePins && (low("tireRL") || low("tireRR"))) pin(25, 82, t("tireLowShort"), "bad");
     const soc = this._v("battery");
     if (plugged && soc != null) fx.push(`<span class="fxbatt${charging ? " on" : ""}"><i style="width:${clamp(soc, 0, 100)}%"></i></span>`);
+    // Waiting for the schedule: a clock with the start time above the wallbox.
+    const wait = plugged && !charging ? this._schedWait() : null;
+    if (wait) fx.push(`<span class="fxsched" role="img" aria-label="${esc(wait.text)}">${icon("clock")}${wait.at ? `<b>${esc(wait.at)}</b>` : ""}</span>`);
     return fx.join("");
   }
 
@@ -4316,11 +4322,13 @@ class LeapmotorCard extends HTMLElement {
     };
   }
 
-  /** Plugged in with the schedule on and not charging: charging can be started by hand. */
+  /** Plugged in with the schedule on, and the charge has not started: not charging, not complete, below the limit. */
   _schedWaiting() {
     const now = this._schedNow();
-    const { charging, plugged } = this._chargeState();
-    return !!(now && now.enabled === true && plugged && !charging && this._ids.startChargeBtn);
+    const { charging, plugged, finished } = this._chargeState();
+    if (!now || now.enabled !== true || !plugged || charging || finished) return false;
+    const soc = this._v("battery"), limit = this._currentLimit();
+    return !(soc != null && limit != null && soc >= limit);
   }
 
   /** When the schedule starts next; null while its window is running or when it is not known. */
@@ -4352,19 +4360,28 @@ class LeapmotorCard extends HTMLElement {
     return null;
   }
 
-  /** "Charging starts at 23:00" with Charge now, while the plugged-in car waits for its schedule. */
-  _schedNowHtml(hero = false) {
-    if (!this._schedWaiting()) return "";
-    const t = (k, v) => this._tr(k, v);
+  /** While the plugged-in car waits for its schedule: the sentence for it and the start time ("23:00", "Wed 23:00"); null otherwise. */
+  _schedWait() {
+    if (!this._schedWaiting()) return null;
     const next = this._schedNextStart();
-    let text = t("schWaiting");
-    if (next) {
-      const today = next.toDateString() === new Date().toDateString();
-      text = t("schStartsAt", { x: "", t: this._time(next) }) + (today ? "" : ` · ${this._weekday((next.getDay() + 6) % 7, "short").replace(/\.$/, "")}`);
-    }
+    if (!next) return { text: this._tr("schWaiting"), at: "" };
+    const today = next.toDateString() === new Date().toDateString();
+    const day = today ? "" : this._weekday((next.getDay() + 6) % 7, "short").replace(/\.$/, "");
+    const time = this._time(next);
+    return { text: this._tr("schStartsAt", { x: "", t: time }) + (day ? ` · ${day}` : ""), at: day ? `${day} ${time}` : time };
+  }
+
+  /** "Charging not started yet · starts at 23:00" while the plugged-in car waits for its schedule; Charge now where the car can be told to. */
+  _schedNowHtml(hero = false) {
+    const wait = this._schedWait();
+    if (!wait) return "";
+    const t = (k, v) => this._tr(k, v);
+    const text = wait.text;
     const armed = this._isArmed("charge");
-    return `<div class="schnow${hero ? " hs" : ""}"><span>${icon("calendar")}${esc(text)}</span>
-        <button class="btn primary${armed ? " armed" : ""}${this._busy.charge ? " busy" : ""}" data-act="ctl" data-key="charge">${icon("bolt")}${esc(armed ? t("tapConfirm") : t("schChargeNow"))}</button></div>`;
+    const button = this._ids.startChargeBtn
+      ? `<button class="btn primary${armed ? " armed" : ""}${this._busy.charge ? " busy" : ""}" data-act="ctl" data-key="charge">${icon("bolt")}${esc(armed ? t("tapConfirm") : t("schChargeNow"))}</button>`
+      : "";
+    return `<div class="schnow${hero ? " hs" : ""}"><span>${icon("clock")}${esc(text)}</span>${button}</div>`;
   }
 
   /** "Mon–Fri", "Sat Sun" or "every day". */
@@ -4393,12 +4410,13 @@ class LeapmotorCard extends HTMLElement {
     }
     const d = this._sched;
     if (!d) {
-      const known = now.start && now.end;
+      // A car whose schedule is a start time only (T03) has no end to show.
+      const known = !!now.start;
       const state = now.enabled == null ? "" : ` · ${now.enabled ? t("on") : t("off")}`;
       const sub = [this._schedDaysText(now.days), now.repeat == null ? "" : now.repeat ? t("schWeekly") : t("schOnce")].filter(Boolean).join(" · ");
       return `<div class="lrow sch">
         <div><small>${esc(t("schedule") + state)}</small>${known
-          ? `<b>${esc(this._clock(now.start))} – ${esc(this._clock(now.end))}</b>${sub ? `<span class="schsub">${esc(sub)}</span>` : ""}`
+          ? `<b>${esc(now.end ? `${this._clock(now.start)} – ${this._clock(now.end)}` : t("schFrom", { t: this._clock(now.start) }))}</b>${sub ? `<span class="schsub">${esc(sub)}</span>` : ""}`
           : `<span class="schsub">${esc(t("schNone"))}</span>`}</div>
         <button class="btn" data-act="schededit">${icon("calendar")}${esc(t("schEdit"))}</button>
       </div>${this._schedNowHtml()}`;

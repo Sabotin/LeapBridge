@@ -84,6 +84,44 @@ class ParsingTests(unittest.TestCase):
             self.assertFalse(cs.apply_cloud_schedule(block, nothing))
             self.assertEqual(block, {"charging_planned_enabled": None})
 
+    def test_the_cars_own_start_time_replaces_a_different_cloud_copy(self):
+        cloud = {"charging_planned_enabled": 1, "charging_planned_start": "23:55",
+                 "charging_planned_end": "09:37", "charging_planned_cycles": "1,2,3,4,5,6,7",
+                 "charging_planned_circulation": 0, "charging_planned_recharge": 0,
+                 "charge_limit_percent": 80, "charging_plan_source": "cloud_schedule"}
+        charging = dict(cloud)
+        self.assertTrue(cs.apply_vehicle_start(charging, "23:00"))
+        # The cloud's plan is not the one the car runs: its window and days go too.
+        self.assertEqual(charging, {
+            "charging_planned_enabled": 1, "charging_planned_start": "23:00",
+            "charging_planned_end": None, "charging_planned_cycles": None,
+            "charging_planned_circulation": None, "charging_planned_recharge": None,
+            "charge_limit_percent": 80, "charging_plan_source": "vehicle_start"})
+        self.assertEqual(cs.schedule_view(charging)["start"], "23:00")
+        # The same time in another spelling is the same plan: nothing is touched.
+        for same in ("23:55", "23:55:00", time(23, 55)):
+            charging = dict(cloud)
+            self.assertFalse(cs.apply_vehicle_start(charging, same))
+            self.assertEqual(charging, cloud)
+
+    def test_the_cars_start_time_fills_a_cloud_plan_without_one(self):
+        charging = {"charging_planned_enabled": 0, "charging_planned_start": None,
+                    "charging_planned_end": "06:00"}
+        self.assertTrue(cs.apply_vehicle_start(charging, "22:30"))
+        self.assertEqual(charging, {
+            "charging_planned_enabled": 0, "charging_planned_start": "22:30",
+            "charging_planned_end": "06:00", "charging_plan_source": "vehicle_start"})
+
+    def test_a_start_time_alone_is_no_schedule(self):
+        for enabled in (None, ""):
+            charging = {"charging_planned_enabled": enabled, "charging_planned_start": None}
+            self.assertFalse(cs.apply_vehicle_start(charging, "00:00"))
+            self.assertIsNone(charging["charging_planned_start"])
+        for nothing in (None, "", "soon", "25:00", 2300):
+            charging = {"charging_planned_enabled": 1, "charging_planned_start": "23:55"}
+            self.assertFalse(cs.apply_vehicle_start(charging, nothing))
+            self.assertEqual(charging["charging_planned_start"], "23:55")
+
 
 class PayloadTests(unittest.TestCase):
     def build(self, current=None, **kwargs):

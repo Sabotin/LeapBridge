@@ -165,5 +165,40 @@ class StationaryChargeInflowTests(unittest.TestCase):
         )
 
 
+class T03CableConnectedTests(unittest.TestCase):
+    """A standing T03 with a charge cable in."""
+
+    def connected(self, **values: object) -> bool:
+        return signals.t03_cable_connected(values)
+
+    def test_state_zero_needs_the_connector_flag(self) -> None:
+        self.assertIs(self.connected(**{"1149": 0, "1197": 1}), True)
+        self.assertIs(self.connected(**{"1149": "0", "1197": "1"}), True)
+        for extra in ({}, {"1197": 0}, {"1197": 2}, {"1197": None}, {"1197": "bad"}):
+            with self.subTest(extra=extra):
+                self.assertIs(self.connected(**{"1149": 0, **extra}), False)
+
+    def test_current_remaining_time_and_ready_flag_do_not_matter(self) -> None:
+        for extra in ({"1178": 0.9}, {"1178": 6}, {"1178": float("nan")}, {"1200": 45},
+                      {"1258": 1}, {"1178": 0.9, "1258": 1, "1010": 0, "1319": 0}):
+            with self.subTest(extra=extra):
+                self.assertIs(self.connected(**{"1149": 0, "1197": 1, **extra}), True)
+
+    def test_every_other_state_but_regeneration_names_the_connector(self) -> None:
+        for state in (1, 2, 3, 4, 6):
+            with self.subTest(state=state):
+                self.assertIs(self.connected(**{"1149": state}), True)
+                self.assertIs(self.connected(**{"1149": state, "1258": 1}), True)
+        for state in (5, 7, None, "bad"):
+            with self.subTest(state=state):
+                self.assertIs(self.connected(**{"1149": state, "1197": 1}), False)
+
+    def test_a_gear_or_motion_is_never_a_cable(self) -> None:
+        for extra in ({"1010": 1}, {"1010": 2}, {"1010": 3}, {"1319": 12}):
+            for state in ({"1149": 0, "1197": 1}, {"1149": 4}, {"1149": 6}):
+                with self.subTest(extra=extra, state=state):
+                    self.assertIs(self.connected(**{**state, **extra}), False)
+
+
 if __name__ == "__main__":
     unittest.main()
