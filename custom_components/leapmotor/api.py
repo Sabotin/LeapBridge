@@ -79,6 +79,11 @@ from .leap_api import (
     derive_operate_password,
     derive_session_device_id,
 )
+from .charging_schedule import (
+    apply_cloud_schedule,
+    build_schedule_command,
+    plan_is_reported,
+)
 from .cloud_extras import (
     daily_rows,
     decode_permissions,
@@ -139,6 +144,10 @@ EXTRAS_BUDGET_SECONDS = 45
 EXTRA_RETRY_SECONDS = 900
 #: The cloud said this account may not read it: ask again once a day.
 EXTRA_DENIED_SECONDS = 24 * 3600
+#: The car's status keeps showing the old charging plan for a while after a
+#: change. A second change within this time builds on what was sent last, so it
+#: cannot undo the first one.
+SENT_CHARGE_PLAN_SECONDS = 300
 #: getAppointment command ids of the schedules that can be read back.
 SCHEDULE_COMMANDS: dict[str, str] = {
     "climate": "171",
@@ -202,6 +211,8 @@ class LeapmotorApiClient:
         self.status_path_resolver = VehicleStatusPathResolver()
         #: Slow-changing extra reads: (kind, key) -> (next refresh, value).
         self._extras: dict[tuple[str, str], tuple[float, Any]] = {}
+        # VIN -> (time sent, content) of the last accepted charging-plan command.
+        self._sent_charge_plans: dict[str, tuple[float, str]] = {}
         self._request_timeout: float | None = None
         self._extras_deadline: float | None = None
         self._extras_warned: set[str] = set()
@@ -698,6 +709,134 @@ class LeapmotorApiClient:
         """Enable or disable the charging plan while preserving its values."""
         return self._set_charging_plan(vin, charge_plan_enabled=enabled)
 
+    def set_charging_schedule(
+        self,
+        vin: str,
+        *,
+        start_time: Any = None,
+        end_time: Any = None,
+        days: Any = None,
+        enabled: bool | None = None,
+        charge_limit_percent: int | None = None,
+        repeat_weekly: bool | None = None,
+        auto_recharge: bool | None = None,
+    ) -> dict[str, Any]:
+        """Set the car's charging schedule: time window, weekdays, limit and switches.
+
+        Ported from LeapConnect (leapmotor-api 0.6.0 ``set_charge_schedule``): one
+        remote command 190 carries the whole schedule. Values that are not
+        given are kept from the car's current schedule, which is only read
+        when something is left out.
+        """
+        vehicle = self._find_vehicle_by_vin(vin)
+        status_plan = charging_plan_control_supported(vehicle.car_type)
+        if (
+            charge_limit_percent is not None
+            and not status_plan
+            and not T03_CHARGE_LIMIT_MIN <= int(charge_limit_percent) <= T03_CHARGE_LIMIT_MAX
+        ):
+            raise LeapmotorApiError(
+                f"T03 charge limit must be {T03_CHARGE_LIMIT_MIN}-{T03_CHARGE_LIMIT_MAX} %, "
+                f"got {charge_limit_percent} %."
+            )
+        given = (
+            start_time, end_time, days, enabled,
+            charge_limit_percent, repeat_weekly, auto_recharge,
+        )
+        current = (
+            {} if all(value is not None for value in given)
+            else self._current_charge_plan(vehicle, use_status=status_plan)
+        )
+        try:
+            cmd_content = build_schedule_command(
+                current,
+                start_time=start_time,
+                end_time=end_time,
+                days=days,
+                enabled=enabled,
+                charge_limit_percent=charge_limit_percent,
+                repeat_weekly=repeat_weekly,
+                auto_recharge=auto_recharge,
+            )
+        except ValueError as exc:
+            raise LeapmotorApiError(str(exc)) from exc
+        # The T03 often leaves command 190 unconfirmed (see the charge limit);
+        # the schedule is a fixed state, so sending it once more is harmless.
+        attempts = 1 if status_plan else 2
+        for attempt in range(1, attempts + 1):
+            try:
+                return self._send_charge_plan(vehicle, cmd_content, "set_charging_schedule")
+            except LeapmotorRemoteCommandUnconfirmedError as exc:
+                if attempt == attempts:
+                    raise
+                _LOGGER.info(
+                    "Leapmotor charging schedule was not confirmed (%s); sending it once more",
+                    exc,
+                )
+                time.sleep(CHARGE_LIMIT_RETRY_DELAY_SECONDS)
+        raise AssertionError("unreachable")
+
+    def _send_charge_plan(
+        self,
+        vehicle: Vehicle,
+        cmd_content: str,
+        action_label: str,
+        *,
+        vin: str | None = None,
+    ) -> dict[str, Any]:
+        """Send command 190 and remember the plan it carried."""
+        result = self._remote_control_raw(
+            vin=vin or vehicle.vin,
+            cmd_id="190",
+            cmd_content=cmd_content,
+            action_label=action_label,
+            vehicle=vehicle,
+        )
+        self._sent_charge_plans[vehicle.vin] = (time.monotonic(), cmd_content)
+        # Read the schedule back from the cloud on the next poll.
+        self.invalidate_extras("charging_schedule")
+        return result
+
+    def _recently_sent_charge_plan(self, vin: str) -> dict[str, Any] | None:
+        """The plan of the last accepted command, while the status may still lag."""
+        sent_at, content = self._sent_charge_plans.get(vin, (None, ""))
+        if sent_at is None or time.monotonic() - sent_at > SENT_CHARGE_PLAN_SECONDS:
+            self._sent_charge_plans.pop(vin, None)
+            return None
+        try:
+            plan = json.loads(content)
+        except ValueError:
+            return None
+        return plan if isinstance(plan, dict) else None
+
+    def _current_charge_plan(self, vehicle: Vehicle, *, use_status: bool) -> dict[str, Any]:
+        """The schedule the car has now: its status, completed from the cloud schedule.
+
+        The T03 status carries no usable plan, so only the cloud schedule
+        (getAppointment) is asked there, as for its charge limit. Right after
+        a change the plan that was sent counts, not the status that lags.
+        """
+        recent = self._recently_sent_charge_plan(vehicle.vin)
+        if recent is not None:
+            return _normalize_charge_plan(recent)
+        plan = _normalize_charge_plan({})
+        if use_status:
+            try:
+                status_json = self.get_vehicle_status(vehicle)
+            except LeapmotorApiError as exc:
+                if not _is_token_error(exc):
+                    raise
+                self._recover_session(exc)
+                status_json = self.get_vehicle_status(vehicle)
+            plan = _normalize_charge_plan(
+                ((status_json.get("data") or {}).get("config") or {}).get("3") or {}
+            )
+        if not _charge_plan_is_complete(plan):
+            plan = _merge_charge_plans(
+                plan, _normalize_charge_plan(self.get_charge_schedule(vehicle.vin))
+            )
+        return plan
+
     def _set_charging_plan(
         self,
         vin: str,
@@ -714,22 +853,7 @@ class LeapmotorApiClient:
                 "Switching the charging schedule on or off is not supported by this "
                 "integration for T03. Set it in the vehicle; the charge limit can be set."
             )
-        try:
-            status_json = self.get_vehicle_status(vehicle)
-        except LeapmotorApiError as exc:
-            if not _is_token_error(exc):
-                raise
-            self._recover_session(exc)
-            status_json = self.get_vehicle_status(vehicle)
-        status_charge_plan = (
-            ((status_json.get("data") or {}).get("config") or {}).get("3") or {}
-        )
-        charge_plan = _normalize_charge_plan(status_charge_plan)
-        if not _charge_plan_is_complete(charge_plan):
-            charge_plan = _merge_charge_plans(
-                charge_plan,
-                _normalize_charge_plan(self.get_charge_schedule(vin)),
-            )
+        charge_plan = self._current_charge_plan(vehicle, use_status=True)
 
         if not _charge_plan_is_complete(charge_plan):
             raise LeapmotorApiError(
@@ -760,16 +884,15 @@ class LeapmotorApiClient:
             },
             separators=(",", ":"),
         )
-        return self._remote_control_raw(
-            vin=vin,
-            cmd_id="190",
-            cmd_content=cmd_content,
-            action_label=(
+        return self._send_charge_plan(
+            vehicle,
+            cmd_content,
+            (
                 "set_charging_plan_enabled"
                 if charge_plan_enabled is not None
                 else "set_charge_limit"
             ),
-            vehicle=vehicle,
+            vin=vin,
         )
 
     def _set_charge_limit_from_schedule(
@@ -791,17 +914,13 @@ class LeapmotorApiClient:
                 f"got {charge_limit_percent} %."
             )
         cmd_content = charge_limit_payload_from_schedule(
-            self.get_charge_schedule(vehicle.vin), charge_limit_percent
+            self._recently_sent_charge_plan(vehicle.vin)
+            or self.get_charge_schedule(vehicle.vin),
+            charge_limit_percent,
         )
         for attempt in (1, 2):
             try:
-                return self._remote_control_raw(
-                    vin=vehicle.vin,
-                    cmd_id="190",
-                    cmd_content=cmd_content,
-                    action_label="set_charge_limit",
-                    vehicle=vehicle,
-                )
+                return self._send_charge_plan(vehicle, cmd_content, "set_charge_limit")
             except LeapmotorRemoteCommandUnconfirmedError as exc:
                 if attempt == 2:
                     raise
@@ -822,8 +941,12 @@ class LeapmotorApiClient:
             self._recover_session(exc)
             return self._get_charge_schedule(vin)
 
-    def _get_charge_schedule(self, vin: str) -> dict[str, Any]:
-        """Fetch the charging schedule without authentication retry."""
+    def _get_charge_schedule(self, vin: str, *, denied_ok: bool = True) -> dict[str, Any]:
+        """Fetch the charging schedule without authentication retry.
+
+        An account without the permission gets an empty schedule; the optional
+        read during a poll asks for the error instead, so it is remembered.
+        """
         headers = self._build_signed_headers(
             vin=vin,
             body_params={"cmdId": "190"},
@@ -858,7 +981,7 @@ class LeapmotorApiClient:
             message=message,
         )
         if response["status_code"] != 200 or result_code != 0:
-            if "permission" in str(message or "").lower():
+            if denied_ok and "permission" in str(message or "").lower():
                 return {}
             raise LeapmotorApiError(
                 f"Leapmotor charge schedule failed: {message or response['body'][:200]}"
@@ -980,10 +1103,45 @@ class LeapmotorApiClient:
                 public_invitation(invitation) for invitation in self.share_invitations
             ]
             for vehicle in vehicles:
-                result["vehicles"][vehicle.vin].update(self._fetch_vehicle_extras(vehicle))
+                vehicle_data = result["vehicles"][vehicle.vin]
+                vehicle_data.update(self._fetch_vehicle_extras(vehicle))
+                self._complete_charging_plan(vehicle, vehicle_data)
         finally:
             self._extras_deadline = None
         return result
+
+    def _complete_charging_plan(self, vehicle: Vehicle, vehicle_data: dict[str, Any]) -> None:
+        """Fill in the charging schedule where the car's status does not carry it.
+
+        The cloud schedule is only asked for cars whose status leaves the
+        schedule out (the T03), at most every half hour, and it can never fail
+        the update.
+        """
+        try:
+            charging = vehicle_data.get("charging")
+            if not isinstance(charging, dict):
+                return
+            # A plan the car confirmed a moment ago counts until the status shows it.
+            apply_cloud_schedule(
+                charging,
+                self._recently_sent_charge_plan(vehicle.vin),
+                replace=True,
+                source="last_command",
+            )
+            if plan_is_reported(charging):
+                return
+            apply_cloud_schedule(
+                charging,
+                self._cached_extra(
+                    "charging_schedule",
+                    vehicle.vin,
+                    lambda: self._get_charge_schedule(vehicle.vin, denied_ok=False),
+                    ttl=SCHEDULES_TTL_SECONDS,
+                    fallback=None,
+                ),
+            )
+        except Exception:  # noqa: BLE001 - optional data must never break polling
+            _LOGGER.debug("Leapmotor charging schedule could not be completed", exc_info=True)
 
     def _cached_extra(
         self,
@@ -2857,6 +3015,7 @@ def normalize_vehicle(
             "charging_planned_end": charge_plan.get("endTime"),
             "charging_planned_cycles": charge_plan.get("cycles"),
             "charging_planned_circulation": charge_plan.get("circulation"),
+            "charging_planned_recharge": charge_plan.get("recharge"),
             "charging_plan_updated_at": charge_plan.get("updateTime"),
         },
         "history": {

@@ -50,6 +50,7 @@ class ChargingTests(unittest.TestCase):
             with self.subTest(schedule=schedule):
                 self.client.get_charge_schedule.return_value = schedule
                 self.client._remote_control_raw.reset_mock()
+                self.client._sent_charge_plans.clear()  # each case is its own car
                 self.client.set_charge_limit("SYNTHETIC", 80)
                 kwargs = self.client._remote_control_raw.call_args.kwargs
                 self.assertEqual((kwargs["cmd_id"], kwargs["cmd_content"]), ("190", expected))
@@ -77,15 +78,58 @@ class ChargingTests(unittest.TestCase):
         self.client.get_vehicle_status.return_value = {"data": {"config": {"3": plan}}}
         for model in ("B10", "C10", "B05"):
             self.client._find_vehicle_by_vin.return_value.car_type = model
+            self.client._sent_charge_plans.clear()
             self.client.set_charge_limit("SYNTHETIC", 80)
             payload = json.loads(self.client._remote_control_raw.call_args.kwargs["cmd_content"])
             self.assertEqual(payload, {"chargeEnable": 0, "chargesoc": 80,
                 "starttime": "00:00", "endtime": "06:00", "cycles": "1,3,5",
                 "circulation": 1, "recharge": 1})
+            self.client._sent_charge_plans.clear()  # as if the status had caught up
             self.client.set_charging_plan_enabled("SYNTHETIC", True)
             payload = json.loads(self.client._remote_control_raw.call_args.kwargs["cmd_content"])
             self.assertEqual((payload["chargeEnable"], payload["chargesoc"]), (1, 95))
         self.client.get_charge_schedule.assert_not_called()
+
+    def test_a_second_change_builds_on_the_first_while_the_status_lags(self):
+        """The status still shows the old plan right after a change (limit 95, off)."""
+        plan = {"isEnable": "0", "percent": 95, "beginTime": "00:00",
+                "endTime": "06:00", "cycles": "1,3,5", "circulation": 1, "recharge": 1}
+        self.client.get_vehicle_status.return_value = {"data": {"config": {"3": plan}}}
+        self.client._find_vehicle_by_vin.return_value.car_type = "C10"
+
+        def sent():
+            return json.loads(self.client._remote_control_raw.call_args.kwargs["cmd_content"])
+
+        self.client.set_charging_schedule("SYNTHETIC", start_time="22:00", days=[6, 7])
+        self.client.set_charge_limit("SYNTHETIC", 80)
+        self.assertEqual(sent(), {"chargeEnable": 0, "chargesoc": 80, "starttime": "22:00",
+            "endtime": "06:00", "cycles": "6,7", "circulation": 1, "recharge": 1})
+        self.client.set_charging_plan_enabled("SYNTHETIC", True)
+        self.assertEqual((sent()["chargeEnable"], sent()["chargesoc"], sent()["cycles"]),
+                         (1, 80, "6,7"))
+        self.assertEqual(self.client.get_vehicle_status.call_count, 1)
+        # A failed command is not remembered, and after a while the status counts again.
+        self.client._remote_control_raw.side_effect = api.LeapmotorApiError("refused")
+        with self.assertRaises(api.LeapmotorApiError):
+            self.client.set_charge_limit("SYNTHETIC", 60)
+        self.client._remote_control_raw.side_effect = None
+        with unittest.mock.patch.object(
+                api.time, "monotonic",
+                return_value=api.time.monotonic() + api.SENT_CHARGE_PLAN_SECONDS + 1):
+            self.client.set_charging_plan_enabled("SYNTHETIC", True)
+        self.assertEqual((sent()["chargesoc"], sent()["starttime"], sent()["cycles"]),
+                         (95, "00:00", "1,3,5"))
+
+    def test_t03_limit_after_a_schedule_change_keeps_the_new_schedule(self):
+        self.client._find_vehicle_by_vin.return_value.car_type = "T03"
+        self.client.get_charge_schedule.return_value = {"chargeEnable": 0, "chargesoc": 90,
+            "starttime": "00:00", "endtime": "08:00", "cycles": "1,2,3,4,5,6,7"}
+        self.client.set_charging_schedule("SYNTHETIC", start_time="23:30", enabled=True)
+        self.client.set_charge_limit("SYNTHETIC", 80)
+        payload = json.loads(self.client._remote_control_raw.call_args.kwargs["cmd_content"])
+        self.assertEqual((payload["chargeEnable"], payload["chargesoc"], payload["starttime"]),
+                         (1, 80, "23:30"))
+        self.assertEqual(self.client.get_charge_schedule.call_count, 1)
 
     def test_incomplete_plan_never_invents_schedule(self):
         self.client._find_vehicle_by_vin.return_value.car_type = "B10"

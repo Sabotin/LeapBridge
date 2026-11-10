@@ -20,6 +20,12 @@ from homeassistant.helpers import selector
 from .api import (
     LeapmotorApiClient,
 )
+from .cert_download import (
+    CERT_REPOSITORY_URL,
+    CertificateDownloadError,
+    CertificateDownloadResult,
+    download_app_certificates,
+)
 from .leap_api import (
     LeapmotorAccountCertError,
     LeapmotorApiError,
@@ -37,6 +43,7 @@ from .const import (
     CONF_APP_KEY_PEM,
     CONF_BATTERY_REFERENCE_KWH,
     CONF_DEVICE_ID,
+    CONF_DOWNLOAD_CERTIFICATES,
     CONF_DRIVING_SCAN_INTERVAL,
     CONF_FUEL_CONSUMPTION,
     CONF_FUEL_PRICE,
@@ -105,22 +112,56 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
 )
 
 
-CERTIFICATE_DATA_SCHEMA = vol.Schema(
-    {
-        vol.Optional(CONF_APP_CERT_FILE): selector.FileSelector(
-            selector.FileSelectorConfig(accept=".pem,.crt,.cert")
-        ),
-        vol.Optional(CONF_APP_KEY_FILE): selector.FileSelector(
-            selector.FileSelectorConfig(accept=".pem,.key")
-        ),
-        vol.Optional(CONF_APP_CERT_PEM, default=""): selector.TextSelector(
-            selector.TextSelectorConfig(multiline=True)
-        ),
-        vol.Optional(CONF_APP_KEY_PEM, default=""): selector.TextSelector(
-            selector.TextSelectorConfig(multiline=True)
-        ),
-    }
+#: The four ways to hand over the certificate pair by hand.
+MANUAL_CERTIFICATE_FIELDS = (
+    CONF_APP_CERT_FILE,
+    CONF_APP_KEY_FILE,
+    CONF_APP_CERT_PEM,
+    CONF_APP_KEY_PEM,
 )
+
+#: Shown in the dialogs next to the download option.
+CERTIFICATE_PLACEHOLDERS = {"repository": CERT_REPOSITORY_URL}
+
+
+def certificate_data_schema(*, download_default: bool = False) -> vol.Schema:
+    """Certificate step: automatic download, or upload/paste the two files."""
+    return vol.Schema(
+        {
+            vol.Optional(CONF_DOWNLOAD_CERTIFICATES, default=download_default): bool,
+            vol.Optional(CONF_APP_CERT_FILE): selector.FileSelector(
+                selector.FileSelectorConfig(accept=".pem,.crt,.cert")
+            ),
+            vol.Optional(CONF_APP_KEY_FILE): selector.FileSelector(
+                selector.FileSelectorConfig(accept=".pem,.key")
+            ),
+            vol.Optional(CONF_APP_CERT_PEM, default=""): selector.TextSelector(
+                selector.TextSelectorConfig(multiline=True)
+            ),
+            vol.Optional(CONF_APP_KEY_PEM, default=""): selector.TextSelector(
+                selector.TextSelectorConfig(multiline=True)
+            ),
+        }
+    )
+
+
+CERTIFICATE_DATA_SCHEMA = certificate_data_schema()
+
+
+def manual_certificates_provided(data: dict[str, Any]) -> bool:
+    """Return whether the user uploaded or pasted any certificate material."""
+    return any(data.get(key) for key in MANUAL_CERTIFICATE_FIELDS)
+
+
+async def async_download_app_certificates(hass: HomeAssistant) -> CertificateDownloadResult:
+    """Download, check and install the app certificate pair (user-triggered only)."""
+    try:
+        return await hass.async_add_executor_job(
+            download_app_certificates, app_certificate_dir(hass)
+        )
+    except CertificateDownloadError as exc:
+        _LOGGER.warning("Leapmotor certificate download failed (%s): %s", exc.reason, exc.detail)
+        raise
 
 
 def app_certificate_dir(hass: HomeAssistant) -> Path:
@@ -146,6 +187,17 @@ def has_app_certificate_material(hass: HomeAssistant) -> bool:
     migrate_legacy_app_certificate_material(hass)
     cert_dir = app_certificate_dir(hass)
     return (cert_dir / STATIC_APP_CERT).exists() and (cert_dir / STATIC_APP_KEY).exists()
+
+
+def has_usable_app_certificate_material(hass: HomeAssistant) -> bool:
+    """Return whether both files exist, parse and belong together."""
+    if not has_app_certificate_material(hass):
+        return False
+    try:
+        validate_app_certificate_material(hass)
+    except ValueError:
+        return False
+    return True
 
 
 def _write_pem_if_provided(path: Path, value: str, marker: str, mode: int) -> None:
@@ -332,9 +384,47 @@ class LeapmotorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         user_input: dict[str, Any] | None = None,
     ) -> config_entries.ConfigFlowResult:
         """Start setup with certificate material if it is not installed yet."""
-        if await self.hass.async_add_executor_job(has_app_certificate_material, self.hass):
+        if await self.hass.async_add_executor_job(
+            has_usable_app_certificate_material, self.hass
+        ):
             return await self.async_step_account(user_input)
-        return await self.async_step_certificates()
+        return await self.async_step_certificate_source()
+
+    async def async_step_certificate_source(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> config_entries.ConfigFlowResult:
+        """Choose between the automatic download and providing the files by hand."""
+        return self.async_show_menu(
+            step_id="certificate_source",
+            menu_options=["download_certificates", "certificates"],
+            description_placeholders=CERTIFICATE_PLACEHOLDERS,
+        )
+
+    async def async_step_download_certificates(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> config_entries.ConfigFlowResult:
+        """Download the certificate pair from GitHub, then continue with the account."""
+        try:
+            await async_download_app_certificates(self.hass)
+        except CertificateDownloadError as exc:
+            # Offer another try and the manual way on one form.
+            return self._async_show_certificates_form(
+                {"base": exc.reason}, download_default=True
+            )
+        return await self.async_step_account()
+
+    @callback
+    def _async_show_certificates_form(
+        self, errors: dict[str, str], *, download_default: bool = False
+    ) -> config_entries.ConfigFlowResult:
+        return self.async_show_form(
+            step_id="certificates",
+            data_schema=certificate_data_schema(download_default=download_default),
+            errors=errors,
+            description_placeholders=CERTIFICATE_PLACEHOLDERS,
+        )
 
     async def async_step_certificates(
         self,
@@ -342,13 +432,23 @@ class LeapmotorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> config_entries.ConfigFlowResult:
         """Collect required app certificate material before account login."""
         errors: dict[str, str] = {}
+        download = False
         if user_input is not None:
+            # Files given by hand win over the download switch.
+            download = bool(
+                user_input.get(CONF_DOWNLOAD_CERTIFICATES)
+            ) and not manual_certificates_provided(user_input)
             try:
-                await self.hass.async_add_executor_job(
-                    save_app_certificate_material,
-                    self.hass,
-                    user_input,
-                )
+                if download:
+                    await async_download_app_certificates(self.hass)
+                else:
+                    await self.hass.async_add_executor_job(
+                        save_app_certificate_material,
+                        self.hass,
+                        user_input,
+                    )
+            except CertificateDownloadError as exc:
+                errors["base"] = exc.reason
             except ValueError:
                 errors["base"] = "certificate_import_error"
             else:
@@ -364,11 +464,7 @@ class LeapmotorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 else:
                     errors["base"] = "missing_app_cert"
 
-        return self.async_show_form(
-            step_id="certificates",
-            data_schema=CERTIFICATE_DATA_SCHEMA,
-            errors=errors,
-        )
+        return self._async_show_certificates_form(errors, download_default=download)
 
     async def async_step_account(
         self,
@@ -572,31 +668,34 @@ class LeapmotorOptionsFlow(config_entries.OptionsFlow):
     ) -> config_entries.ConfigFlowResult:
         """Manage configurable runtime options."""
         if user_input is not None:
+            manual = manual_certificates_provided(user_input)
+            # Files given by hand win over the download switch.
+            download = bool(user_input.get(CONF_DOWNLOAD_CERTIFICATES)) and not manual
             try:
-                await self.hass.async_add_executor_job(
-                    save_app_certificate_material,
-                    self.hass,
-                    user_input,
-                )
+                if download:
+                    await async_download_app_certificates(self.hass)
+                else:
+                    await self.hass.async_add_executor_job(
+                        save_app_certificate_material,
+                        self.hass,
+                        user_input,
+                    )
+            except CertificateDownloadError as exc:
+                return self._show_options_form({"base": exc.reason}, download_default=True)
             except ValueError:
-                return self.async_show_form(
-                    step_id="init",
-                    data_schema=self._options_schema(),
-                    errors={"base": "certificate_import_error"},
-                )
-            if any(user_input.get(key) for key in (
-                CONF_APP_CERT_FILE, CONF_APP_KEY_FILE, CONF_APP_CERT_PEM, CONF_APP_KEY_PEM,
-            )):
+                return self._show_options_form({"base": "certificate_import_error"})
+            if manual or download:
                 try:
                     await self.hass.async_add_executor_job(
                         validate_app_certificate_material, self.hass
                     )
                 except ValueError as exc:
-                    return self.async_show_form(
-                        step_id="init",
-                        data_schema=self._options_schema(),
-                        errors={"base": str(exc)},
-                    )
+                    return self._show_options_form({"base": str(exc)})
+                if self._config_entry.state is not config_entries.ConfigEntryState.LOADED:
+                    # Setup was waiting for certificates: start it now instead of
+                    # at Home Assistant's next retry. An entry that is not loaded
+                    # has no update listener, so this is the only reload.
+                    self.hass.config_entries.async_schedule_reload(self._config_entry.entry_id)
             return self.async_create_entry(
                 title="",
                 data={
@@ -625,12 +724,19 @@ class LeapmotorOptionsFlow(config_entries.OptionsFlow):
                 },
             )
 
+        return self._show_options_form({})
+
+    def _show_options_form(
+        self, errors: dict[str, str], *, download_default: bool = False
+    ) -> config_entries.ConfigFlowResult:
         return self.async_show_form(
             step_id="init",
-            data_schema=self._options_schema(),
+            data_schema=self._options_schema(download_default=download_default),
+            errors=errors,
+            description_placeholders=CERTIFICATE_PLACEHOLDERS,
         )
 
-    def _options_schema(self) -> vol.Schema:
+    def _options_schema(self, *, download_default: bool = False) -> vol.Schema:
         """Build the options schema."""
         scan_interval = self._config_entry.options.get(
             CONF_SCAN_INTERVAL,
@@ -642,6 +748,7 @@ class LeapmotorOptionsFlow(config_entries.OptionsFlow):
         )
         return vol.Schema(
             {
+                vol.Optional(CONF_DOWNLOAD_CERTIFICATES, default=download_default): bool,
                 vol.Optional(CONF_APP_CERT_FILE): selector.FileSelector(
                     selector.FileSelectorConfig(accept=".pem,.crt,.cert")
                 ),

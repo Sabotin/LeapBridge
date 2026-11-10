@@ -31,6 +31,9 @@ APPOINTMENT = f"{BASE}/oversea/vehicle/v1/app/remote/ctl/getAppointment"
 DAILY = f"{BASE}/oversea/drivingRecord/v1/mileage/energy/detail"
 CHARGING = f"{BASE}/charge/daily/detail/page"
 VEHICLES = f"{BASE}/oversea/vehicle/v1/list"
+#: The climate, battery-heating and prepare-car schedules, plus the charging
+#: schedule, which is only read for a car whose status does not carry it.
+SCHEDULE_READS = len(api.SCHEDULE_COMMANDS) + 1
 
 
 def reference_signature(client, headers, *, vin=None, body_params=None):
@@ -324,12 +327,12 @@ class ExtrasTests(unittest.TestCase):
             self.poll()
         self.assertEqual(self.cloud.count(SOFTWARE), 1)
         self.assertEqual(self.cloud.count(CHARGING), 1)
-        self.assertEqual(self.cloud.count(APPOINTMENT), len(api.SCHEDULE_COMMANDS))
+        self.assertEqual(self.cloud.count(APPOINTMENT), SCHEDULE_READS)
         self.assertEqual(self.cloud.count(INVITES), 1)
         self.assertEqual(self.cloud.count(MESSAGES), 5)
         self.client.invalidate_extras("schedule_climate")
         self.poll()
-        self.assertEqual(self.cloud.count(APPOINTMENT), len(api.SCHEDULE_COMMANDS) + 1)
+        self.assertEqual(self.cloud.count(APPOINTMENT), SCHEDULE_READS + 1)
         self.assertEqual(self.cloud.count(SOFTWARE), 1)
         self.client.invalidate_extras()
         self.poll()
@@ -377,9 +380,68 @@ class ExtrasTests(unittest.TestCase):
         self.assertEqual(car["software"]["reason"], "no_permission")
         self.assertIsNone(car["schedules"]["prepare_car"])
         self.assertEqual(self.cloud.count(SOFTWARE), 1)
-        self.assertEqual(self.cloud.count(APPOINTMENT), len(api.SCHEDULE_COMMANDS))
+        self.assertEqual(self.cloud.count(APPOINTMENT), SCHEDULE_READS)
         due, _ = self.client._extras[("software", VIN)]
         self.assertGreater(due - api.time.monotonic(), api.EXTRA_DENIED_SECONDS - 60)
+
+    def appointment_commands(self):
+        return [data.rsplit("cmdId=", 1)[1] for path, _, data in self.cloud.calls
+                if path == APPOINTMENT]
+
+    def test_a_status_with_the_charging_plan_needs_no_extra_read(self):
+        plan = {"isEnable": 1, "percent": 80, "beginTime": "23:00", "endTime": "06:00",
+                "cycles": "1,2,3,4,5", "circulation": 1, "recharge": 0}
+        self.client.get_vehicle_status.return_value = {
+            "data": {"signal": {"1204": 60}, "config": {"3": plan}}}
+        charging = self.poll()["vehicles"][VIN]["charging"]
+        self.assertNotIn("190", self.appointment_commands())
+        self.assertEqual(self.cloud.count(APPOINTMENT), len(api.SCHEDULE_COMMANDS))
+        self.assertEqual((charging["charging_planned_start"], charging["charging_planned_recharge"]),
+                         ("23:00", 0))
+        self.assertNotIn("charging_plan_source", charging)
+
+    def test_a_status_without_the_plan_is_completed_from_the_cloud_schedule(self):
+        self.owner.car_type = "T03"
+        self.client.get_vehicle_status.return_value = {"data": {
+            "signal": {"1204": 60}, "chargesocSetting": 95, "chargeTimeSetting": "00:00"}}
+        schedule = {"chargeEnable": 1, "chargesoc": 80, "starttime": "23:00", "endtime": "06:30",
+                    "cycles": "1,2,3,4,5", "circulation": 1, "recharge": 0}
+        self.cloud.answers[APPOINTMENT] = (
+            lambda data: json.dumps(schedule if data.endswith("cmdId=190") else {"controls": []}))
+        for _ in range(3):
+            charging = self.poll()["vehicles"][VIN]["charging"]
+        self.assertEqual(self.appointment_commands().count("190"), 1)
+        self.assertEqual(
+            [charging[key] for key in ("charging_planned_enabled", "charging_planned_start",
+                                       "charging_planned_end", "charging_planned_cycles",
+                                       "charging_planned_circulation", "charging_planned_recharge")],
+            [1, "23:00", "06:30", "1,2,3,4,5", 1, 0])
+        self.assertEqual(charging["charging_plan_source"], "cloud_schedule")
+        # What the status reported is never replaced.
+        self.assertEqual(charging["charge_limit_percent"], 95)
+
+    def test_a_schedule_change_is_shown_at_once_and_read_back_later(self):
+        self.poll()
+        self.client._remote_control_raw = Mock(return_value={"code": 0})
+        self.client._find_vehicle_by_vin = Mock(return_value=self.owner)
+        self.client.set_charging_schedule(
+            VIN, start_time="22:00", end_time="05:00", days=[1], enabled=True,
+            charge_limit_percent=80, repeat_weekly=True, auto_recharge=False)
+        # The confirmed plan is shown at once, although the status has not caught
+        # up, and nothing needs to be asked while it is.
+        charging = self.poll()["vehicles"][VIN]["charging"]
+        self.assertEqual(
+            [charging[key] for key in ("charging_planned_enabled", "charging_planned_start",
+                                       "charging_planned_end", "charging_planned_cycles",
+                                       "charge_limit_percent", "charging_plan_source")],
+            [1, "22:00", "05:00", "1", 80, "last_command"])
+        self.assertEqual(self.appointment_commands().count("190"), 1)
+        # Later the car's own data counts again; the cloud schedule is read anew.
+        with patch.object(api.time, "monotonic",
+                          return_value=api.time.monotonic() + api.SENT_CHARGE_PLAN_SECONDS + 1):
+            charging = self.poll()["vehicles"][VIN]["charging"]
+        self.assertIsNone(charging["charging_planned_start"])
+        self.assertEqual(self.appointment_commands().count("190"), 2)
 
     def test_only_the_optional_reads_carry_a_time_limit(self):
         self.poll()

@@ -12,6 +12,7 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -20,6 +21,7 @@ from homeassistant.util import dt as dt_util
 from . import insights
 from .abrp import build_abrp_telemetry, send_abrp_telemetry
 from .api import LeapmotorApiClient
+from .cert_download import CERT_REPOSITORY_URL
 from .const import (
     CONF_FUEL_CONSUMPTION,
     CONF_FUEL_PRICE,
@@ -91,6 +93,12 @@ ZONE_MARGIN_M = 50.0
 
 #: The cloud lists a newly accepted shared car a few seconds after the answer.
 SHARE_RELOAD_DELAY_SECONDS = 8
+MISSING_CERTIFICATES_ISSUE_PREFIX = "missing_app_cert_"
+
+
+def missing_certificates_issue_id(entry_id: str) -> str:
+    """Repair shown while an account cannot log in without app certificates."""
+    return f"{MISSING_CERTIFICATES_ISSUE_PREFIX}{entry_id}"
 
 
 @callback
@@ -139,6 +147,8 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
         self._polling_mode = "normal"
         self._lock_state_overrides: dict[str, tuple[bool, float]] = {}
         self._last_remote_results: dict[str, dict[str, Any]] = {}
+        # None until the first update says whether the certificates are there.
+        self._missing_certificates_reported: bool | None = None
         self._last_abrp_results: dict[str, dict[str, Any]] = {}
         self._last_vehicle_states: dict[str, str] = {}
         self._followup_refresh_tasks: dict[str, asyncio.Task[None]] = {}
@@ -635,11 +645,14 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
                 "polling_mode": self._polling_mode,
                 "vehicle_count": self._integration_status.get("vehicle_count", 0),
             }
+            if isinstance(exc, LeapmotorMissingAppCertError):
+                self._async_report_missing_certificates(True)
             if isinstance(exc, LeapmotorAuthError) and not isinstance(
                 exc, (LeapmotorAccountCertError, LeapmotorMissingAppCertError)
             ):
                 raise ConfigEntryAuthFailed(str(exc)) from exc
             raise UpdateFailed(str(exc)) from exc
+        self._async_report_missing_certificates(False)
         self._stabilize_vehicle_states(data)
         self._apply_state_freshness(data)
         self._normalize_locations(data)
@@ -707,6 +720,32 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
             self._async_remote_followup_refresh(vin, delay_seconds)
         )
 
+    @callback
+    def _async_report_missing_certificates(self, missing: bool) -> None:
+        """Show or clear the repair that offers to download the app certificates."""
+        if missing == self._missing_certificates_reported:
+            return
+        issue_id = missing_certificates_issue_id(self.config_entry.entry_id)
+        try:
+            if missing:
+                ir.async_create_issue(
+                    self.hass,
+                    DOMAIN,
+                    issue_id,
+                    is_fixable=True,
+                    is_persistent=False,
+                    severity=ir.IssueSeverity.ERROR,
+                    translation_key="missing_app_cert",
+                    translation_placeholders={"repository": CERT_REPOSITORY_URL},
+                    data={"entry_id": self.config_entry.entry_id},
+                )
+            else:
+                ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+        except Exception:  # noqa: BLE001 - a hint only, never break the update
+            _LOGGER.debug("Could not update the missing-certificate repair", exc_info=True)
+            return
+        self._missing_certificates_reported = missing
+
     def cancel_scheduled_followup_refreshes(self) -> None:
         """Cancel pending delayed refreshes during unload."""
         for task in self._followup_refresh_tasks.values():
@@ -766,8 +805,9 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
         ``cooldown=False`` marks a failure that never reached the car, so the
         next command is not held back by the remote-action cooldown.
         """
-        if success and "schedule" in str(action):
-            # A schedule was changed: read the schedules back on the next poll.
+        if success and "schedule" in str(action) and "charging" not in str(action):
+            # A climate or prepare-car schedule was changed: read them back on the
+            # next poll. (The charging schedule is read back by the client itself.)
             for kind in ("climate", "battery_heating", "prepare_car"):
                 self.client.invalidate_extras(f"schedule_{kind}")
         remote_data = (result or {}).get("data") if isinstance(result, dict) else None

@@ -57,14 +57,26 @@
           "show_sidebar_panel": "Doda vnos Leapmotor v stransko vrstico s celotno nadzorno ploščo. Izklopi, če ga želiš skriti."
         }
       },
+      "certificate_source": {
+        "title": "Certifikati Leapmotor",
+        "description": "Za prijavo v Leapmotor sta potrebna certifikat aplikacije in njegov zasebni ključ (app_cert.pem in app_key.pem). Nista del te integracije. Home Assistant ju lahko prenese iz skupnostnega repozitorija {repository}, lahko pa datoteki priskrbiš ročno. V obeh primerih se shranita samo na tem sistemu, v /config/leapmotor.",
+        "menu_options": {
+          "download_certificates": "Prenesi z GitHuba (priporočeno)",
+          "certificates": "Naloži ali prilepi datoteki ročno"
+        }
+      },
       "certificates": {
         "title": "Certifikati Leapmotor",
-        "description": "Naloži zahtevani certifikat in zasebni ključ aplikacije ali prilepi njuno vsebino PEM. Shranita se lokalno kot /config/leapmotor/app_cert.pem in /config/leapmotor/app_key.pem in nista del javnega repozitorija.",
+        "description": "Vklopi prenos, da se obe datoteki preneseta iz {repository}, ali naloži certifikat in zasebni ključ aplikacije oziroma prilepi njuno vsebino PEM. Shranita se lokalno kot /config/leapmotor/app_cert.pem in /config/leapmotor/app_key.pem in nista del javnega repozitorija.",
         "data": {
+          "download_certificates": "Prenesi obe datoteki z GitHuba",
           "app_cert_file": "Naloži app_cert.pem (certifikat)",
           "app_key_file": "Naloži app_key.pem (zasebni ključ)",
           "app_cert_pem": "Prilepi PEM iz app_cert.pem (certifikat)",
           "app_key_pem": "Prilepi PEM iz app_key.pem (zasebni ključ)"
+        },
+        "data_description": {
+          "download_certificates": "Prenese trenutni datoteki app_cert.pem in app_key.pem iz repozitorija leapmotor-certs in preveri, da spadata skupaj. Datoteki, ki ju naložiš ali prilepiš spodaj, imata prednost."
         }
       },
       "account": {
@@ -111,13 +123,17 @@
       "api_refresh_failed": "Prijava je uspela, vendar prva osvežitev podatkov vozila prek API-ja ni uspela.",
       "no_vehicle": "Ta račun nima povezanega vozila.",
       "unknown": "Nepričakovana napaka.",
-      "missing_app_cert": "Manjka certifikat ali zasebni ključ aplikacije. Prilepi obe vrednosti PEM ali shrani app_cert.pem in app_key.pem v /config/leapmotor.",
+      "missing_app_cert": "Manjka certifikat ali zasebni ključ aplikacije. Prenesi ju z GitHuba v možnostih integracije, prilepi obe vrednosti PEM ali shrani app_cert.pem in app_key.pem v /config/leapmotor.",
       "certificate_import_error": "Uvoz certifikata ni uspel. Preveri certifikat PEM in zasebni ključ.",
       "app_cert_invalid": "Datoteka certifikata ni veljaven certifikat PEM. Preveri, da app_cert.pem vsebuje celoten blok BEGIN/END CERTIFICATE.",
       "app_key_invalid": "Datoteka zasebnega ključa ni veljaven zasebni ključ PEM. Preveri, da app_key.pem vsebuje celoten blok BEGIN/END PRIVATE KEY in ni šifriran.",
       "certificate_key_mismatch": "Certifikat in zasebni ključ se ne ujemata. Poskrbi, da sta app_cert.pem in app_key.pem ujemajoč se par iz istega vira.",
       "share_accept_failed": "Povabila ni bilo mogoče sprejeti. Poskusi znova ali ga sprejmi v aplikaciji Leapmotor.",
-      "share_not_ready": "Povabilo je sprejeto, vendar se avto v računu še ni pojavil. Čez trenutek potrdi znova."
+      "share_not_ready": "Povabilo je sprejeto, vendar se avto v računu še ni pojavil. Čez trenutek potrdi znova.",
+      "cert_download_cannot_connect": "Certifikatov ni bilo mogoče prenesti: GitHub iz Home Assistanta ni bil dosegljiv. Preveri internetno povezavo in potrdi znova ali pa datoteki naloži ročno.",
+      "cert_download_not_found": "V repozitoriju leapmotor-certs ni bilo datotek s certifikatom. Datoteki naloži ročno.",
+      "cert_download_invalid": "Preneseni datoteki nista veljaven, ujemajoč se par certifikata in ključa, zato ni bilo nič spremenjeno. Poskusi znova pozneje ali pa datoteki naloži ročno.",
+      "cert_download_write_failed": "Certifikata sta bila prenesena, vendar ju ni bilo mogoče shraniti v /config/leapmotor. Preveri, ali je v mapo mogoče pisati."
     },
     "abort": {
       "already_configured": "Ta račun je že nastavljen.",
@@ -897,6 +913,14 @@
           }
         }
       }
+    },
+    "time": {
+      "charging_schedule_start": {
+        "name": "Nastavi začetek urnika polnjenja"
+      },
+      "charging_schedule_end": {
+        "name": "Nastavi konec urnika polnjenja"
+      }
     }
   },
   "options": {
@@ -905,6 +929,7 @@
         "title": "Možnosti Leapmotor",
         "description": "Spremeni nastavitve certifikatov in poizvedovanja za celoten račun. PIN vozila in ABRP se nastavita posebej za vsako vozilo.",
         "data": {
+          "download_certificates": "Prenesi certifikata aplikacije z GitHuba",
           "app_cert_file": "Naloži app_cert.pem (certifikat)",
           "app_key_file": "Naloži app_key.pem (zasebni ključ)",
           "app_cert_pem": "Prilepi PEM iz app_cert.pem (certifikat)",
@@ -929,6 +954,7 @@
           "grid_co2_g_kwh": "CO2 tvoje elektrike"
         },
         "data_description": {
+          "download_certificates": "Znova prenese app_cert.pem in app_key.pem iz repozitorija leapmotor-certs na GitHubu in po preverjanju zamenja shranjeni par. Pusti izklopljeno, če želiš obdržati trenutna certifikata.",
           "eco_polling_enabled": "Počasnejši varčni interval uporabi le, ko so vsa vozila zanesljivo zaklenjena, parkirana in odklopljena.",
           "eco_scan_interval": "Interval poizvedovanja v varčnem načinu. Samodejno je omejen na najmanj običajni interval posodabljanja.",
           "price_home_kwh": "Uporabi se za polnjenja, ki se začnejo v coni Doma. Pusti 0, če stroškov ne želiš spremljati.",
@@ -951,7 +977,11 @@
       "app_key_invalid": "Datoteka zasebnega ključa ni veljaven zasebni ključ PEM. Preveri, da app_key.pem vsebuje celoten blok BEGIN/END PRIVATE KEY in ni šifriran.",
       "certificate_key_mismatch": "Certifikat in zasebni ključ se ne ujemata. Poskrbi, da sta app_cert.pem in app_key.pem ujemajoč se par iz istega vira.",
       "certificate_import_error": "Uvoz certifikata ni uspel. Preveri certifikat PEM in zasebni ključ.",
-      "missing_app_cert": "Manjka certifikat ali zasebni ključ aplikacije. Prilepi obe vrednosti PEM ali shrani app_cert.pem in app_key.pem v /config/leapmotor."
+      "missing_app_cert": "Manjka certifikat ali zasebni ključ aplikacije. Prenesi ju z GitHuba v možnostih integracije, prilepi obe vrednosti PEM ali shrani app_cert.pem in app_key.pem v /config/leapmotor.",
+      "cert_download_cannot_connect": "Certifikatov ni bilo mogoče prenesti: GitHub iz Home Assistanta ni bil dosegljiv. Preveri internetno povezavo in potrdi znova ali pa datoteki naloži ročno.",
+      "cert_download_not_found": "V repozitoriju leapmotor-certs ni bilo datotek s certifikatom. Datoteki naloži ročno.",
+      "cert_download_invalid": "Preneseni datoteki nista veljaven, ujemajoč se par certifikata in ključa, zato ni bilo nič spremenjeno. Poskusi znova pozneje ali pa datoteki naloži ročno.",
+      "cert_download_write_failed": "Certifikata sta bila prenesena, vendar ju ni bilo mogoče shraniti v /config/leapmotor. Preveri, ali je v mapo mogoče pisati."
     }
   },
   "services": {
@@ -1186,6 +1216,48 @@
           "description": "Zadnji znaki številke VIN. Potrebno le, če čaka več povabil."
         }
       }
+    },
+    "set_charging_schedule": {
+      "name": "Nastavi urnik polnjenja",
+      "description": "Z enim ukazom nastavi urnik polnjenja avta: časovno okno, dneve v tednu, mejo polnjenja, tedensko ponavljanje in samodejno dopolnjevanje. Polja, ki jih izpustiš, obdržijo vrednost, ki jo ima avto zdaj. Potreben je PIN vozila.",
+      "fields": {
+        "start_time": {
+          "name": "Začetek",
+          "description": "Od kdaj se sme polniti, po lokalnem času avta. V YAML ga zapiši v narekovajih, npr. \"23:00\"."
+        },
+        "end_time": {
+          "name": "Konec",
+          "description": "Kdaj se polnjenje konča. Okno čez polnoč je mogoče, npr. od 23:00 do 06:00."
+        },
+        "days": {
+          "name": "Dnevi",
+          "description": "Dnevi v tednu, za katere velja urnik. Mogoče tudi s številkami, od 1 (ponedeljek) do 7 (nedelja)."
+        },
+        "enabled": {
+          "name": "Urnik vklopljen",
+          "description": "Vklopi urnik. Izklopi, če ga želiš shraniti, a pustiti izklopljenega."
+        },
+        "charge_limit_percent": {
+          "name": "Meja polnjenja",
+          "description": "Zgornja meja polnjenja v odstotkih (T03: od 50 do 100)."
+        },
+        "repeat_weekly": {
+          "name": "Ponovi vsak teden",
+          "description": "Urnik se ponovi vsak teden na izbrane dneve. Izklopljeno pomeni, da se izvede enkrat."
+        },
+        "auto_recharge": {
+          "name": "Samodejno dopolnjevanje",
+          "description": "Stikalo urnika za samodejno dopolnjevanje."
+        },
+        "vin": {
+          "name": "VIN",
+          "description": "VIN vozila. Obvezen, kadar je nastavljenih več vozil."
+        },
+        "entity_id": {
+          "name": "ID entitete",
+          "description": "Neobvezna entiteta Leapmotor za določitev vozila."
+        }
+      }
     }
   },
   "exceptions": {
@@ -1213,6 +1285,36 @@
           "entry_not_loaded": "Integracija Leapmotor ni naložena.",
           "share_accept_failed": "Povabila ni bilo mogoče sprejeti. Poskusi pozneje ali ga sprejmi v aplikaciji Leapmotor."
         }
+      }
+    },
+    "missing_app_cert": {
+      "title": "Manjkata certifikata aplikacije Leapmotor",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Prenesi certifikata aplikacije",
+            "description": "Integracija Leapmotor se ne more prijaviti, ker v /config/leapmotor manjkata app_cert.pem in app_key.pem. S potrditvijo se obe datoteki preneseta iz {repository}; integracija se nato znova zažene. Datoteki lahko naložiš tudi ročno v možnostih integracije."
+          }
+        },
+        "error": {
+          "cert_download_cannot_connect": "Certifikatov ni bilo mogoče prenesti: GitHub iz Home Assistanta ni bil dosegljiv. Preveri internetno povezavo in potrdi znova ali pa datoteki naloži ročno.",
+          "cert_download_not_found": "V repozitoriju leapmotor-certs ni bilo datotek s certifikatom. Datoteki naloži ročno.",
+          "cert_download_invalid": "Preneseni datoteki nista veljaven, ujemajoč se par certifikata in ključa, zato ni bilo nič spremenjeno. Poskusi znova pozneje ali pa datoteki naloži ročno.",
+          "cert_download_write_failed": "Certifikata sta bila prenesena, vendar ju ni bilo mogoče shraniti v /config/leapmotor. Preveri, ali je v mapo mogoče pisati."
+        }
+      }
+    }
+  },
+  "selector": {
+    "charging_days": {
+      "options": {
+        "mon": "ponedeljek",
+        "tue": "torek",
+        "wed": "sreda",
+        "thu": "četrtek",
+        "fri": "petek",
+        "sat": "sobota",
+        "sun": "nedelja"
       }
     }
   }

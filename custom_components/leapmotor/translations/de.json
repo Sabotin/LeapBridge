@@ -57,14 +57,26 @@
           "show_sidebar_panel": "Fügt der Seitenleiste einen Leapmotor-Eintrag mit dem vollständigen Dashboard hinzu. Zum Ausblenden ausschalten."
         }
       },
+      "certificate_source": {
+        "title": "Leapmotor Zertifikate",
+        "description": "Für die Anmeldung bei Leapmotor werden das App-Zertifikat und der zugehörige Private-Key benötigt (app_cert.pem und app_key.pem). Sie sind nicht Teil dieser Integration. Home Assistant kann sie aus dem Community-Repository {repository} herunterladen, oder die beiden Dateien werden selbst bereitgestellt. In beiden Fällen werden sie nur auf diesem System unter /config/leapmotor gespeichert.",
+        "menu_options": {
+          "download_certificates": "Von GitHub herunterladen (empfohlen)",
+          "certificates": "Dateien selbst hochladen oder einfügen"
+        }
+      },
       "certificates": {
         "title": "Leapmotor Zertifikate",
-        "description": "Erforderliches App-Zertifikat und Private-Key hochladen oder PEM-Inhalte einfügen. Sie werden lokal als /config/leapmotor/app_cert.pem und /config/leapmotor/app_key.pem gespeichert und sind nicht im Public-Repo enthalten.",
+        "description": "Download einschalten, um beide Dateien von {repository} zu holen, oder App-Zertifikat und Private-Key hochladen bzw. die PEM-Inhalte einfügen. Sie werden lokal als /config/leapmotor/app_cert.pem und /config/leapmotor/app_key.pem gespeichert und sind nicht im Public-Repo enthalten.",
         "data": {
+          "download_certificates": "Beide Dateien von GitHub herunterladen",
           "app_cert_file": "app_cert.pem hochladen (Zertifikat)",
           "app_key_file": "app_key.pem hochladen (Private Key)",
           "app_cert_pem": "app_cert.pem PEM einfügen (Zertifikat)",
           "app_key_pem": "app_key.pem PEM einfügen (Private Key)"
+        },
+        "data_description": {
+          "download_certificates": "Holt die aktuellen Dateien app_cert.pem und app_key.pem aus dem Repository leapmotor-certs und prüft, ob sie zusammengehören. Unten hochgeladene oder eingefügte Dateien haben Vorrang."
         }
       },
       "account": {
@@ -111,13 +123,17 @@
       "api_refresh_failed": "Login war erfolgreich, aber der erste API-Abruf der Fahrzeugdaten ist fehlgeschlagen.",
       "no_vehicle": "Dieses Konto hat kein verknüpftes Fahrzeug.",
       "unknown": "Unerwarteter Fehler.",
-      "missing_app_cert": "App-Zertifikat/Private-Key fehlen. Beide PEM-Werte einfügen oder app_cert.pem und app_key.pem unter /config/leapmotor ablegen.",
+      "missing_app_cert": "App-Zertifikat/Private-Key fehlen. In den Optionen der Integration von GitHub herunterladen, beide PEM-Werte einfügen oder app_cert.pem und app_key.pem unter /config/leapmotor ablegen.",
       "certificate_import_error": "Zertifikatsimport fehlgeschlagen. PEM-Zertifikat und Private-Key prüfen.",
       "share_accept_failed": "Die Einladung konnte nicht angenommen werden. Erneut versuchen oder in der Leapmotor-App annehmen.",
       "share_not_ready": "Die Einladung wurde angenommen, aber das Auto ist noch nicht im Konto. Gleich noch einmal absenden.",
       "app_cert_invalid": "Die Zertifikatsdatei ist kein gültiges PEM-Zertifikat. Prüfen, ob app_cert.pem den vollständigen Block BEGIN/END CERTIFICATE enthält.",
       "app_key_invalid": "Die Private-Key-Datei ist kein gültiger PEM-Private-Key. Prüfen, ob app_key.pem den vollständigen Block BEGIN/END PRIVATE KEY enthält und nicht verschlüsselt ist.",
-      "certificate_key_mismatch": "Zertifikat und Private-Key passen nicht zusammen. app_cert.pem und app_key.pem müssen das zusammengehörige Paar aus derselben Quelle sein."
+      "certificate_key_mismatch": "Zertifikat und Private-Key passen nicht zusammen. app_cert.pem und app_key.pem müssen das zusammengehörige Paar aus derselben Quelle sein.",
+      "cert_download_cannot_connect": "Die Zertifikate konnten nicht heruntergeladen werden: GitHub war von Home Assistant aus nicht erreichbar. Internetverbindung prüfen und erneut absenden oder die beiden Dateien selbst hochladen.",
+      "cert_download_not_found": "Im Repository leapmotor-certs wurden keine Zertifikatsdateien gefunden. Die beiden Dateien selbst hochladen.",
+      "cert_download_invalid": "Die heruntergeladenen Dateien sind kein gültiges, zusammengehöriges Paar aus Zertifikat und Schlüssel; es wurde nichts geändert. Später erneut versuchen oder die beiden Dateien selbst hochladen.",
+      "cert_download_write_failed": "Die Zertifikate wurden heruntergeladen, konnten aber nicht unter /config/leapmotor gespeichert werden. Prüfen, ob der Ordner beschreibbar ist."
     },
     "abort": {
       "already_configured": "Dieses Konto ist bereits eingerichtet.",
@@ -897,6 +913,14 @@
           }
         }
       }
+    },
+    "time": {
+      "charging_schedule_start": {
+        "name": "Ladeplanung Start einstellen"
+      },
+      "charging_schedule_end": {
+        "name": "Ladeplanung Ende einstellen"
+      }
     }
   },
   "options": {
@@ -905,6 +929,7 @@
         "title": "Leapmotor Optionen",
         "description": "Kontoweite Zertifikats- und Abrufeinstellungen ändern. Fahrzeug-PIN und ABRP werden separat für jedes Fahrzeug konfiguriert.",
         "data": {
+          "download_certificates": "App-Zertifikate von GitHub herunterladen",
           "app_cert_file": "app_cert.pem hochladen (Zertifikat)",
           "app_key_file": "app_key.pem hochladen (Private Key)",
           "app_cert_pem": "app_cert.pem PEM einfügen (Zertifikat)",
@@ -929,6 +954,7 @@
           "driving_scan_interval": "Aktualisierungsintervall während der Fahrt (Minuten)"
         },
         "data_description": {
+          "download_certificates": "Holt app_cert.pem und app_key.pem erneut aus dem Repository leapmotor-certs auf GitHub und ersetzt das gespeicherte Paar, sobald es geprüft ist. Ausgeschaltet lassen, um die aktuellen Zertifikate zu behalten.",
           "eco_polling_enabled": "Das langsamere Eco-Intervall nur verwenden, wenn alle Fahrzeuge eindeutig verriegelt, geparkt und nicht angesteckt sind.",
           "eco_scan_interval": "Polling-Intervall im Eco-Modus. Es wird automatisch mindestens auf das normale Aktualisierungsintervall begrenzt.",
           "fuel_price_l": "Zeigt, was ein Verbrenner für dieselbe Strecke gekostet hätte. Bei 0 werden nur Liter und CO2 angezeigt.",
@@ -951,7 +977,11 @@
       "app_key_invalid": "Die Private-Key-Datei ist kein gültiger PEM-Private-Key. Prüfen, ob app_key.pem den vollständigen Block BEGIN/END PRIVATE KEY enthält und nicht verschlüsselt ist.",
       "certificate_key_mismatch": "Zertifikat und Private-Key passen nicht zusammen. app_cert.pem und app_key.pem müssen das zusammengehörige Paar aus derselben Quelle sein.",
       "certificate_import_error": "Zertifikatsimport fehlgeschlagen. PEM-Zertifikat und Private-Key prüfen.",
-      "missing_app_cert": "App-Zertifikat/Private-Key fehlen. Beide PEM-Werte einfügen oder app_cert.pem und app_key.pem unter /config/leapmotor ablegen."
+      "missing_app_cert": "App-Zertifikat/Private-Key fehlen. In den Optionen der Integration von GitHub herunterladen, beide PEM-Werte einfügen oder app_cert.pem und app_key.pem unter /config/leapmotor ablegen.",
+      "cert_download_cannot_connect": "Die Zertifikate konnten nicht heruntergeladen werden: GitHub war von Home Assistant aus nicht erreichbar. Internetverbindung prüfen und erneut absenden oder die beiden Dateien selbst hochladen.",
+      "cert_download_not_found": "Im Repository leapmotor-certs wurden keine Zertifikatsdateien gefunden. Die beiden Dateien selbst hochladen.",
+      "cert_download_invalid": "Die heruntergeladenen Dateien sind kein gültiges, zusammengehöriges Paar aus Zertifikat und Schlüssel; es wurde nichts geändert. Später erneut versuchen oder die beiden Dateien selbst hochladen.",
+      "cert_download_write_failed": "Die Zertifikate wurden heruntergeladen, konnten aber nicht unter /config/leapmotor gespeichert werden. Prüfen, ob der Ordner beschreibbar ist."
     }
   },
   "services": {
@@ -1186,6 +1216,48 @@
           "description": "Optionale Leapmotor-Entität zur Ermittlung des Zielfahrzeugs."
         }
       }
+    },
+    "set_charging_schedule": {
+      "name": "Ladeplanung einstellen",
+      "description": "Stellt die Ladeplanung des Autos mit einem Befehl ein: Zeitfenster, Wochentage, Ladelimit, wöchentliche Wiederholung und automatisches Nachladen. Weggelassene Felder behalten den Wert, den das Auto gerade hat. Fahrzeug-PIN erforderlich.",
+      "fields": {
+        "start_time": {
+          "name": "Startzeit",
+          "description": "Ab wann geladen werden darf, in der Ortszeit des Autos. In YAML in Anführungszeichen schreiben, z. B. \"23:00\"."
+        },
+        "end_time": {
+          "name": "Endzeit",
+          "description": "Wann das Laden endet. Ein Zeitfenster über Mitternacht ist möglich, z. B. 23:00 bis 06:00."
+        },
+        "days": {
+          "name": "Tage",
+          "description": "Wochentage, an denen die Planung gilt. Auch als Zahlen möglich, 1 (Montag) bis 7 (Sonntag)."
+        },
+        "enabled": {
+          "name": "Planung ein",
+          "description": "Schaltet die Planung ein. Ausschalten, um sie zu speichern, aber ausgeschaltet zu lassen."
+        },
+        "charge_limit_percent": {
+          "name": "Ladelimit",
+          "description": "Oberes Ladelimit in Prozent (T03: 50 bis 100)."
+        },
+        "repeat_weekly": {
+          "name": "Jede Woche wiederholen",
+          "description": "Wiederholt die Planung jede Woche an den gewählten Tagen. Aus bedeutet: einmalig."
+        },
+        "auto_recharge": {
+          "name": "Automatisch nachladen",
+          "description": "Der Schalter „automatisch nachladen“ der Planung."
+        },
+        "vin": {
+          "name": "FIN",
+          "description": "Ziel-FIN. Erforderlich, wenn mehrere Fahrzeuge eingerichtet sind."
+        },
+        "entity_id": {
+          "name": "Entitäts-ID",
+          "description": "Optionale Leapmotor-Entität, um das Zielfahrzeug zu bestimmen."
+        }
+      }
     }
   },
   "issues": {
@@ -1203,6 +1275,23 @@
           "share_accept_failed": "Die Einladung konnte nicht angenommen werden. Später erneut versuchen oder in der Leapmotor-App annehmen."
         }
       }
+    },
+    "missing_app_cert": {
+      "title": "Die Leapmotor-App-Zertifikate fehlen",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "App-Zertifikate herunterladen",
+            "description": "Die Leapmotor-Integration kann sich nicht anmelden, weil app_cert.pem und app_key.pem unter /config/leapmotor fehlen. Absenden, um beide Dateien von {repository} herunterzuladen; die Integration startet danach neu. Die Dateien lassen sich auch in den Optionen der Integration selbst hochladen."
+          }
+        },
+        "error": {
+          "cert_download_cannot_connect": "Die Zertifikate konnten nicht heruntergeladen werden: GitHub war von Home Assistant aus nicht erreichbar. Internetverbindung prüfen und erneut absenden oder die beiden Dateien selbst hochladen.",
+          "cert_download_not_found": "Im Repository leapmotor-certs wurden keine Zertifikatsdateien gefunden. Die beiden Dateien selbst hochladen.",
+          "cert_download_invalid": "Die heruntergeladenen Dateien sind kein gültiges, zusammengehöriges Paar aus Zertifikat und Schlüssel; es wurde nichts geändert. Später erneut versuchen oder die beiden Dateien selbst hochladen.",
+          "cert_download_write_failed": "Die Zertifikate wurden heruntergeladen, konnten aber nicht unter /config/leapmotor gespeichert werden. Prüfen, ob der Ordner beschreibbar ist."
+        }
+      }
     }
   },
   "exceptions": {
@@ -1214,6 +1303,19 @@
     },
     "session_rejected": {
       "message": "Leapmotor hat die Sitzung auch nach erneuter Anmeldung abgelehnt. Wenn die offizielle App mit demselben Konto angemeldet ist, Home Assistant ein eigenes (geteiltes) Konto geben."
+    }
+  },
+  "selector": {
+    "charging_days": {
+      "options": {
+        "mon": "Montag",
+        "tue": "Dienstag",
+        "wed": "Mittwoch",
+        "thu": "Donnerstag",
+        "fri": "Freitag",
+        "sat": "Samstag",
+        "sun": "Sonntag"
+      }
     }
   }
 }

@@ -9,6 +9,8 @@ CONF_APP_CERT_FILE = "app_cert_file"
 CONF_APP_CERT_PEM = "app_cert_pem"
 CONF_APP_KEY_FILE = "app_key_file"
 CONF_APP_KEY_PEM = "app_key_pem"
+#: Setup/options switch: fetch the app certificate pair from GitHub.
+CONF_DOWNLOAD_CERTIFICATES = "download_certificates"
 CONF_ABRP_ENABLED = "abrp_enabled"
 CONF_ABRP_TOKEN = "abrp_token"
 CONF_ECO_POLLING_ENABLED = "eco_polling_enabled"

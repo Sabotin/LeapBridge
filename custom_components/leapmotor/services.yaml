@@ -797,6 +797,74 @@ set_charge_limit:
       description: Optional Leapmotor entity to resolve the target vehicle.
       selector:
         text:
+set_charging_schedule:
+  name: Set charging schedule
+  description: Set the car's charging schedule in one command - time window, weekdays, charge limit, weekly repetition and auto recharge. Fields you leave out keep the value the car has now. Requires the configured Vehicle PIN.
+  fields:
+    start_time:
+      name: Start time
+      description: When charging may start, in the car's local time. In YAML write it in quotes, for example "23:00".
+      example: "23:00"
+      selector:
+        time:
+    end_time:
+      name: End time
+      description: When charging stops. A window over midnight is fine, for example 23:00 to 06:00.
+      example: "06:00"
+      selector:
+        time:
+    days:
+      name: Days
+      description: Weekdays the schedule applies to. Also accepted as numbers, 1 (Monday) to 7 (Sunday).
+      example: '["mon", "tue", "wed", "thu", "fri"]'
+      selector:
+        select:
+          multiple: true
+          translation_key: charging_days
+          options:
+            - mon
+            - tue
+            - wed
+            - thu
+            - fri
+            - sat
+            - sun
+    enabled:
+      name: Schedule on
+      description: Switch the schedule on. Turn this off to store the schedule but leave it switched off.
+      default: true
+      selector:
+        boolean:
+    charge_limit_percent:
+      name: Charge limit
+      description: Upper charge limit in percent (T03 - 50 to 100).
+      example: 80
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+          mode: box
+    repeat_weekly:
+      name: Repeat every week
+      description: Repeat the schedule every week on the chosen days. Off means it runs once.
+      selector:
+        boolean:
+    auto_recharge:
+      name: Auto recharge
+      description: The schedule's auto-recharge switch.
+      selector:
+        boolean:
+    vin:
+      name: VIN
+      description: Target VIN. Required when multiple vehicles are configured.
+      selector:
+        text:
+    entity_id:
+      name: Entity ID
+      description: Optional Leapmotor entity to resolve the target vehicle.
+      selector:
+        text:
 send_destination:
   name: Send destination
   description: Send a navigation destination to the vehicle. Does not require the Vehicle PIN.

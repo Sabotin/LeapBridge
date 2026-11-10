@@ -26,6 +26,7 @@ import voluptuous as vol
 from .api import LeapmotorApiClient
 from .button import BUTTON_SPECS
 from .card import async_remove_panel, async_setup_frontend
+from .charging_schedule import normalize_days, normalize_time
 from .const import (
     CONF_SHOW_PANEL,
     DEFAULT_OPERATION_PASSWORD,
@@ -46,10 +47,15 @@ from .const import (
     STATIC_CERT_STORAGE_DIR,
     SUBENTRY_TYPE_VEHICLE,
 )
-from .coordinator import LeapmotorDataUpdateCoordinator, async_reload_after_share_accept
+from .coordinator import (
+    LeapmotorDataUpdateCoordinator,
+    async_reload_after_share_accept,
+    missing_certificates_issue_id,
+)
 from .leap_api import LeapmotorApiError
 from .entity_migration import async_remove_obsolete_entities
 from .lock import LOCK_ACTION, UNLOCK_ACTION
+from .time import SET_CHARGING_SCHEDULE_ACTION
 from .remote_helpers import (
     RemoteActionSpec,
     async_execute_remote_action,
@@ -258,6 +264,37 @@ SET_CHARGE_LIMIT_FIELDS = vol.Schema(
     }
 )
 
+def _charging_schedule_time(value: object) -> str:
+    """Validate a time of day for the charging schedule and return it as HH:MM."""
+    try:
+        return normalize_time(value)
+    except ValueError as exc:
+        raise vol.Invalid(str(exc)) from exc
+
+
+def _charging_schedule_days(value: object) -> list[int]:
+    """Validate charging weekdays: mon to sun, or 1 (Monday) to 7 (Sunday)."""
+    try:
+        return normalize_days(value)
+    except ValueError as exc:
+        raise vol.Invalid(str(exc)) from exc
+
+
+#: Everything except the switch is optional: what is left out stays as the car has it.
+SET_CHARGING_SCHEDULE_FIELDS = vol.Schema(
+    {
+        vol.Optional("start_time"): _charging_schedule_time,
+        vol.Optional("end_time"): _charging_schedule_time,
+        vol.Optional("days"): _charging_schedule_days,
+        vol.Optional("enabled", default=True): bool,
+        vol.Optional("charge_limit_percent"): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
+        vol.Optional("repeat_weekly"): bool,
+        vol.Optional("auto_recharge"): bool,
+        vol.Optional("vin"): str,
+        vol.Optional("entity_id"): str,
+    }
+)
+
 SEND_DESTINATION_FIELDS = vol.Schema(
     {
         vol.Required("name"): vol.All(str, vol.Length(min=1)),
@@ -337,6 +374,7 @@ PLATFORMS: list[Platform] = [
     Platform.NUMBER,
     Platform.SENSOR,
     Platform.SWITCH,
+    Platform.TIME,
     Platform.UPDATE,
 ]
 
@@ -564,6 +602,14 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             _async_unregister_services(hass)
             await async_remove_panel(hass)
     return unload_ok
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Forget the certificate repair of an account that was removed."""
+    try:
+        ir.async_delete_issue(hass, DOMAIN, missing_certificates_issue_id(entry.entry_id))
+    except Exception:  # noqa: BLE001 - a hint only
+        _LOGGER.debug("Could not clear the missing-certificate repair", exc_info=True)
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -803,6 +849,24 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             kwargs,
         )
 
+    async def handle_set_charging_schedule(call: ServiceCall) -> None:
+        """Set the charging time window, weekdays, limit and switches in one command."""
+        coordinator, target_vin = resolve_call_target(call)
+        kwargs = {
+            key: call.data[key]
+            for key in (
+                "start_time", "end_time", "days", "enabled",
+                "charge_limit_percent", "repeat_weekly", "auto_recharge",
+            )
+            if key in call.data
+        }
+        await async_execute_remote_action(
+            coordinator,
+            target_vin,
+            SET_CHARGING_SCHEDULE_ACTION,
+            kwargs,
+        )
+
     async def handle_send_destination(call: ServiceCall) -> None:
         domain_data = hass.data.get(DOMAIN) or {}
         if not domain_data:
@@ -961,6 +1025,13 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         schema=SET_CHARGE_LIMIT_FIELDS,
     )
     _LOGGER.debug("Registered Leapmotor service %s.%s", DOMAIN, "set_charge_limit")
+    hass.services.async_register(
+        DOMAIN,
+        "set_charging_schedule",
+        handle_set_charging_schedule,
+        schema=SET_CHARGING_SCHEDULE_FIELDS,
+    )
+    _LOGGER.debug("Registered Leapmotor service %s.%s", DOMAIN, "set_charging_schedule")
     hass.services.async_register(
         DOMAIN,
         "send_destination",
@@ -1158,7 +1229,7 @@ def _async_unregister_services(hass: HomeAssistant) -> None:
         hass.services.async_remove(DOMAIN, "export_diagnostics")
     for service_name in (
         "log_maintenance", "reset_maintenance", "preheat_cabin", "precool_cabin",
-        "precondition_cabin", *EXTRA_SERVICES,
+        "precondition_cabin", "set_charging_schedule", *EXTRA_SERVICES,
     ):
         if hass.services.has_service(DOMAIN, service_name):
             hass.services.async_remove(DOMAIN, service_name)
