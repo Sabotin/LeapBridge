@@ -88,6 +88,7 @@ async def async_get_config_entry_diagnostics(
                 "media": _redact(media),
                 "remote_control": _redact(remote),
                 "abrp": _redact(abrp),
+                "extras": _extras_summary(vehicle_data),
             }
 
     client = getattr(coordinator, "client", None) if coordinator else None
@@ -135,6 +136,34 @@ async def async_get_config_entry_diagnostics(
         },
         "vehicles": vehicles,
     })
+
+
+def _extras_summary(vehicle_data: dict[str, Any]) -> dict[str, Any]:
+    """What the extra cloud reads returned, without any of their content.
+
+    Message texts, charging positions and release-note texts stay out.
+    """
+    software = vehicle_data.get("software") or {}
+    inbox = vehicle_data.get("inbox") or {}
+    charging = vehicle_data.get("cloud_charging") or {}
+    schedules = vehicle_data.get("schedules") or {}
+    analytics = vehicle_data.get("analytics") or {}
+    sessions = charging.get("sessions")
+    return {
+        "software": {
+            key: software.get(key)
+            for key in ("available", "reason", "installed_version", "latest_version",
+                        "update_available", "update_state", "release_notes_language")
+        },
+        "inbox_messages": len(inbox.get("messages") or []),
+        "cloud_charging_sessions": len(sessions) if isinstance(sessions, list) else None,
+        "schedules": {
+            kind: (len(entries) if isinstance(entries, list) else None)
+            for kind, entries in schedules.items()
+        },
+        "permissions": vehicle_data.get("permissions"),
+        "insights": sorted(key for key in analytics if analytics.get(key) is not None),
+    }
 
 
 def _support_summary(

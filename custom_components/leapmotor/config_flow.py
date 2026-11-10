@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
 import logging
 from pathlib import Path
@@ -25,6 +26,7 @@ from .leap_api import (
     LeapmotorAuthError,
     LeapmotorMissingAppCertError,
     LeapmotorNoVehicleError,
+    LeapmotorShareInvitationPendingError,
 )
 from .const import (
     CONF_ABRP_ENABLED,
@@ -36,6 +38,11 @@ from .const import (
     CONF_BATTERY_REFERENCE_KWH,
     CONF_DEVICE_ID,
     CONF_DRIVING_SCAN_INTERVAL,
+    CONF_FUEL_CONSUMPTION,
+    CONF_FUEL_PRICE,
+    CONF_GRID_CO2,
+    DEFAULT_FUEL_CONSUMPTION,
+    DEFAULT_GRID_CO2,
     CONF_ECO_POLLING_ENABLED,
     CONF_ECO_SCAN_INTERVAL,
     CONF_OPERATION_PASSWORD,
@@ -241,6 +248,26 @@ def save_app_certificate_material(hass: HomeAssistant, data: dict[str, Any]) -> 
     )
 
 
+#: After accepting a car-share invitation the car appears within seconds.
+SHARE_ACCEPT_ATTEMPTS = 4
+SHARE_ACCEPT_WAIT_SECONDS = 3
+
+
+def _accept_share_invitation(hass: HomeAssistant, data: dict[str, Any], vin_tail: str | None) -> None:
+    """Accept one pending car-share invitation with a short-lived client."""
+    client = LeapmotorApiClient(
+        username=data[CONF_USERNAME],
+        password=data[CONF_PASSWORD],
+        device_id=data.get(CONF_DEVICE_ID),
+        static_cert_dir=app_certificate_dir(hass),
+        history_timezone=hass.config.time_zone,
+    )
+    try:
+        client.answer_share_invitation(vin_tail, accept=True)
+    finally:
+        client.close()
+
+
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
     """Validate the user input by doing one read-only data refresh."""
     await hass.async_add_executor_job(save_app_certificate_material, hass, data)
@@ -267,6 +294,10 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
 
     vehicles = result.get("vehicles") or {}
     if not vehicles:
+        invitations = result.get("share_invitations") or []
+        if invitations:
+            # A car was shared with this account but not accepted yet.
+            raise LeapmotorShareInvitationPendingError(invitations)
         raise LeapmotorNoVehicleError("No vehicle linked to this account.")
     return {
         "title": f"Leapmotor ({data[CONF_USERNAME]})",
@@ -364,6 +395,24 @@ class LeapmotorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Ask for a replacement password for the same account."""
         return await self._async_update_credentials(user_input, "reauth_confirm")
 
+    @callback
+    def _async_finish_credentials_update(
+        self, entry: config_entries.ConfigEntry, data: dict[str, Any], step_id: str,
+    ) -> config_entries.ConfigFlowResult:
+        """Store the new password and reload the entry exactly once.
+
+        A loaded entry reloads through its update listener when the data changes.
+        Home Assistant no longer accepts a second, explicit reload on top of that
+        (it stops working in 2026.12), so one is scheduled only when the listener
+        will not run: the password is unchanged, or setup failed before the
+        listener was registered.
+        """
+        changed = self.hass.config_entries.async_update_entry(entry, data=data)
+        if not changed or not entry.update_listeners:
+            self.hass.config_entries.async_schedule_reload(entry.entry_id)
+        return self.async_abort(
+            reason="reauth_successful" if step_id == "reauth_confirm" else "reconfigure_successful")
+
     async def _async_update_credentials(
         self, user_input: dict[str, Any] | None, step_id: str,
     ) -> config_entries.ConfigFlowResult:
@@ -389,9 +438,7 @@ class LeapmotorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected error validating replacement credentials")
                 errors["base"] = "unknown"
             else:
-                return self.async_update_reload_and_abort(
-                    entry, data_updates={CONF_PASSWORD: user_input[CONF_PASSWORD]},
-                )
+                return self._async_finish_credentials_update(entry, data, step_id)
         return self.async_show_form(
             step_id=step_id,
             data_schema=vol.Schema({vol.Required(CONF_PASSWORD): str}),
@@ -417,6 +464,12 @@ class LeapmotorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "missing_app_cert"
             except LeapmotorAccountCertError:
                 errors["base"] = "account_cert_error"
+            except LeapmotorShareInvitationPendingError as exc:
+                # The account has no car yet, but one was shared with it:
+                # offer to accept the invitation right here.
+                self._pending_account = data
+                self._pending_invitations = list(exc.invitations)
+                return await self.async_step_share_invitation()
             except LeapmotorNoVehicleError:
                 errors["base"] = "no_vehicle"
             except ValueError:
@@ -428,25 +481,81 @@ class LeapmotorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except Exception:  # noqa: BLE001
                 errors["base"] = "unknown"
             else:
-                await self.async_set_unique_id(user_input[CONF_USERNAME].lower())
-                self._abort_if_unique_id_configured()
-                entry_data = {
-                    CONF_USERNAME: data[CONF_USERNAME],
-                    CONF_PASSWORD: data[CONF_PASSWORD],
-                    CONF_DEVICE_ID: data[CONF_DEVICE_ID],
-                    CONF_OPERATION_PASSWORD: data.get(CONF_OPERATION_PASSWORD) or "",
-                    CONF_SCAN_INTERVAL: data[CONF_SCAN_INTERVAL],
-                    CONF_ECO_POLLING_ENABLED: bool(data.get(CONF_ECO_POLLING_ENABLED)),
-                    CONF_ECO_SCAN_INTERVAL: data[CONF_ECO_SCAN_INTERVAL],
-                    CONF_ABRP_ENABLED: bool(data.get(CONF_ABRP_ENABLED)),
-                    CONF_ABRP_TOKEN: data.get(CONF_ABRP_TOKEN) or "",
-                }
-
-                return self.async_create_entry(title=info["title"], data=entry_data)
+                return await self._async_create_account_entry(data, info)
 
         return self.async_show_form(
             step_id=step_id,
             data_schema=STEP_USER_DATA_SCHEMA,
+            errors=errors,
+        )
+
+    async def _async_create_account_entry(
+        self, data: dict[str, Any], info: dict[str, Any]
+    ) -> config_entries.ConfigFlowResult:
+        """Create the config entry for a validated account."""
+        await self.async_set_unique_id(data[CONF_USERNAME].lower())
+        self._abort_if_unique_id_configured()
+        entry_data = {
+            CONF_USERNAME: data[CONF_USERNAME],
+            CONF_PASSWORD: data[CONF_PASSWORD],
+            CONF_DEVICE_ID: data[CONF_DEVICE_ID],
+            CONF_OPERATION_PASSWORD: data.get(CONF_OPERATION_PASSWORD) or "",
+            CONF_SCAN_INTERVAL: data[CONF_SCAN_INTERVAL],
+            CONF_ECO_POLLING_ENABLED: bool(data.get(CONF_ECO_POLLING_ENABLED)),
+            CONF_ECO_SCAN_INTERVAL: data[CONF_ECO_SCAN_INTERVAL],
+            CONF_ABRP_ENABLED: bool(data.get(CONF_ABRP_ENABLED)),
+            CONF_ABRP_TOKEN: data.get(CONF_ABRP_TOKEN) or "",
+        }
+        return self.async_create_entry(title=info["title"], data=entry_data)
+
+    async def async_step_share_invitation(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> config_entries.ConfigFlowResult:
+        """Accept a car-share invitation waiting for an account without a car.
+
+        Nothing is accepted before the user confirms this step.
+        """
+        data = getattr(self, "_pending_account", None)
+        invitations = getattr(self, "_pending_invitations", None) or []
+        if not data or not invitations:
+            return await self.async_step_account()
+        invitation = invitations[0]
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                await self.hass.async_add_executor_job(
+                    _accept_share_invitation, self.hass, data, invitation.get("vin_tail")
+                )
+                info = None
+                # The car joins the account a moment after the invitation is accepted.
+                for attempt in range(SHARE_ACCEPT_ATTEMPTS):
+                    if attempt:
+                        await asyncio.sleep(SHARE_ACCEPT_WAIT_SECONDS)
+                    try:
+                        info = await validate_input(self.hass, data)
+                        break
+                    except LeapmotorNoVehicleError:
+                        continue
+                if info is None:
+                    errors["base"] = "share_not_ready"
+                else:
+                    return await self._async_create_account_entry(data, info)
+            except LeapmotorAuthError:
+                errors["base"] = "invalid_auth"
+            except LeapmotorApiError:
+                errors["base"] = "share_accept_failed"
+            except Exception:  # noqa: BLE001
+                _LOGGER.exception("Unexpected error accepting a car-share invitation")
+                errors["base"] = "unknown"
+        return self.async_show_form(
+            step_id="share_invitation",
+            data_schema=vol.Schema({}),
+            description_placeholders={
+                "owner": str(invitation.get("owner") or "?"),
+                "car": str(invitation.get("car_name") or invitation.get("car_type") or "Leapmotor"),
+                "vin_tail": str(invitation.get("vin_tail") or ""),
+            },
             errors=errors,
         )
 
@@ -504,6 +613,14 @@ class LeapmotorOptionsFlow(config_entries.OptionsFlow):
                     CONF_LOW_TARIFF_START: user_input.get(CONF_LOW_TARIFF_START) or "22:00:00",
                     CONF_LOW_TARIFF_END: user_input.get(CONF_LOW_TARIFF_END) or "06:00:00",
                     CONF_LOW_TARIFF_WEEKENDS: bool(user_input.get(CONF_LOW_TARIFF_WEEKENDS)),
+                    CONF_FUEL_PRICE: float(user_input.get(CONF_FUEL_PRICE) or 0),
+                    CONF_FUEL_CONSUMPTION: float(
+                        user_input.get(CONF_FUEL_CONSUMPTION) or DEFAULT_FUEL_CONSUMPTION
+                    ),
+                    CONF_GRID_CO2: float(
+                        user_input.get(CONF_GRID_CO2)
+                        if user_input.get(CONF_GRID_CO2) is not None else DEFAULT_GRID_CO2
+                    ),
                     CONF_SHOW_PANEL: bool(user_input.get(CONF_SHOW_PANEL, True)),
                 },
             )
@@ -580,6 +697,40 @@ class LeapmotorOptionsFlow(config_entries.OptionsFlow):
                     CONF_LOW_TARIFF_WEEKENDS,
                     default=bool(self._config_entry.options.get(CONF_LOW_TARIFF_WEEKENDS, False)),
                 ): bool,
+                vol.Optional(
+                    CONF_FUEL_PRICE,
+                    default=float(self._config_entry.options.get(CONF_FUEL_PRICE) or 0),
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=0, max=20, step=0.001, mode=selector.NumberSelectorMode.BOX,
+                        unit_of_measurement=(
+                            f"{self.hass.config.currency}/l" if self.hass.config.currency else "/l"
+                        ),
+                    )
+                ),
+                vol.Optional(
+                    CONF_FUEL_CONSUMPTION,
+                    default=float(
+                        self._config_entry.options.get(CONF_FUEL_CONSUMPTION)
+                        or DEFAULT_FUEL_CONSUMPTION
+                    ),
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=2, max=25, step=0.1, mode=selector.NumberSelectorMode.BOX,
+                        unit_of_measurement="l/100 km",
+                    )
+                ),
+                vol.Optional(
+                    CONF_GRID_CO2,
+                    default=float(
+                        self._config_entry.options.get(CONF_GRID_CO2, DEFAULT_GRID_CO2)
+                    ),
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=0, max=1200, step=1, mode=selector.NumberSelectorMode.BOX,
+                        unit_of_measurement="g/kWh",
+                    )
+                ),
                 vol.Optional(
                     CONF_SHOW_PANEL,
                     default=bool(self._config_entry.options.get(CONF_SHOW_PANEL, True)),

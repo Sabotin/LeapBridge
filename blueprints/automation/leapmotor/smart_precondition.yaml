@@ -1,0 +1,127 @@
+blueprint:
+  name: Leapmotor — pre-condition before your usual departure
+  description: >-
+    Heat or cool the cabin shortly before the car usually leaves. The time is
+    not set by hand: the integration learns from the trip log when the car
+    leaves on each weekday (sensor "Next predicted departure") and this
+    automation starts the climate a few minutes earlier. It only runs when the
+    prediction is reliable enough, the battery is above a minimum, the car is
+    not being driven and it is cold or warm enough outside to be worth it.
+    Pick the "Pre-condition cabin (auto)" button to heat or cool as needed.
+  domain: automation
+  source_url: https://github.com/Sabotin/LeapBridge/blob/main/blueprints/automation/leapmotor/smart_precondition.yaml
+  input:
+    departure_sensor:
+      name: Next predicted departure
+      selector:
+        entity:
+          filter:
+            - integration: leapmotor
+              domain: sensor
+              device_class: timestamp
+    climate_button:
+      name: Climate button
+      description: Preheat cabin, Pre-cool cabin or Pre-condition cabin (auto).
+      selector:
+        entity:
+          filter:
+            - integration: leapmotor
+              domain: button
+    lead_minutes:
+      name: Start this long before the departure
+      default: 15
+      selector:
+        number:
+          min: 5
+          max: 45
+          unit_of_measurement: min
+    min_confidence:
+      name: Only when the car left at this time on at least
+      description: Share of the last eight weeks on which the car left around this time.
+      default: 60
+      selector:
+        number:
+          min: 50
+          max: 100
+          unit_of_measurement: "%"
+    battery_sensor:
+      name: Battery sensor
+      selector:
+        entity:
+          filter:
+            - integration: leapmotor
+              domain: sensor
+              device_class: battery
+    min_battery:
+      name: Minimum battery
+      default: 30
+      selector:
+        number:
+          min: 0
+          max: 100
+          unit_of_measurement: "%"
+    outdoor_sensor:
+      name: Outside temperature
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: temperature
+    heat_below:
+      name: Run when it is colder than
+      default: 8
+      selector:
+        number:
+          min: -20
+          max: 25
+          unit_of_measurement: "°C"
+    cool_above:
+      name: Or warmer than
+      default: 27
+      selector:
+        number:
+          min: 15
+          max: 45
+          unit_of_measurement: "°C"
+    driving_sensor:
+      name: Car is driving
+      description: The "Is driving" binary sensor; nothing is started while the car moves.
+      selector:
+        entity:
+          filter:
+            - integration: leapmotor
+              domain: binary_sensor
+mode: single
+max_exceeded: silent
+trigger_variables:
+  departure_sensor: !input departure_sensor
+  lead_minutes: !input lead_minutes
+trigger:
+  - platform: template
+    value_template: >-
+      {% set at = states(departure_sensor) | as_datetime(none) %}
+      {{ at is not none and now() >= at - timedelta(minutes=lead_minutes | int(15)) and now() < at }}
+variables:
+  departure_sensor: !input departure_sensor
+  min_confidence: !input min_confidence
+  outdoor_sensor: !input outdoor_sensor
+  heat_below: !input heat_below
+  cool_above: !input cool_above
+condition:
+  - condition: template
+    value_template: >-
+      {{ (state_attr(departure_sensor, 'confidence') | float(0)) * 100 >= min_confidence | float(60) }}
+  - condition: numeric_state
+    entity_id: !input battery_sensor
+    above: !input min_battery
+  - condition: state
+    entity_id: !input driving_sensor
+    state: "off"
+  - condition: template
+    value_template: >-
+      {% set t = states(outdoor_sensor) | float(none) %}
+      {{ t is not none and (t < heat_below | float(8) or t > cool_above | float(27)) }}
+action:
+  - service: button.press
+    target:
+      entity_id: !input climate_button

@@ -56,10 +56,10 @@ key or certificate, so they can't end up online by accident.
 
 ### With HACS (recommended)
 
-[![Open your Home Assistant instance and add this repository to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Sabotin&repository=Leapmotor&category=integration)
+[![Open your Home Assistant instance and add this repository to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Sabotin&repository=LeapBridge&category=integration)
 
 1. Click the button above, or in HACS open **⋮ → Custom repositories** and add
-   `https://github.com/Sabotin/Leapmotor` with the type **Integration**.
+   `https://github.com/Sabotin/LeapBridge` with the type **Integration**.
 2. Search for **Leapmotor** in HACS and click **Download**.
 3. **Restart** Home Assistant.
 
@@ -70,7 +70,7 @@ configuration folder (`/config`), for example with the **Samba share**,
 **Studio Code Server**, **File editor** or **Terminal & SSH** add-on.
 
 1. Download the repository as a ZIP:
-   **[Sabotin/Leapmotor → main.zip](https://github.com/Sabotin/Leapmotor/archive/refs/heads/main.zip)**
+   **[Sabotin/LeapBridge → main.zip](https://github.com/Sabotin/LeapBridge/archive/refs/heads/main.zip)**
    and unpack it on your computer.
 2. Copy the folder `custom_components/leapmotor` from the unpacked ZIP into
    your Home Assistant config folder, so that this file exists:
@@ -88,7 +88,7 @@ configuration folder (`/config`), for example with the **Samba share**,
 mkdir -p /config/custom_components
 ```
 ```bash
-wget -O /tmp/leapmotor.zip https://github.com/Sabotin/Leapmotor/archive/refs/heads/main.zip
+wget -O /tmp/leapmotor.zip https://github.com/Sabotin/LeapBridge/archive/refs/heads/main.zip
 ```
 ```bash
 rm -rf /tmp/leapmotor-src && unzip -q /tmp/leapmotor.zip -d /tmp/leapmotor-src
@@ -171,15 +171,21 @@ If the card isn't found, refresh the browser once with **Ctrl + F5**
 (⌘ + Shift + R on macOS). In the companion app use
 *Settings → Companion app → Debugging → Reset frontend cache*.
 
-The card has four pages with tabs at the top:
+The card has five pages with tabs at the top:
 
-- **Overview**: the car with its battery and quick buttons, the vehicle check
-  and remote control (*Climate*, *Doors & security* and *Charging controls*),
-- **Trips**: details of the selected trip (map, consumption, speed, cost), the
-  trip log by day and the last 7 days,
+- **Overview**: the car with its battery and quick buttons, the outlook for
+  the next day (plug in or not, usual departure, real range), the vehicle
+  check, a timeline of the last 24 hours and remote control (*Climate*,
+  *Doors & security* and *Charging controls*),
+- **Trips**: details of the selected trip (map with replay, consumption,
+  speed, cost, eco score), the trip log by day with CSV export, the last
+  7 days and your frequent routes,
 - **Charging**: charging with the charge limit and charging commands, the last
-  24 hours, and battery and consumption,
-- **Vehicle**: maintenance, tires and insights.
+  24 hours, battery and consumption, the charging curve and the charging
+  history,
+- **Vehicle**: maintenance, tires, insights, the car software and messages,
+- **Journey**: a year of driving on a calendar, totals and records, the
+  comparison with a petrol car, a range lab and achievements.
 
 Plus a **Settings** tab (gear) where each user picks the theme, day or night
 and the language, saved for that user on every device. A dot on a tab means
@@ -215,6 +221,7 @@ All card options are in [card.md](card.md).
 | Low tariff | Options | Optional home low-tariff price, start/end time (e.g. 22:00–06:00) and "all day on weekends" (two-rate tariffs). Home sessions are split by time between the two prices. |
 | Charging tariffs | Options | Price per kWh for **home**, **public AC** and **public DC**. A session counts as home when it starts inside your Home zone; DC when the car reports a DC cable or charges above 22 kW. Leave 0 to skip costs. Prices apply to sessions from then on. |
 | Battery capacity | Per vehicle | Optional usable capacity in kWh (e.g. 69.9). Used as 100 % for battery health; leave 0 to compare with the best capacity measured. |
+| Comparison with a petrol car | Options | **Fuel price per litre**, the **consumption of a comparable petrol car** (default 6.5 l/100 km) and the **CO₂ of your electricity** (default 250 g/kWh; use about 30 for your own solar). Used for the fuel, money and CO₂ saved. Without a fuel price the litres and CO₂ are still shown. |
 
 *Options* means **Settings → Devices & services → Leapmotor → Configure** (the
 cog on the account). *Per vehicle* means the vehicle listed below the account →
@@ -258,6 +265,40 @@ copied to every car, so set it on the intended vehicle.
   more; the same value twice is harmless. Switching the T03 charging schedule
   on or off stays unsupported.
 - **Battery health** needs at least three days with a full (100 %) charge.
+- **What the integration learns** comes only from the trips and charging
+  sessions it has recorded in your Home Assistant; nothing is sent anywhere.
+  The **predicted departure** looks at the last eight weeks: a weekday gets a
+  usual departure when the car left within the same 45 minutes on at least
+  three of those days and on at least half of them. Until then the sensors
+  stay *unknown* rather than guess.
+- **The outlook** (*Expected distance next day*, *Battery needed next day*,
+  *Enough for next day*) is about tomorrow; between midnight and 04:00 it is
+  about the day that has just begun, so a late evening still gets the right
+  answer.
+- **Charge recommended** turns on when the battery is below what the next
+  day's usual distance needs plus a 15 % reserve, or below 15 %, and stays
+  off while the car is plugged in.
+- **Real range** uses your own consumption at the current outside temperature
+  when there are enough trips in that range, otherwise your recent trips,
+  otherwise the cloud's six-week average. The attribute `basis` says which.
+- **Eco score** compares each trip with your own usual consumption on similar
+  trips (three quarters of the score) and adds a part for speed. It is a
+  comparison with yourself, not with other drivers.
+- **Slow charging** compares the AC power of the session in progress with
+  your earlier sessions at the same kind of place (home, public AC). It turns
+  on when the power stays below 70 % of your usual after ten minutes and
+  below 85 % battery. It needs three earlier sessions and never judges DC
+  charging, where power falls with the battery level anyway.
+- **Charging interrupted** is reported when charging stops clearly below the
+  charge limit while the cable stays in. On the T03, where the limit cannot be
+  read reliably, it is not reported.
+- **Car software, messages, schedules, charging history** are read from the
+  Leapmotor cloud less often than the car status (software every 6 hours,
+  charging history hourly, schedules every 30 minutes) and keep their last
+  value when a read fails. `leapmotor.refresh_cloud_data` reads them now.
+  The software information is only available to the owner's account.
+- **A year of driving** is read back from the cloud a quarter at a time, one
+  step per update, so the calendar is complete after the first few updates.
 - **Trip comparison** keeps approximate trip start and end points (rounded to
   about 100 m) in Home Assistant's local storage, only to find similar trips.
   They are never exposed in attributes or diagnostics.
@@ -325,6 +366,10 @@ permissions.
 | `leapmotor.reset_maintenance` | — | Forget a logged service |
 | `leapmotor.send_destination` | — | `name`, `latitude`, `longitude`, optional `address` |
 | `leapmotor.export_diagnostics` | — | Write a redacted support JSON |
+| `leapmotor.get_trips` | — | Returns the stored trip log as response data (optional `limit`, up to 500) |
+| `leapmotor.get_charging_sessions` | — | Returns the recorded charging sessions and the ones the cloud keeps (optional `limit`) |
+| `leapmotor.refresh_cloud_data` | — | Read software, schedules, charging history and share invitations again now |
+| `leapmotor.accept_share_invitation` / `leapmotor.decline_share_invitation` | — | Answer a car-share invitation waiting for this account; optional `vin_tail` when several are waiting |
 
 Sentry mode and healthy charging are switches. The commands for sentry mode,
 start/stop charging, healthy charging and the sunroof come from LeapConnect and
@@ -393,6 +438,42 @@ Disable the charging schedule:
 action: switch.turn_off
 target:
   entity_id: switch.c10_charging_schedule
+```
+
+Save the trip log to a file every night (a driver's logbook):
+
+```yaml
+triggers:
+  - trigger: time
+    at: "23:55:00"
+actions:
+  - action: leapmotor.get_trips
+    data:
+      entity_id: sensor.c10_battery
+      limit: 50
+    response_variable: log
+  - action: notify.send_message
+    target:
+      entity_id: notify.trip_log_file
+    data:
+      message: "{{ log.trips | to_json }}"
+```
+
+React to something the car did:
+
+```yaml
+triggers:
+  - trigger: state
+    entity_id: event.c10_activity
+conditions:
+  - condition: template
+    value_template: "{{ trigger.to_state.attributes.event_type == 'trip_finished' }}"
+actions:
+  - action: notify.mobile_app_phone
+    data:
+      message: >-
+        {{ trigger.to_state.attributes.distance_km }} km,
+        eco score {{ trigger.to_state.attributes.eco_score }}
 ```
 
 Send a destination:

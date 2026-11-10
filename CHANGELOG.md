@@ -1,5 +1,147 @@
 # Changelog
 
+## Unreleased — the car learns your routine, a Journey page, software and messages
+
+Everything that existed before works as before: the regular poll is unchanged,
+no remote command was added or altered, and every new cloud read is optional,
+cached and kept apart, so a failing read keeps its last value and never stops
+an update. The new reads also have a time limit — 20 seconds each and 45
+seconds for all of them in one update — so a slow cloud cannot hold the
+regular update back. Card version 1.2.0.
+
+### New from the Leapmotor cloud (read only)
+
+- **Car software:** the installed version (`sensor.<model>_software_version`)
+  and an update entity (`update.<model>_software`) that shows when Leapmotor
+  offers a new version, with the release notes in your language. Installing
+  still happens in the car; Home Assistant only tells you. Owner accounts
+  only — a shared account is not allowed to read it.
+- **Messages:** the last 20 messages of the Leapmotor app (door left open,
+  charging finished, service notes …) as the `messages` attribute of *Unread
+  messages* and on the card.
+- **Charging history:** the sessions the cloud keeps for the last 60 days
+  (`sensor.<model>_cloud_charging_sessions`), each with energy, duration,
+  average power, AC or DC, the place (your zones) and the cost from your
+  tariffs. They complete the sessions the integration records itself.
+- **A year of driving:** distance and energy per day are read back for up to a
+  year, a little on each update, for the calendar on the new Journey page.
+- **Schedules:** *Next scheduled pre-conditioning* shows when the car's own
+  climate, battery-heating or prepare-car schedule runs next.
+- **Remote permissions:** what the account is allowed to do with the car —
+  useful on shared accounts, where a missing permission explains a refused
+  command.
+- **Shared cars:** when a car was shared with the account and the invitation is
+  still open, setup now offers to accept it instead of ending with "no
+  vehicle"; later invitations appear under **Settings → Repairs**. Also as
+  actions `leapmotor.accept_share_invitation` and
+  `leapmotor.decline_share_invitation`. Nothing is accepted without your
+  confirmation.
+
+### The integration learns from your own trips (computed locally)
+
+- **Next predicted departure:** from the last eight weeks of trips the
+  integration learns when the car usually leaves on each weekday, with a
+  confidence. No calendar and no manual schedule.
+- **Outlook for the next day:** *Expected distance next day*, *Battery needed
+  next day*, *Enough for next day* and *Charge recommended* — a plug-in hint
+  only on the evenings it is really needed.
+- **Real range:** the range worked out from your own consumption at the
+  current outside temperature, next to the car's optimistic figure, plus the
+  *Range at charge limit*.
+- **Eco score:** each trip gets a score from 0 to 100 against your own usual
+  consumption on similar trips and for speed, with an average over the last
+  trips.
+- **Frequent routes:** the routes you drive most (Home → Work …), each with
+  its typical time, distance, consumption, cost and best run.
+- **Battery forecast:** the capacity trend per year from your full charges and
+  the expected *Battery health in one year*.
+- **Savings against a petrol car:** money and fuel saved and CO₂ avoided, this
+  month and in total. Set your fuel price, a comparison consumption (default
+  6.5 l/100 km) and the CO₂ of your electricity (default 250 g/kWh) in
+  **Leapmotor → Configure**.
+- **Charging curve:** power over battery level for the session in progress and
+  the last DC session, against your usual curve. *Slow charging* turns on when
+  an AC session is clearly slower than you usually get at that kind of place —
+  for example a wallbox that fell back to one phase.
+- **Journey:** distance this year, driving streak, longest trip and longest
+  day, busiest month, lifetime average consumption, average daily distance,
+  trips and charging sessions recorded, home charging share, parked since.
+- **Achievements:** eleven badges in bronze, silver and gold (Distance,
+  Road-trip day, Long haul, Eco driver, On a roll, Explorer, Frost driver,
+  Charge cycles, Night owl, CO₂ saver, Together).
+- **Activity events:** `event.<model>_activity` fires for trip started and
+  finished, charging started, finished and interrupted, plugged in and
+  unplugged, battery low, new message, software update available and
+  achievement reached, each with its details (distance, energy, cost, eco
+  score …). The same events go out on the event bus as `leapmotor_event`.
+
+### Actions
+
+- `leapmotor.get_trips` and `leapmotor.get_charging_sessions` return the
+  stored log (up to 500 entries) as response data, for exports and a driver's
+  logbook.
+- `leapmotor.refresh_cloud_data` reads software, schedules, charging history
+  and invitations again without waiting for their next refresh.
+
+### Ready-made automations
+
+- **Pre-condition before your usual departure** — heats or cools a few minutes
+  before the learned departure, only when the prediction is reliable and the
+  weather makes it worth it.
+- **Plug in for tomorrow** — an evening reminder only when the battery is not
+  enough for the next day's usual driving.
+- **Notify when something happens with the car** — pick the events you want.
+- **Slow charging alert**.
+
+### Dashboard card
+
+- **New Journey page:** a year of driving as a calendar with the last twelve
+  months, totals and records, the comparison with a petrol car, a **range
+  lab** (move speed and outside temperature and see your range change, tuned
+  to your own consumption) and the achievements.
+- **Overview:** an **Outlook** panel (plug in tonight or not, usual departure,
+  real range, your usual week) and a **Last 24 hours** timeline of trips,
+  charging, locking and the cable.
+- **Trips:** **replay** a trip on the map, **export the trip log as CSV**, an
+  eco score on every trip, and the frequent routes.
+- **Charging:** the charging curve with the slow-charging warning, and the
+  charging history with place and cost.
+- **Vehicle:** car software with release notes, the car's schedules and
+  permissions, and the messages.
+- The tabs and the car panel show when an update is waiting or charging is
+  slow. English, Slovenian and German throughout.
+
+### Fixes
+
+- **Car picture:** a thin line next to some official car pictures (along the
+  side, the bottom or both) is gone, and the charging cable now ends at the
+  car instead of beside it. The card measures where the car really is in the
+  picture.
+- **One part of the card can no longer take the rest down:** if a panel
+  cannot be drawn, it says so and the other panels keep working.
+- **Home Assistant 2026.12:** entering a new password (re-login or
+  *Reconfigure*) reloaded the integration twice in a way Home Assistant stops
+  accepting in 2026.12. It now reloads exactly once.
+- **Narrow phones:** panel titles with buttons wrap instead of being cut off,
+  and tab labels and the driver-display gauges fit at 320 px.
+- Links point to the repository's current name, `Sabotin/LeapBridge`.
+
+### Deliberately left out
+
+Commands that could not be verified on a real car are not included: setting
+the car's speed limit, installing software updates, the Wi-Fi hotspot, the
+digital key, remote parking, seat adjustment and media. The integration only
+ships commands that are known to work.
+
+### Checked with
+
+246 unit tests and 27 runtime tests on Home Assistant 2025.3.0, 2026.2 and
+2026.11, and every card page in all three themes, three languages and six
+screen widths (1,200 renders). The new cloud reads are tested against the
+answer formats that leapmotor-api 0.6.0 reads, not against the real Leapmotor
+cloud: if the cloud answers differently, the affected entity stays unknown
+and everything else keeps working.
+
 ## Unreleased — charging shows on the T03, green glow while charging
 
 - **T03 charging is read from the measured current:** when the car stands in

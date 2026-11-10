@@ -23,9 +23,14 @@ class CurlTransport:
         headers: dict[str, str],
         data: str,
         cert: tuple[str, str],
+        timeout: float | None = None,
     ) -> dict[str, Any]:
-        """Send a POST request and return status, body text, and raw headers."""
-        response = self._post(path=path, headers=headers, data=data, cert=cert)
+        """Send a POST request and return status, body text, and raw headers.
+
+        ``timeout`` (seconds) limits the whole request; without it the request
+        is sent exactly as before.
+        """
+        response = self._post(path=path, headers=headers, data=data, cert=cert, timeout=timeout)
         return {
             "status_code": response["status_code"],
             "body": response["body"].decode("utf-8", errors="replace"),
@@ -50,6 +55,7 @@ class CurlTransport:
         headers: dict[str, str],
         data: str,
         cert: tuple[str, str],
+        timeout: float | None = None,
     ) -> dict[str, Any]:
         url = f"{self.base_url}/{path.lstrip('/')}"
         with tempfile.NamedTemporaryFile() as header_file, tempfile.NamedTemporaryFile() as body_file:
@@ -73,8 +79,19 @@ class CurlTransport:
             for key, value in headers.items():
                 cmd.extend(["-H", f"{key}: {value}"])
             cmd.extend(["--data", data])
+            limit: float | None = None
+            if timeout is not None and timeout > 0:
+                seconds = max(1, int(round(timeout)))
+                cmd.extend(["--connect-timeout", str(min(10, seconds)), "--max-time", str(seconds)])
+                # A little longer than curl's own limit, in case curl itself hangs.
+                limit = seconds + 5
 
-            result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            try:
+                result = subprocess.run(
+                    cmd, capture_output=True, text=True, check=False, timeout=limit
+                )
+            except subprocess.TimeoutExpired as exc:
+                raise LeapmotorApiError(f"curl request timed out after {limit:.0f} s") from exc
             body_bytes = Path(body_file.name).read_bytes()
             header_text = Path(header_file.name).read_text(encoding="utf-8", errors="replace")
             if result.returncode != 0:

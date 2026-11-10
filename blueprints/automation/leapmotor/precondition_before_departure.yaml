@@ -7,7 +7,7 @@ blueprint:
     temperature, fan and recirculation come from the vehicle settings.
     Optionally only when the battery is above a minimum and the car is home.
   domain: automation
-  source_url: https://github.com/sabotin/leapmotor/blob/main/blueprints/automation/leapmotor/precondition_before_departure.yaml
+  source_url: https://github.com/Sabotin/LeapBridge/blob/main/blueprints/automation/leapmotor/precondition_before_departure.yaml
   input:
     climate_button:
       name: Climate button

@@ -98,6 +98,10 @@
         "data": {
           "password": "Password"
         }
+      },
+      "share_invitation": {
+        "title": "A car was shared with this account",
+        "description": "{owner} shared the {car} (VIN ending in {vin_tail}) with this account, and the invitation has not been accepted yet.\n\nAccept it now to finish the setup. Nothing is accepted before you submit."
       }
     },
     "error": {
@@ -111,7 +115,9 @@
       "certificate_import_error": "Certificate import failed. Check the PEM certificate and private key.",
       "app_cert_invalid": "The certificate file is not a valid PEM certificate. Check that app_cert.pem contains the full BEGIN/END CERTIFICATE block.",
       "app_key_invalid": "The private key file is not a valid PEM private key. Check that app_key.pem contains the full BEGIN/END PRIVATE KEY block and is not encrypted.",
-      "certificate_key_mismatch": "The certificate and private key do not match. Make sure app_cert.pem and app_key.pem are the matching pair from the same source."
+      "certificate_key_mismatch": "The certificate and private key do not match. Make sure app_cert.pem and app_key.pem are the matching pair from the same source.",
+      "share_accept_failed": "The invitation could not be accepted. Try again, or accept it in the Leapmotor app.",
+      "share_not_ready": "The invitation was accepted, but the car has not appeared in the account yet. Submit again in a moment."
     },
     "abort": {
       "already_configured": "This account is already configured.",
@@ -498,6 +504,96 @@
       },
       "energy_to_charge_limit_kwh": {
         "name": "Energy to charge limit"
+      },
+      "real_range_km": {
+        "name": "Real range"
+      },
+      "range_at_charge_limit_km": {
+        "name": "Range at charge limit"
+      },
+      "next_departure": {
+        "name": "Next predicted departure"
+      },
+      "next_day_distance_km": {
+        "name": "Expected distance next day"
+      },
+      "next_day_battery_needed": {
+        "name": "Battery needed next day"
+      },
+      "eco_score": {
+        "name": "Eco score"
+      },
+      "eco_score_average": {
+        "name": "Eco score average"
+      },
+      "frequent_routes": {
+        "name": "Frequent routes"
+      },
+      "battery_capacity_trend": {
+        "name": "Battery capacity trend"
+      },
+      "battery_health_in_one_year": {
+        "name": "Battery health in one year"
+      },
+      "fuel_savings_month": {
+        "name": "Fuel savings this month"
+      },
+      "fuel_savings_total": {
+        "name": "Fuel savings total"
+      },
+      "co2_saved_month": {
+        "name": "CO2 saved this month"
+      },
+      "co2_saved_total": {
+        "name": "CO2 saved total"
+      },
+      "fuel_avoided_total_l": {
+        "name": "Fuel not burned"
+      },
+      "distance_this_year": {
+        "name": "Distance this year"
+      },
+      "driving_streak_days": {
+        "name": "Driving streak"
+      },
+      "longest_trip_km": {
+        "name": "Longest trip"
+      },
+      "lifetime_trips": {
+        "name": "Trips recorded"
+      },
+      "lifetime_charging_sessions": {
+        "name": "Charging sessions recorded"
+      },
+      "achievements": {
+        "name": "Achievements"
+      },
+      "charging_curve": {
+        "name": "Charging curve peak power"
+      },
+      "home_charging_share_percent": {
+        "name": "Home charging share"
+      },
+      "parked_since": {
+        "name": "Parked since"
+      },
+      "lifetime_consumption_kwh_100km": {
+        "name": "Lifetime average consumption"
+      },
+      "average_daily_distance_km": {
+        "name": "Average daily distance"
+      },
+      "software_version": {
+        "name": "Software version"
+      },
+      "cloud_charging_sessions": {
+        "name": "Charging sessions (cloud)"
+      },
+      "next_scheduled_preconditioning": {
+        "name": "Next scheduled pre-conditioning"
+      },
+      "remote_permissions": {
+        "name": "Remote permissions"
       }
     },
     "binary_sensor": {
@@ -641,6 +737,15 @@
       },
       "speeding": {
         "name": "Speeding"
+      },
+      "charge_recommended": {
+        "name": "Charge recommended"
+      },
+      "slow_charging": {
+        "name": "Slow charging"
+      },
+      "next_day_range_sufficient": {
+        "name": "Enough for next day"
       }
     },
     "image": {
@@ -765,6 +870,33 @@
       "healthy_charging": {
         "name": "Healthy charging"
       }
+    },
+    "update": {
+      "vehicle_software": {
+        "name": "Vehicle software"
+      }
+    },
+    "event": {
+      "activity": {
+        "name": "Activity",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "trip_started": "Trip started",
+              "trip_finished": "Trip finished",
+              "charging_started": "Charging started",
+              "charging_finished": "Charging finished",
+              "charging_interrupted": "Charging interrupted",
+              "plugged_in": "Plugged in",
+              "unplugged": "Unplugged",
+              "battery_low": "Battery low",
+              "new_message": "New message",
+              "software_update_available": "Software update available",
+              "achievement_unlocked": "Achievement reached"
+            }
+          }
+        }
+      }
     }
   },
   "options": {
@@ -791,7 +923,10 @@
           "low_tariff_end": "Low tariff ends",
           "low_tariff_weekends": "Low tariff all day on weekends",
           "show_sidebar_panel": "Show the Leapmotor dashboard in the sidebar",
-          "driving_scan_interval": "Update interval while driving (minutes)"
+          "driving_scan_interval": "Update interval while driving (minutes)",
+          "fuel_price_l": "Fuel price per litre (comparison)",
+          "fuel_l_100km": "Comparison car consumption",
+          "grid_co2_g_kwh": "CO2 of your electricity"
         },
         "data_description": {
           "eco_polling_enabled": "Use the slower eco interval only while every vehicle is clearly locked, parked, and unplugged.",
@@ -804,7 +939,10 @@
           "low_tariff_end": "For example 06:00. Overnight windows are supported.",
           "low_tariff_weekends": "Common for two-rate tariffs such as the Slovenian MT/VT.",
           "show_sidebar_panel": "Adds a Leapmotor entry to the sidebar with the full dashboard. Turn off to hide it.",
-          "driving_scan_interval": "Polls this often while a car is driving, so trip maps and the speed alert get more points. It is never slower than the normal interval."
+          "driving_scan_interval": "Polls this often while a car is driving, so trip maps and the speed alert get more points. It is never slower than the normal interval.",
+          "fuel_price_l": "Used to show what a combustion car would have cost for the same distance. Leave 0 to show litres and CO2 only.",
+          "fuel_l_100km": "Fuel a comparable combustion car uses per 100 km.",
+          "grid_co2_g_kwh": "Grams of CO2 per kWh of the electricity you charge with. Use 0 for your own solar power."
         }
       }
     },
@@ -988,6 +1126,66 @@
           "description": "Optional Leapmotor entity to resolve the target vehicle."
         }
       }
+    },
+    "get_trips": {
+      "name": "Get trips",
+      "description": "Return the stored trip log (up to 500 trips) with times, distance, energy, consumption, speeds, eco score and zone names. Use it for exports and driver's logbooks.",
+      "fields": {
+        "limit": {
+          "name": "Limit",
+          "description": "How many of the newest trips to return."
+        },
+        "vin": {
+          "name": "VIN",
+          "description": "Target VIN. Required when multiple vehicles are configured."
+        },
+        "entity_id": {
+          "name": "Entity ID",
+          "description": "Optional Leapmotor entity to resolve the target vehicle."
+        }
+      }
+    },
+    "get_charging_sessions": {
+      "name": "Get charging sessions",
+      "description": "Return the charging sessions recorded by the integration and the ones the Leapmotor cloud keeps.",
+      "fields": {
+        "limit": {
+          "name": "Limit",
+          "description": "How many of the newest sessions to return."
+        },
+        "vin": {
+          "name": "VIN",
+          "description": "Target VIN. Required when multiple vehicles are configured."
+        },
+        "entity_id": {
+          "name": "Entity ID",
+          "description": "Optional Leapmotor entity to resolve the target vehicle."
+        }
+      }
+    },
+    "refresh_cloud_data": {
+      "name": "Refresh cloud data",
+      "description": "Read the software version, schedules, charging history and share invitations again now instead of waiting for their next scheduled refresh."
+    },
+    "accept_share_invitation": {
+      "name": "Accept share invitation",
+      "description": "Accept a car that was shared with the account this integration uses. The integration reloads afterwards and adds the car.",
+      "fields": {
+        "vin_tail": {
+          "name": "End of the VIN",
+          "description": "Last characters of the VIN. Only needed when several invitations are waiting."
+        }
+      }
+    },
+    "decline_share_invitation": {
+      "name": "Decline share invitation",
+      "description": "Decline a car-share invitation waiting for the account this integration uses.",
+      "fields": {
+        "vin_tail": {
+          "name": "End of the VIN",
+          "description": "Last characters of the VIN. Only needed when several invitations are waiting."
+        }
+      }
     }
   },
   "exceptions": {
@@ -999,6 +1197,23 @@
     },
     "session_rejected": {
       "message": "Leapmotor rejected the session even after logging in again. If the official app is signed in with the same account, give Home Assistant its own (shared) account."
+    }
+  },
+  "issues": {
+    "share_invitation": {
+      "title": "A car was shared with your Leapmotor account",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Accept the shared car",
+            "description": "{owner} shared the {car} (VIN ending in {vin_tail}) with the account this integration uses. Submit to accept the invitation; the integration then reloads and adds the car."
+          }
+        },
+        "abort": {
+          "entry_not_loaded": "The Leapmotor integration is not loaded.",
+          "share_accept_failed": "The invitation could not be accepted. Try again later, or accept it in the Leapmotor app."
+        }
+      }
     }
   }
 }
