@@ -1,0 +1,12 @@
+#!/bin/sh
+# Strip AI attribution lines from every commit message.
+sed -i -E '/^co-authored-by:.*(claude|anthropic)/Id; /^claude-session:/Id; /generated with.*claude/Id' "$1"
+
+# Refuse a commit whose author or committer is an Anthropic identity.
+for ident in "$(git var GIT_AUTHOR_IDENT)" "$(git var GIT_COMMITTER_IDENT)"; do
+  if printf '%s\n' "$ident" | grep -qiE 'anthropic\.com|^claude '; then
+    echo "commit-msg: refusing to commit as: $ident" >&2
+    echo "commit-msg: run scripts/setup-git-guards.sh, or set user.name and user.email" >&2
+    exit 1
+  fi
+done
