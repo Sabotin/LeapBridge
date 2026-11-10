@@ -557,12 +557,10 @@ are not available for CN yet. See the upstream
 
 ## Updating
 
-- **HACS:** HACS installs the latest release (the first one is 0.7.5). A new
-  release appears in HACS and among the updates in Home Assistant's settings:
-  download it and restart. If you do not see it yet, open Leapmotor in HACS →
-  **⋮ → Update information**. If you installed before the first release,
-  choose **Redownload** once. If the card still looks old, refresh the browser
-  (**Ctrl + F5**).
+- **HACS:** open Leapmotor in HACS → **⋮ → Update information** →
+  **Redownload** → restart. If the card still looks old, refresh the browser
+  (**Ctrl + F5**). HACS installs from the `main` branch (there are no
+  releases).
 - **Manually:** repeat [step 1](#manually-step-by-step) (replace the folder)
   and restart. Your certificates in `/config/leapmotor/` stay untouched.
 

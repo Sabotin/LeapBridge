@@ -64,7 +64,7 @@
 4. Open **Settings → Devices & services → Add integration → Leapmotor**.
 5. Upload both certificates and enter your account details. When setup is done, Leapmotor appears in the sidebar.
 
-**Updating:** HACS installs the latest release (the first one is 0.7.5). When a new release is out, the update appears in HACS and among the updates in Home Assistant's settings; download it and restart Home Assistant. If you do not see it yet, open Leapmotor in HACS and choose **⋮ → Update information**. If you installed the integration before the first release, choose **Redownload** once and restart Home Assistant. If the card still looks old, refresh the browser with **Ctrl + F5**.
+**Updating:** HACS installs the latest version from the `main` branch. To check for a new version, open Leapmotor in HACS and choose **⋮ → Update information**, then **Redownload** and restart Home Assistant. If the card still looks old, refresh the browser with **Ctrl + F5**.
 
 Manual installation and detailed instructions: **[English guide](docs/guide-en.md)**.
 
