@@ -45,6 +45,7 @@ from .leap_api import (
     LeapmotorAuthError,
     LeapmotorMissingAppCertError,
 )
+from . import battery_memory
 from .drive_analytics import (
     STORAGE_VERSION as ANALYTICS_STORAGE_VERSION,
     TIER_HOME,
@@ -69,6 +70,9 @@ from .vehicle_config import (
 _LOGGER = logging.getLogger(__name__)
 
 GPS_SIGN_STORAGE_VERSION = 1
+BATTERY_MEMORY_STORAGE_VERSION = 1
+#: A charging car changes its values every poll; they are written at most this often.
+BATTERY_MEMORY_SAVE_DELAY_SECONDS = 60
 
 
 def _minutes(value: Any) -> int | None:
@@ -160,6 +164,13 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
             f"{DOMAIN}.gps_signs.{config_entry.entry_id}",
         )
         self._location_sign_save_task: asyncio.Task[None] | None = None
+        # Battery level and cable state of the last complete status, per VIN.
+        self._battery_memory: dict[str, dict[str, Any]] = {}
+        self._battery_memory_store = Store[dict[str, dict[str, Any]]](
+            hass,
+            BATTERY_MEMORY_STORAGE_VERSION,
+            f"{DOMAIN}.battery_memory.{config_entry.entry_id}",
+        )
         self._analytics = DriveAnalytics()
         self._pending_events: dict[str, list[dict[str, Any]]] = {}
         self._maintenance_catalog: dict[str, Any] = {"packs": {}}
@@ -223,6 +234,25 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
             for vin, signs in stored.items()
             if isinstance(signs, dict)
         }
+
+    async def async_load_battery_memory(self) -> None:
+        """Load the last complete battery status, so a restart keeps it while the car sleeps."""
+        self._battery_memory = battery_memory.from_storage(
+            await self._battery_memory_store.async_load()
+        )
+
+    def battery_memory_for(self, vin: str) -> dict[str, Any] | None:
+        """Return what the last complete status of this car said, for diagnostics."""
+        memory = self._battery_memory.get(vin)
+        return dict(memory) if memory else None
+
+    def _apply_battery_memory(self, data: dict[str, Any]) -> None:
+        """Keep battery level and cable state across the reduced status of a sleeping car."""
+        if battery_memory.update(self._battery_memory, data.get("vehicles"), time.time()):
+            self._battery_memory_store.async_delay_save(
+                lambda: {vin: dict(memory) for vin, memory in self._battery_memory.items()},
+                BATTERY_MEMORY_SAVE_DELAY_SECONDS,
+            )
 
     async def async_load_analytics(self) -> None:
         """Load the trip log, charging sessions and full-charge history."""
@@ -653,6 +683,8 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
                 raise ConfigEntryAuthFailed(str(exc)) from exc
             raise UpdateFailed(str(exc)) from exc
         self._async_report_missing_certificates(False)
+        # First, so everything below works with the kept values.
+        self._apply_battery_memory(data)
         self._stabilize_vehicle_states(data)
         self._apply_state_freshness(data)
         self._normalize_locations(data)

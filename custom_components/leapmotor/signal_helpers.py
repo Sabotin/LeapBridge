@@ -141,6 +141,19 @@ def t03_cable_connected(signals: dict[str, object]) -> bool:
     return state == 0 and _safe_int(signals.get("1197")) == 1
 
 
+#: Charge state, pack voltage and current, connector flag, remaining charge time.
+BATTERY_SIGNALS = ("1149", "1177", "1178", "1197", "1200")
+
+
+def battery_data_reported(signals: dict[str, object]) -> bool:
+    """Return whether the status carries anything from the battery electronics.
+
+    A sleeping car answers with a reduced status that has none of these
+    fields; its battery level can then read 0 and says nothing.
+    """
+    return any(signals.get(key) is not None for key in BATTERY_SIGNALS)
+
+
 def _safe_int(raw: object) -> int | None:
     """Return a status value as int or None."""
     if raw is None:

@@ -4,6 +4,25 @@
 below; from this release on, HACS installs releases instead of the latest
 commit.
 
+## 0.7.9: battery level and cable state while the car sleeps
+
+- **A sleeping car no longer shows 0 % and "not plugged in".** When a T03 is
+  woken by a remote command (lock, unlock) while its battery electronics
+  sleep, the Leapmotor cloud answers with a reduced status: no charge state,
+  no pack current or voltage, no connector flag, and a battery level of 0.
+  The official app shows exactly that: 0 % and no cable. The integration now
+  recognises this status, does not take its 0 for a battery level, and keeps
+  the battery level and the cable state of the last complete status until
+  the next complete one arrives or the car has driven. The kept values
+  survive a restart of Home Assistant. Plugging in and charging both wake the
+  electronics; a cable taken out of a sleeping car is noticed when the car is
+  next switched on. Until the first complete status after the update, both
+  values are *unknown* instead of wrong.
+- The battery sensor carries `source: last_complete_status` while a kept
+  level is shown. The diagnostics download has a new block,
+  `last_complete_battery_status`, with the raw values the cable state was
+  read from and the last changes of that reading.
+
 ## 0.7.8: T03 plugged in and waiting for its schedule
 
 - **T03: a plugged-in car that waits for its schedule is no longer shown as

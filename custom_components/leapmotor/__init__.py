@@ -432,6 +432,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         driving_update_interval=timedelta(minutes=driving_scan_interval),
     )
     await coordinator.async_load_location_signs()
+    await coordinator.async_load_battery_memory()
     await coordinator.async_load_analytics()
     await coordinator.async_config_entry_first_refresh()
     _async_ensure_vehicle_subentries(hass, entry, coordinator.data.get("vehicles") or {})

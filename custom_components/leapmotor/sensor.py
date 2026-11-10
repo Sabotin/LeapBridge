@@ -1595,6 +1595,11 @@ class LeapmotorSensor(CoordinatorEntity[LeapmotorDataUpdateCoordinator], SensorE
             "car_type": vehicle.get("car_type"),
             "is_shared": vehicle.get("is_shared"),
         }
+        if self.entity_description.key == "battery_percent":
+            # Set while the car sleeps and the level of its last complete status is shown.
+            source = self.vehicle_data["status"].get("battery_percent_source")
+            if source:
+                attributes["source"] = source
         if self.entity_description.key == "charge_limit_percent":
             charging = self.vehicle_data["charging"]
             attributes.update({

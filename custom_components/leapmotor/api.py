@@ -111,6 +111,7 @@ from .model_helpers import (
     vehicle_status_path,
 )
 from .signal_helpers import (
+    battery_data_reported,
     charge_connection_allows_charging,
     nonzero_state,
     stationary_charge_inflow,
@@ -2862,6 +2863,12 @@ def normalize_vehicle(
     charge_plan = config.get("3") or _charge_plan_from_named_status(status_data)
     charge_plan = charge_plan if isinstance(charge_plan, dict) else {}
     t03 = str(vehicle.car_type or "").strip().upper() == "T03"
+    # A sleeping car's reduced status: no battery fields, and a level of 0
+    # that is not a measurement (the official app shows it as 0 %).
+    battery_reported = battery_data_reported(signal)
+    battery_percent = signal.get("1204")
+    if not battery_reported and _safe_float(battery_percent) == 0:
+        battery_percent = None
     # The regular checks take a T03 for unplugged while it is switched on and
     # in the charge states only this model reports with the cable in.
     cable_in = t03 and t03_cable_connected(signal)
@@ -2919,7 +2926,7 @@ def normalize_vehicle(
             "module_rights": vehicle.module_rights,
         },
         "status": {
-            "battery_percent": signal.get("1204"),
+            "battery_percent": battery_percent,
             "fuel_level_percent": _safe_float(signal.get("3235")),
             # REEV captures identify 3263 as the vehicle's measured fuel volume
             # in millilitres. Keep 2363 as a fallback for older payload variants.
@@ -2992,6 +2999,7 @@ def normalize_vehicle(
             ),
             "is_regening": _is_regening(signal),
             "connection_state": connection_state,
+            "battery_data_reported": battery_reported,
             "charge_limit_percent": charge_plan.get("percent"),
             "charge_limit_source": "config_3" if config.get("3") else "named_status",
             "charge_limit_reliability": "unverified" if t03 else "reported",

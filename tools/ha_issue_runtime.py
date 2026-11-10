@@ -242,6 +242,42 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
                 entity_id = registry.async_get_entity_id(domain, "leapmotor", f"{VIN}_{key}")
                 self.assertEqual(self.hass.states.get(entity_id).state, state)
 
+    async def test_a_sleeping_t03_keeps_battery_level_and_cable_state(self):
+        """The reduced status of a sleeping car (0 %, no charge fields) changes nothing."""
+        entry = await self.load_entry()
+        coordinator = self.hass.data["leapmotor"][entry.entry_id]
+        vehicle = self.api.Vehicle(VIN, None, "T03", None, False)
+        asleep = {"soc": 0, "expectedMileage": 102, "speed": 0, "gearStatus": 0, "totalMileage": 7810,
+                  "chargesocSetting": 80, "chargeTimeSetting": "23:00", "driverDoorLockStatus": True}
+        awake = {**asleep, "soc": 43, "chargeState": 0, "dcInputFastCharge": 1, "batteryCurrent": 0.9,
+                 "batteryVoltage": 368.0, "chargeRemainTime": 0}
+        for status, expected in (
+            (asleep, ("unknown", "unknown")),   # nothing known yet: no made-up 0 %
+            (awake, ("43", "on")),
+            (asleep, ("43", "on")),
+            ({**asleep, "totalMileage": 7815}, ("unknown", "unknown")),   # it drove since
+        ):
+            data = self.api.normalize_vehicle(vehicle, {"data": dict(status)}, None)
+            self.client.fetch_data.return_value = {"vehicles": {VIN: data}}
+            await coordinator.async_refresh()
+            await self.hass.async_block_till_done()
+            self.assertEqual(
+                (self.state_of("sensor", "battery_percent").state,
+                 self.state_of("binary_sensor", "is_plugged_in").state), expected)
+        data = self.api.normalize_vehicle(vehicle, {"data": dict(awake)}, None)
+        self.client.fetch_data.return_value = {"vehicles": {VIN: data}}
+        await coordinator.async_refresh()
+        await self.hass.async_block_till_done()
+        from custom_components.leapmotor.diagnostics import async_get_config_entry_diagnostics
+        result = await async_get_config_entry_diagnostics(self.hass, entry)
+        self.assert_private_values_absent(result)
+        memory = result["vehicles"]["***123456"]["last_complete_battery_status"]
+        self.assertEqual((memory["battery_percent"], memory["is_plugged_in"]), (43, True))
+        self.assertEqual(
+            (memory["raw"]["charge_state"], memory["raw"]["connector_flag"], memory["raw"]["current_a"]),
+            (0, 1, 0.9))
+        self.assertEqual(len(memory["trail"]), 1)
+
     async def test_rejected_credentials_start_reauth_and_preserve_entry_on_success(self):
         entry = await self.load_entry()
         coordinator = self.hass.data["leapmotor"][entry.entry_id]

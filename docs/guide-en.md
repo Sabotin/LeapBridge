@@ -326,7 +326,10 @@ copied to every car, so set it on the intended vehicle.
   values can be stale (`reliability: unverified`). A standing T03 with the
   cable in and no charge running (a wallbox pause, or waiting for its
   schedule) is reported as connected (`plugged_in`, EVCC `B`), also while it
-  is switched on. The schedule shows the start time set in the car; the
+  is switched on. While the car sleeps, the cloud can answer with a reduced
+  status (battery 0 %, no charge fields; the official app shows it like
+  that): the battery level and cable state of the last complete status are
+  kept. The schedule shows the start time set in the car; the
   cloud's end time and weekdays are only shown while its start time is the
   same. Signal 1197 alone cannot identify DC on T03. Standing in Park with about
   1 kW or more flowing into the battery counts as charging, whatever the

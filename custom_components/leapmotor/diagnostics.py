@@ -77,6 +77,8 @@ async def async_get_config_entry_diagnostics(
                 "charging": _redact(vehicle_data.get("charging") or {}),
                 "history": history,
                 "raw_signals": _raw_signals_from_diagnostics(diagnostics),
+                # What the last complete status said, kept while the car sleeps.
+                "last_complete_battery_status": _battery_memory(coordinator, vin),
                 "diagnostics": _redact(diagnostics),
                 "location": {
                     "location_source": vehicle_data.get("location", {}).get("location_source"),
@@ -200,6 +202,13 @@ def _support_summary(
         if client
         else [],
     }
+
+
+def _battery_memory(coordinator: Any, vin: str) -> dict[str, Any] | None:
+    """Return the remembered battery status of one car, if the coordinator keeps one."""
+    getter = getattr(coordinator, "battery_memory_for", None)
+    memory = getter(vin) if callable(getter) else None
+    return _redact(memory) if isinstance(memory, dict) else None
 
 
 def _redact(value: Any) -> Any:

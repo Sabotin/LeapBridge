@@ -155,6 +155,24 @@ class ChargingTests(unittest.TestCase):
         self.assertEqual((payload["chargeEnable"], payload["chargesoc"], payload["starttime"]), (0, 90, "00:00"))
 
 
+#: The status of a sleeping T03 (plugged in, charging set for 23:00, 43 % in the
+#: pack) as the cloud returned it: nothing from the battery electronics.
+SLEEPING_T03 = {
+    "soc": 0, "expectedMileage": 102, "expectedMileageMile": 63, "speed": 0, "gearStatus": 0,
+    "totalMileage": 7810, "chargesocSetting": 80, "chargeTimeSetting": "23:00",
+    "driverDoorLockStatus": True, "bcmKeyPositionOn1": False, "bcmKeyPositionOn3": False,
+    "lbcmDriverDoorStatus": False, "rbcmDriverDoorStatus": False,
+    "lbcmLeftRearDoorStatus": False, "rbcmRightRearDoorStatus": False, "bbcmBackDoorStatus": False,
+    "driverWindowStatus": False, "rightFrontWindowStatus": False,
+    "leftRearWindowStatus": False, "rightRearWindowStatus": False,
+    "leftFrontWindowPercent": 0, "rightFrontWindowPercent": 0,
+    "leftRearWindowPercent": 0, "rightRearWindowPercent": 0,
+    "leftFrontTirePressure": 214, "rightFrontTirePressure": 211,
+    "leftRearTirePressure": 211, "rightRearTirePressure": 214,
+    "acSwitch": False, "acSetting": 21, "collectTimeMs": 1794344970213,
+}
+
+
 class NormalizationTests(unittest.TestCase):
     def normalize(self, model, data, **kwargs):
         return api.normalize_vehicle(api.Vehicle("SYNTHETIC", None, model, None, False),
@@ -204,8 +222,27 @@ class NormalizationTests(unittest.TestCase):
             self.assertIs(result["diagnostics"]["steering_wheel_heating"], expected)
 
     def test_real_zero_soc_is_not_discarded(self):
-        result = self.normalize("T03", {"signal": {"1204": 0}})
+        result = self.normalize("T03", {"signal": {"1204": 0, "1149": 0}})
         self.assertEqual(result["status"]["battery_percent"], 0)
+        self.assertIs(result["charging"]["battery_data_reported"], True)
+
+    def test_a_sleeping_t03_reports_no_battery_level_and_no_cable_state(self):
+        """The reduced status of a real T03: the official app shows it as 0 % and no cable."""
+        result = self.normalize("T03", SLEEPING_T03)
+        self.assertIsNone(result["status"]["battery_percent"])
+        self.assertEqual(result["diagnostics"]["battery_soc_named_raw"], 0)
+        self.assertEqual(result["status"]["remaining_range_km"], 102)
+        charging = result["charging"]
+        self.assertIs(charging["battery_data_reported"], False)
+        self.assertEqual(
+            [charging[key] for key in ("is_plugged_in", "connection_state", "is_charging",
+                                       "charging_current_a", "charge_limit_percent")],
+            [None, None, False, None, 80])
+        self.assertEqual(result["diagnostics"]["charging_plan_start_raw"], "23:00")
+        # A level other than 0 is kept as it is reported.
+        result = self.normalize("T03", {**SLEEPING_T03, "soc": 43})
+        self.assertEqual(result["status"]["battery_percent"], 43)
+        self.assertIs(result["charging"]["battery_data_reported"], False)
 
     def test_ac_mode_only_decodes_known_values(self):
         for value, expected in ((0, "auto"), (1, "manual"), (17, None), (None, None)):
