@@ -22,12 +22,17 @@ new clone (worktrees share the setting):
 
 It sets `git config core.hooksPath scripts/git-hooks` and, where git would
 commit as an Anthropic identity, the owner's identity for this clone.
-Claude Code runs it at every session start (`.claude/settings.json`).
+Where `.claude/settings.json` is present, Claude Code runs it at every session
+start.
 
 - `scripts/git-hooks/commit-msg` strips attribution lines and refuses a commit
   made as an Anthropic identity.
+- `scripts/git-hooks/pre-push` refuses a push if a pushed commit has an
+  attribution line, or an Anthropic author or committer.
 - `.claude/settings.json` and `.claude/settings.local.json` turn off Claude
-  Code's own attribution lines.
+  Code's own attribution lines and the session link. They are local only,
+  never in the repo: a new clone has neither until they are copied in. Work
+  happens on the VM only, never in a cloud session, which would not have them.
 
 ## History was rewritten on 2026-11-10
 
