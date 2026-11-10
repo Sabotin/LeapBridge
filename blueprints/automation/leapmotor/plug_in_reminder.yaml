@@ -1,5 +1,5 @@
 blueprint:
-  name: Leapmotor — plug-in reminder
+  name: "Leapmotor: plug-in reminder"
   description: In the evening, remind you to plug in when the car is home, the battery is low and the cable is not connected.
   domain: automation
   source_url: https://github.com/Sabotin/LeapBridge/blob/main/blueprints/automation/leapmotor/plug_in_reminder.yaml

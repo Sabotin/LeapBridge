@@ -3,7 +3,7 @@
  "license": "MIT, Copyright (c) 2026 markoceri",
  "packs": {
   "c10-severe-use": {
-   "name": "C10 — Severe use",
+   "name": "C10: Severe use",
    "model_compat": [
     "C10"
    ],
@@ -11,7 +11,7 @@
    "items": [
     {
      "service_type": "brake_fluid_replace",
-     "label": "Brake fluid — replacement (DOT4)",
+     "label": "Brake fluid: replacement (DOT4)",
      "category": "brakes",
      "interval_km": 30000,
      "interval_months": 24,
@@ -20,7 +20,7 @@
     },
     {
      "service_type": "brake_pads_inspect",
-     "label": "Brake pads — inspection",
+     "label": "Brake pads: inspection",
      "category": "brakes",
      "interval_km": 15000,
      "interval_months": 12,
@@ -38,7 +38,7 @@
     },
     {
      "service_type": "cabin_filter_replace",
-     "label": "Cabin (A/C) filter — replacement",
+     "label": "Cabin (A/C) filter: replacement",
      "category": "climate",
      "interval_km": 15000,
      "interval_months": 12,
@@ -47,7 +47,7 @@
     },
     {
      "service_type": "reducer_oil_replace",
-     "label": "Reducer (gearbox) oil — replacement",
+     "label": "Reducer (gearbox) oil: replacement",
      "category": "drivetrain",
      "interval_km": 15000,
      "interval_months": 24,
@@ -67,7 +67,7 @@
    "items": [
     {
      "service_type": "wiper_blades_replace",
-     "label": "Wiper blades — replacement",
+     "label": "Wiper blades: replacement",
      "category": "exterior",
      "interval_km": null,
      "interval_months": 12,
@@ -76,7 +76,7 @@
     },
     {
      "service_type": "washer_fluid_topup",
-     "label": "Washer fluid — top up",
+     "label": "Washer fluid: top up",
      "category": "exterior",
      "interval_km": null,
      "interval_months": 6,
@@ -85,7 +85,7 @@
     },
     {
      "service_type": "aux_battery_12v_check",
-     "label": "12V auxiliary battery — health check",
+     "label": "12V auxiliary battery: health check",
      "category": "electrical",
      "interval_km": null,
      "interval_months": 12,
@@ -95,7 +95,7 @@
    ]
   },
   "official-b10": {
-   "name": "Leapmotor B10 — Factory schedule",
+   "name": "Leapmotor B10: Factory schedule",
    "model_compat": [
     "B10"
    ],
@@ -103,7 +103,7 @@
    "items": [
     {
      "service_type": "brake_fluid_inspect",
-     "label": "Brake fluid — inspection",
+     "label": "Brake fluid: inspection",
      "category": "brakes",
      "interval_km": 20000,
      "interval_months": 12,
@@ -112,7 +112,7 @@
     },
     {
      "service_type": "brake_fluid_replace",
-     "label": "Brake fluid — replacement (DOT4)",
+     "label": "Brake fluid: replacement (DOT4)",
      "category": "brakes",
      "interval_km": 40000,
      "interval_months": 24,
@@ -121,7 +121,7 @@
     },
     {
      "service_type": "brake_pads_inspect",
-     "label": "Brake pads — inspection",
+     "label": "Brake pads: inspection",
      "category": "brakes",
      "interval_km": 20000,
      "interval_months": 12,
@@ -130,7 +130,7 @@
     },
     {
      "service_type": "brake_discs_inspect",
-     "label": "Brake discs — inspection",
+     "label": "Brake discs: inspection",
      "category": "brakes",
      "interval_km": 20000,
      "interval_months": 12,
@@ -139,7 +139,7 @@
     },
     {
      "service_type": "tire_inspect",
-     "label": "Tires — pressure, wear, tread inspection",
+     "label": "Tires: pressure, wear, tread inspection",
      "category": "tires",
      "interval_km": 20000,
      "interval_months": 12,
@@ -148,7 +148,7 @@
     },
     {
      "service_type": "tire_replace",
-     "label": "Tires — replacement",
+     "label": "Tires: replacement",
      "category": "tires",
      "interval_km": 60000,
      "interval_months": 36,
@@ -166,7 +166,7 @@
     },
     {
      "service_type": "reducer_oil_replace",
-     "label": "Reducer (gearbox) oil — replacement",
+     "label": "Reducer (gearbox) oil: replacement",
      "category": "drivetrain",
      "interval_km": 20000,
      "interval_months": 24,
@@ -175,7 +175,7 @@
     },
     {
      "service_type": "cabin_filter_replace",
-     "label": "Cabin (A/C) filter — replacement",
+     "label": "Cabin (A/C) filter: replacement",
      "category": "climate",
      "interval_km": 20000,
      "interval_months": 12,
@@ -184,7 +184,7 @@
     },
     {
      "service_type": "coolant_inspect",
-     "label": "Coolant level — inspection",
+     "label": "Coolant level: inspection",
      "category": "cooling",
      "interval_km": 20000,
      "interval_months": 12,
@@ -193,7 +193,7 @@
     },
     {
      "service_type": "brake_hoses_inspect",
-     "label": "Brake hoses & lines — inspection",
+     "label": "Brake hoses & lines: inspection",
      "category": "brakes",
      "interval_km": 20000,
      "interval_months": 12,
@@ -202,7 +202,7 @@
     },
     {
      "service_type": "lights_horn_check",
-     "label": "Lights, horn, washers — functional check",
+     "label": "Lights, horn, washers: functional check",
      "category": "electrical",
      "interval_km": 20000,
      "interval_months": 12,
@@ -211,7 +211,7 @@
     },
     {
      "service_type": "battery_pack_inspect",
-     "label": "HV battery pack — visual & connector inspection",
+     "label": "HV battery pack: visual & connector inspection",
      "category": "battery",
      "interval_km": 20000,
      "interval_months": 12,
@@ -221,7 +221,7 @@
    ]
   },
   "official-c10": {
-   "name": "Leapmotor C10 — Factory schedule",
+   "name": "Leapmotor C10: Factory schedule",
    "model_compat": [
     "C10"
    ],
@@ -229,7 +229,7 @@
    "items": [
     {
      "service_type": "brake_fluid_inspect",
-     "label": "Brake fluid — inspection",
+     "label": "Brake fluid: inspection",
      "category": "brakes",
      "interval_km": 20000,
      "interval_months": 12,
@@ -238,7 +238,7 @@
     },
     {
      "service_type": "brake_fluid_replace",
-     "label": "Brake fluid — replacement (DOT4)",
+     "label": "Brake fluid: replacement (DOT4)",
      "category": "brakes",
      "interval_km": 40000,
      "interval_months": 24,
@@ -247,7 +247,7 @@
     },
     {
      "service_type": "brake_pads_inspect",
-     "label": "Brake pads — inspection",
+     "label": "Brake pads: inspection",
      "category": "brakes",
      "interval_km": 20000,
      "interval_months": 12,
@@ -256,7 +256,7 @@
     },
     {
      "service_type": "brake_discs_inspect",
-     "label": "Brake discs — inspection",
+     "label": "Brake discs: inspection",
      "category": "brakes",
      "interval_km": 20000,
      "interval_months": 12,
@@ -265,7 +265,7 @@
     },
     {
      "service_type": "tire_inspect",
-     "label": "Tires — pressure, wear, tread inspection",
+     "label": "Tires: pressure, wear, tread inspection",
      "category": "tires",
      "interval_km": 20000,
      "interval_months": 12,
@@ -274,7 +274,7 @@
     },
     {
      "service_type": "tire_replace",
-     "label": "Tires — replacement",
+     "label": "Tires: replacement",
      "category": "tires",
      "interval_km": 60000,
      "interval_months": 36,
@@ -292,7 +292,7 @@
     },
     {
      "service_type": "reducer_oil_replace",
-     "label": "Reducer (gearbox) oil — replacement",
+     "label": "Reducer (gearbox) oil: replacement",
      "category": "drivetrain",
      "interval_km": 20000,
      "interval_months": 24,
@@ -301,7 +301,7 @@
     },
     {
      "service_type": "cabin_filter_replace",
-     "label": "Cabin (A/C) filter — replacement",
+     "label": "Cabin (A/C) filter: replacement",
      "category": "climate",
      "interval_km": 20000,
      "interval_months": 12,
@@ -310,7 +310,7 @@
     },
     {
      "service_type": "coolant_inspect",
-     "label": "Coolant level — inspection",
+     "label": "Coolant level: inspection",
      "category": "cooling",
      "interval_km": 20000,
      "interval_months": 12,
@@ -319,7 +319,7 @@
     },
     {
      "service_type": "brake_hoses_inspect",
-     "label": "Brake hoses & lines — inspection",
+     "label": "Brake hoses & lines: inspection",
      "category": "brakes",
      "interval_km": 20000,
      "interval_months": 12,
@@ -328,7 +328,7 @@
     },
     {
      "service_type": "lights_horn_check",
-     "label": "Lights, horn, washers — functional check",
+     "label": "Lights, horn, washers: functional check",
      "category": "electrical",
      "interval_km": 20000,
      "interval_months": 12,
@@ -337,7 +337,7 @@
     },
     {
      "service_type": "battery_pack_inspect",
-     "label": "HV battery pack — visual & connector inspection",
+     "label": "HV battery pack: visual & connector inspection",
      "category": "battery",
      "interval_km": 20000,
      "interval_months": 12,
@@ -347,7 +347,7 @@
    ]
   },
   "official-c10_reev": {
-   "name": "Leapmotor C10 REEV — Factory schedule",
+   "name": "Leapmotor C10 REEV: Factory schedule",
    "model_compat": [
     "C10_REEV"
    ],
@@ -355,7 +355,7 @@
    "items": [
     {
      "service_type": "engine_oil_replace",
-     "label": "Engine oil & filter — replacement",
+     "label": "Engine oil & filter: replacement",
      "category": "engine",
      "interval_km": 15000,
      "interval_months": 12,
@@ -364,7 +364,7 @@
     },
     {
      "service_type": "engine_air_filter_replace",
-     "label": "Engine air filter — replacement",
+     "label": "Engine air filter: replacement",
      "category": "engine",
      "interval_km": 20000,
      "interval_months": 12,
@@ -373,7 +373,7 @@
     },
     {
      "service_type": "spark_plugs_replace",
-     "label": "Spark plugs — inspection / replacement",
+     "label": "Spark plugs: inspection / replacement",
      "category": "engine",
      "interval_km": 40000,
      "interval_months": 24,
@@ -382,7 +382,7 @@
     },
     {
      "service_type": "fuel_filter_replace",
-     "label": "Fuel filter — replacement",
+     "label": "Fuel filter: replacement",
      "category": "engine",
      "interval_km": 40000,
      "interval_months": 24,
@@ -391,7 +391,7 @@
     },
     {
      "service_type": "brake_fluid_inspect",
-     "label": "Brake fluid — inspection",
+     "label": "Brake fluid: inspection",
      "category": "brakes",
      "interval_km": 20000,
      "interval_months": 12,
@@ -400,7 +400,7 @@
     },
     {
      "service_type": "brake_fluid_replace",
-     "label": "Brake fluid — replacement (DOT4)",
+     "label": "Brake fluid: replacement (DOT4)",
      "category": "brakes",
      "interval_km": 40000,
      "interval_months": 24,
@@ -409,7 +409,7 @@
     },
     {
      "service_type": "brake_pads_inspect",
-     "label": "Brake pads — inspection",
+     "label": "Brake pads: inspection",
      "category": "brakes",
      "interval_km": 20000,
      "interval_months": 12,
@@ -418,7 +418,7 @@
     },
     {
      "service_type": "brake_discs_inspect",
-     "label": "Brake discs — inspection",
+     "label": "Brake discs: inspection",
      "category": "brakes",
      "interval_km": 20000,
      "interval_months": 12,
@@ -427,7 +427,7 @@
     },
     {
      "service_type": "tire_inspect",
-     "label": "Tires — pressure, wear, tread inspection",
+     "label": "Tires: pressure, wear, tread inspection",
      "category": "tires",
      "interval_km": 20000,
      "interval_months": 12,
@@ -436,7 +436,7 @@
     },
     {
      "service_type": "tire_replace",
-     "label": "Tires — replacement",
+     "label": "Tires: replacement",
      "category": "tires",
      "interval_km": 60000,
      "interval_months": 36,
@@ -454,7 +454,7 @@
     },
     {
      "service_type": "reducer_oil_replace",
-     "label": "Reducer (gearbox) oil — replacement",
+     "label": "Reducer (gearbox) oil: replacement",
      "category": "drivetrain",
      "interval_km": 20000,
      "interval_months": 24,
@@ -463,7 +463,7 @@
     },
     {
      "service_type": "cabin_filter_replace",
-     "label": "Cabin (A/C) filter — replacement",
+     "label": "Cabin (A/C) filter: replacement",
      "category": "climate",
      "interval_km": 20000,
      "interval_months": 12,
@@ -472,7 +472,7 @@
     },
     {
      "service_type": "coolant_inspect",
-     "label": "Coolant level — inspection",
+     "label": "Coolant level: inspection",
      "category": "cooling",
      "interval_km": 20000,
      "interval_months": 12,
@@ -481,7 +481,7 @@
     },
     {
      "service_type": "brake_hoses_inspect",
-     "label": "Brake hoses & lines — inspection",
+     "label": "Brake hoses & lines: inspection",
      "category": "brakes",
      "interval_km": 20000,
      "interval_months": 12,
@@ -490,7 +490,7 @@
     },
     {
      "service_type": "lights_horn_check",
-     "label": "Lights, horn, washers — functional check",
+     "label": "Lights, horn, washers: functional check",
      "category": "electrical",
      "interval_km": 20000,
      "interval_months": 12,
@@ -499,7 +499,7 @@
     },
     {
      "service_type": "battery_pack_inspect",
-     "label": "HV battery pack — visual & connector inspection",
+     "label": "HV battery pack: visual & connector inspection",
      "category": "battery",
      "interval_km": 20000,
      "interval_months": 12,
@@ -509,7 +509,7 @@
    ]
   },
   "official-t03": {
-   "name": "Leapmotor T03 — Factory schedule",
+   "name": "Leapmotor T03: Factory schedule",
    "model_compat": [
     "T03"
    ],
@@ -517,7 +517,7 @@
    "items": [
     {
      "service_type": "brake_fluid_inspect",
-     "label": "Brake fluid — inspection",
+     "label": "Brake fluid: inspection",
      "category": "brakes",
      "interval_km": 20000,
      "interval_months": 12,
@@ -526,7 +526,7 @@
     },
     {
      "service_type": "brake_fluid_replace",
-     "label": "Brake fluid — replacement (DOT4)",
+     "label": "Brake fluid: replacement (DOT4)",
      "category": "brakes",
      "interval_km": 40000,
      "interval_months": 24,
@@ -535,7 +535,7 @@
     },
     {
      "service_type": "brake_pads_inspect",
-     "label": "Brake pads — inspection (replace if friction <3 mm)",
+     "label": "Brake pads: inspection (replace if friction <3 mm)",
      "category": "brakes",
      "interval_km": 20000,
      "interval_months": 12,
@@ -544,7 +544,7 @@
     },
     {
      "service_type": "brake_discs_inspect",
-     "label": "Brake discs — inspection",
+     "label": "Brake discs: inspection",
      "category": "brakes",
      "interval_km": 20000,
      "interval_months": 12,
@@ -553,7 +553,7 @@
     },
     {
      "service_type": "brake_hoses_inspect",
-     "label": "Brake hoses & rigid lines — inspection",
+     "label": "Brake hoses & rigid lines: inspection",
      "category": "brakes",
      "interval_km": 20000,
      "interval_months": 12,
@@ -562,7 +562,7 @@
     },
     {
      "service_type": "tire_inspect",
-     "label": "Tires — pressure, wear, tread inspection",
+     "label": "Tires: pressure, wear, tread inspection",
      "category": "tires",
      "interval_km": 20000,
      "interval_months": 12,
@@ -571,7 +571,7 @@
     },
     {
      "service_type": "tire_replace",
-     "label": "Tires — replacement (or when tread <3 mm)",
+     "label": "Tires: replacement (or when tread <3 mm)",
      "category": "tires",
      "interval_km": 60000,
      "interval_months": 36,
@@ -589,7 +589,7 @@
     },
     {
      "service_type": "reducer_oil_replace",
-     "label": "Reducer (gearbox) oil — replacement",
+     "label": "Reducer (gearbox) oil: replacement",
      "category": "drivetrain",
      "interval_km": 20000,
      "interval_months": 24,
@@ -598,7 +598,7 @@
     },
     {
      "service_type": "cabin_filter_clean",
-     "label": "Cabin (A/C) filter — cleaning",
+     "label": "Cabin (A/C) filter: cleaning",
      "category": "climate",
      "interval_km": 10000,
      "interval_months": 6,
@@ -607,7 +607,7 @@
     },
     {
      "service_type": "cabin_filter_replace",
-     "label": "Cabin (A/C) filter — replacement",
+     "label": "Cabin (A/C) filter: replacement",
      "category": "climate",
      "interval_km": 20000,
      "interval_months": 12,
@@ -616,7 +616,7 @@
     },
     {
      "service_type": "coolant_inspect",
-     "label": "Coolant level — inspection",
+     "label": "Coolant level: inspection",
      "category": "cooling",
      "interval_km": 20000,
      "interval_months": 12,
@@ -625,7 +625,7 @@
     },
     {
      "service_type": "wiper_blades_inspect",
-     "label": "Wiper blades — inspect/replace if worn",
+     "label": "Wiper blades: inspect/replace if worn",
      "category": "exterior",
      "interval_km": 20000,
      "interval_months": 12,
@@ -634,7 +634,7 @@
     },
     {
      "service_type": "lights_horn_check",
-     "label": "Lights, horn, washers — functional check",
+     "label": "Lights, horn, washers: functional check",
      "category": "electrical",
      "interval_km": 20000,
      "interval_months": 12,
@@ -643,7 +643,7 @@
     },
     {
      "service_type": "hvac_system_check",
-     "label": "A/C system — leak & noise check",
+     "label": "A/C system: leak & noise check",
      "category": "climate",
      "interval_km": 20000,
      "interval_months": 12,
@@ -652,7 +652,7 @@
     },
     {
      "service_type": "battery_pack_inspect",
-     "label": "HV battery pack — visual, connectors, bolts, insulation",
+     "label": "HV battery pack: visual, connectors, bolts, insulation",
      "category": "battery",
      "interval_km": 20000,
      "interval_months": 12,
@@ -661,7 +661,7 @@
     },
     {
      "service_type": "door_hinges_lube",
-     "label": "Door/hood/tailgate hinges — clean & lubricate",
+     "label": "Door/hood/tailgate hinges: clean & lubricate",
      "category": "body",
      "interval_km": 20000,
      "interval_months": 12,
@@ -670,7 +670,7 @@
     },
     {
      "service_type": "chassis_bolts_check",
-     "label": "Chassis bolts & visible fasteners — torque check",
+     "label": "Chassis bolts & visible fasteners: torque check",
      "category": "body",
      "interval_km": 20000,
      "interval_months": 12,
@@ -679,7 +679,7 @@
     },
     {
      "service_type": "drive_motor_inspect",
-     "label": "Drive motor & controller — inspection",
+     "label": "Drive motor & controller: inspection",
      "category": "drivetrain",
      "interval_km": 20000,
      "interval_months": 12,
@@ -688,7 +688,7 @@
     },
     {
      "service_type": "charging_port_inspect",
-     "label": "Charging port (fast & slow) — clean & inspection",
+     "label": "Charging port (fast & slow): clean & inspection",
      "category": "electrical",
      "interval_km": 20000,
      "interval_months": 12,
@@ -697,7 +697,7 @@
     },
     {
      "service_type": "software_update_check",
-     "label": "ECU software version — check & update",
+     "label": "ECU software version: check & update",
      "category": "electrical",
      "interval_km": 20000,
      "interval_months": 12,
@@ -707,7 +707,7 @@
    ]
   },
   "t03-city-use": {
-   "name": "T03 — City use",
+   "name": "T03: City use",
    "model_compat": [
     "T03"
    ],
@@ -715,7 +715,7 @@
    "items": [
     {
      "service_type": "cabin_filter_clean",
-     "label": "Cabin (A/C) filter — cleaning",
+     "label": "Cabin (A/C) filter: cleaning",
      "category": "climate",
      "interval_km": 8000,
      "interval_months": 6,
@@ -724,7 +724,7 @@
     },
     {
      "service_type": "brake_pads_inspect",
-     "label": "Brake pads — inspection (replace if friction <3 mm)",
+     "label": "Brake pads: inspection (replace if friction <3 mm)",
      "category": "brakes",
      "interval_km": 15000,
      "interval_months": 12,

@@ -1,4 +1,4 @@
-## Fixes and remaining investigations — 0.7.3 / 0.8.0b2
+## Fixes and remaining investigations: 0.7.3 / 0.8.0b2
 
 - **Diagnostics (#69):** Both the HA diagnostics download and
   `leapmotor.export_diagnostics` mask nested VINs, account/vehicle titles,

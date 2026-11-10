@@ -52,7 +52,7 @@ const STRINGS = {
     home: "Home", away: "Away", refresh: "Refresh", insideChip: "Inside",
     secureChip: "Locked & closed",
     check: "Vehicle check", cloudStatus: "cloud status", allSecure: "All secure",
-    allSecureSub: "Locked — doors, windows and trunk closed", attention: "Needs attention",
+    allSecureSub: "Locked, doors, windows and trunk closed", attention: "Needs attention",
     doorsClosed: "All doors closed", doorsOpen: "Doors open: {n}",
     windowsClosed: "Windows closed", windowsOpen: "Windows open: {n}",
     trunkClosed: "Trunk closed", trunkOpen: "Trunk open",
@@ -62,14 +62,14 @@ const STRINGS = {
     subLock: "central locking", subDoors: "4 doors", subWindows: "windows & sunroof",
     subTrunk: "tailgate", subTires: "all four wheels", subBattery: "state of charge",
     subData: "last contact with the car",
-    footnote: "Polled from the Leapmotor cloud — values can lag behind the car.",
+    footnote: "Polled from the Leapmotor cloud. Values can lag behind the car.",
     lock: "Lock", unlock: "Unlock", findCar: "Find car",
     last24: "Last 24 hours", tabBattery: "Battery", tabRange: "Range", tabPower: "Power",
     sum24: "{charged} charged and {driven} driven in the last 24 h.",
     sumCharged: "{charged} charged in the last 24 h.", sumDriven: "{driven} driven in the last 24 h.",
     peakLow: "Peak {max} at {tmax}, lowest {min} at {tmin}.", peakOnly: "Peak {max} at {tmax}.",
     sumNoChange: "Steady over the last 24 h.",
-    noHistory: "No history yet — the chart fills in as Home Assistant records data.",
+    noHistory: "No history yet. The chart fills in as Home Assistant records data.",
     nowPill: "now",
     last7: "Last 7 days", today: "Today", longest: "Longest", total: "Total",
     drivingDays: "Driving days", noWeek: "No daily history from the cloud yet.",
@@ -97,7 +97,7 @@ const STRINGS = {
     mapTitle: "Trip map", mapLoading: "Loading route…", mapEmpty: "No route for this trip yet. It is drawn from the car's location history in Home Assistant.", mapHint: "Trips appear on the map after your next drive.", mapStart: "Start", mapEnd: "End", mapLive: "Live", topSpeed: "Top speed", avgSpeedL: "Average", aboveLimit: "Above limit", limitCar: "Car speed limit", limitAlert: "Speed alert", legendBelow: "below limit", legendNear: "close to it", legendAbove: "above limit", legendSlow: "up to 50", legendMid: "50–90", legendFast: "over 90", tooFast: "Too fast · {x}", speedLimit: "Speed limit", trunk: "Trunk", windows: "Windows", doors: "Doors", sunroof: "Sunroof", sentryOn: "Sentry", tireLowShort: "Tire", limitDown: "Lower charge limit", limitUp: "Raise charge limit", limitSet: "Charge limit {x}",
     pageOverview: "Overview", pageTrips: "Trips", pageCharging: "Charging", pageVehicle: "Vehicle",
     groupClimate: "Climate", groupAccess: "Doors & security", groupCharging: "Charging controls",
-    setLimit: "Set to {x}", cancel: "Cancel", currently: "now {x}", noSessions: "No charging sessions recorded yet — they appear after the next charge.",
+    setLimit: "Set to {x}", cancel: "Cancel", currently: "now {x}", noSessions: "No charging sessions recorded yet. They appear after the next charge.",
     delta24: "{x} in 24 h", chargedL: "Charged", drivenL: "Driven", rangeLeft: "{x} range", doneAt: "done at {x}", left: "{x} left",
     weekEnergy: "Energy", weekAvg: "Average", tripDetail: "Trip details", cost: "Cost", showMore: "Show {n} more",
     todayL: "Today", monthL: "This month", tripsN: "{n}×", tiresTitle: "Tires", tireHint: "low below {x} bar", tiresOkShort: "Tires OK",
@@ -120,7 +120,7 @@ const STRINGS = {
     home: "Doma", away: "Na poti", refresh: "Osveži", insideChip: "Notri",
     secureChip: "Zaklenjeno in zaprto",
     check: "Pregled vozila", cloudStatus: "stanje v oblaku", allSecure: "Vse je varno",
-    allSecureSub: "Zaklenjeno — vrata, okna in prtljažnik zaprti", attention: "Potrebna pozornost",
+    allSecureSub: "Zaklenjeno, vrata, okna in prtljažnik zaprti", attention: "Potrebna pozornost",
     doorsClosed: "Vsa vrata zaprta", doorsOpen: "Odprta vrata: {n}",
     windowsClosed: "Okna zaprta", windowsOpen: "Odprta okna: {n}",
     trunkClosed: "Prtljažnik zaprt", trunkOpen: "Prtljažnik odprt",
@@ -130,14 +130,14 @@ const STRINGS = {
     subLock: "centralno zaklepanje", subDoors: "4 vrata", subWindows: "okna in strešno okno",
     subTrunk: "prtljažna vrata", subTires: "vsa štiri kolesa", subBattery: "stanje napolnjenosti",
     subData: "zadnji stik z vozilom",
-    footnote: "Podatki iz oblaka Leapmotor — lahko zamujajo za vozilom.",
+    footnote: "Podatki iz oblaka Leapmotor. Lahko zamujajo za vozilom.",
     lock: "Zakleni", unlock: "Odkleni", findCar: "Poišči avto",
     last24: "Zadnjih 24 ur", tabBattery: "Baterija", tabRange: "Doseg", tabPower: "Moč",
     sum24: "V zadnjih 24 urah {charged} napolnjeno in {driven} prevoženo.",
     sumCharged: "V zadnjih 24 urah {charged} napolnjeno.", sumDriven: "V zadnjih 24 urah {driven} prevoženo.",
     peakLow: "Najvišje {max} ob {tmax}, najnižje {min} ob {tmin}.", peakOnly: "Največ {max} ob {tmax}.",
     sumNoChange: "Zadnjih 24 ur brez sprememb.",
-    noHistory: "Zgodovine še ni — graf se zapolni, ko Home Assistant beleži podatke.",
+    noHistory: "Zgodovine še ni. Graf se zapolni, ko Home Assistant beleži podatke.",
     nowPill: "zdaj",
     last7: "Zadnjih 7 dni", today: "Danes", longest: "Najdaljša", total: "Skupaj",
     drivingDays: "Dni vožnje", noWeek: "Dnevne zgodovine iz oblaka še ni.",
@@ -165,7 +165,7 @@ const STRINGS = {
     mapTitle: "Zemljevid vožnje", mapLoading: "Nalagam pot …", mapEmpty: "Za to vožnjo še ni poti. Nariše se iz zgodovine lokacije avta v Home Assistantu.", mapHint: "Vožnje se na zemljevidu pokažejo po naslednji vožnji.", mapStart: "Začetek", mapEnd: "Cilj", mapLive: "V živo", topSpeed: "Najvišja hitrost", avgSpeedL: "Povprečno", aboveLimit: "Nad omejitvijo", limitCar: "Omejitev v avtu", limitAlert: "Opozorilo na hitrost", legendBelow: "pod omejitvijo", legendNear: "blizu nje", legendAbove: "nad omejitvijo", legendSlow: "do 50", legendMid: "50–90", legendFast: "nad 90", tooFast: "Prehitro · {x}", speedLimit: "Omejitev hitrosti", trunk: "Prtljažnik", windows: "Okna", doors: "Vrata", sunroof: "Strešno okno", sentryOn: "Straža", tireLowShort: "Pnevmatika", limitDown: "Znižaj mejo polnjenja", limitUp: "Zvišaj mejo polnjenja", limitSet: "Meja polnjenja {x}",
     pageOverview: "Pregled", pageTrips: "Vožnje", pageCharging: "Polnjenje", pageVehicle: "Vozilo",
     groupClimate: "Klima", groupAccess: "Vrata in varnost", groupCharging: "Upravljanje polnjenja",
-    setLimit: "Nastavi na {x}", cancel: "Prekliči", currently: "zdaj {x}", noSessions: "Polnjenja še niso zabeležena — pokažejo se po naslednjem polnjenju.",
+    setLimit: "Nastavi na {x}", cancel: "Prekliči", currently: "zdaj {x}", noSessions: "Polnjenja še niso zabeležena. Pokažejo se po naslednjem polnjenju.",
     delta24: "{x} v 24 urah", chargedL: "Napolnjeno", drivenL: "Prevoženo", rangeLeft: "doseg {x}", doneAt: "konec ob {x}", left: "še {x}",
     weekEnergy: "Energija", weekAvg: "Povprečje", tripDetail: "Podrobnosti vožnje", cost: "Strošek", showMore: "Pokaži še {n}",
     todayL: "Danes", monthL: "Ta mesec", tripsN: "{n}×", tiresTitle: "Pnevmatike", tireHint: "nizko pod {x} bar", tiresOkShort: "Pnevmatike OK",
@@ -188,7 +188,7 @@ const STRINGS = {
     home: "Zuhause", away: "Unterwegs", refresh: "Aktualisieren", insideChip: "Innen",
     secureChip: "Verriegelt & geschlossen",
     check: "Fahrzeugcheck", cloudStatus: "Cloud-Status", allSecure: "Alles sicher",
-    allSecureSub: "Verriegelt — Türen, Fenster und Kofferraum zu", attention: "Bitte prüfen",
+    allSecureSub: "Verriegelt, Türen, Fenster und Kofferraum zu", attention: "Bitte prüfen",
     doorsClosed: "Alle Türen zu", doorsOpen: "Türen offen: {n}",
     windowsClosed: "Fenster geschlossen", windowsOpen: "Fenster offen: {n}",
     trunkClosed: "Kofferraum zu", trunkOpen: "Kofferraum offen",
@@ -198,14 +198,14 @@ const STRINGS = {
     subLock: "Zentralverriegelung", subDoors: "4 Türen", subWindows: "Fenster & Schiebedach",
     subTrunk: "Heckklappe", subTires: "alle vier Räder", subBattery: "Ladezustand",
     subData: "letzter Kontakt zum Auto",
-    footnote: "Aus der Leapmotor-Cloud abgefragt — Werte können dem Auto hinterherhinken.",
+    footnote: "Aus der Leapmotor-Cloud abgefragt. Werte können dem Auto hinterherhinken.",
     lock: "Verriegeln", unlock: "Entriegeln", findCar: "Auto finden",
     last24: "Letzte 24 Stunden", tabBattery: "Akku", tabRange: "Reichweite", tabPower: "Leistung",
     sum24: "{charged} geladen und {driven} gefahren in den letzten 24 h.",
     sumCharged: "{charged} geladen in den letzten 24 h.", sumDriven: "{driven} gefahren in den letzten 24 h.",
     peakLow: "Höchststand {max} um {tmax}, Tiefststand {min} um {tmin}.", peakOnly: "Spitze {max} um {tmax}.",
     sumNoChange: "Keine Veränderung in den letzten 24 h.",
-    noHistory: "Noch kein Verlauf — das Diagramm füllt sich, sobald Home Assistant Daten aufzeichnet.",
+    noHistory: "Noch kein Verlauf. Das Diagramm füllt sich, sobald Home Assistant Daten aufzeichnet.",
     nowPill: "jetzt",
     last7: "Letzte 7 Tage", today: "Heute", longest: "Längste", total: "Gesamt",
     drivingDays: "Fahrtage", noWeek: "Noch kein Tagesverlauf aus der Cloud.",
@@ -233,7 +233,7 @@ const STRINGS = {
     mapTitle: "Fahrtenkarte", mapLoading: "Route wird geladen …", mapEmpty: "Für diese Fahrt gibt es noch keine Route. Sie wird aus dem Standortverlauf des Autos in Home Assistant gezeichnet.", mapHint: "Fahrten erscheinen nach der nächsten Fahrt auf der Karte.", mapStart: "Start", mapEnd: "Ziel", mapLive: "Live", topSpeed: "Höchstgeschw.", avgSpeedL: "Durchschnitt", aboveLimit: "Über Limit", limitCar: "Tempolimit im Auto", limitAlert: "Tempowarnung", legendBelow: "unter Limit", legendNear: "knapp darunter", legendAbove: "über Limit", legendSlow: "bis 50", legendMid: "50–90", legendFast: "über 90", tooFast: "Zu schnell · {x}", speedLimit: "Tempolimit", trunk: "Kofferraum", windows: "Fenster", doors: "Türen", sunroof: "Schiebedach", sentryOn: "Wächter", tireLowShort: "Reifen", limitDown: "Ladelimit senken", limitUp: "Ladelimit erhöhen", limitSet: "Ladelimit {x}",
     pageOverview: "Übersicht", pageTrips: "Fahrten", pageCharging: "Laden", pageVehicle: "Fahrzeug",
     groupClimate: "Klima", groupAccess: "Türen & Sicherheit", groupCharging: "Ladesteuerung",
-    setLimit: "Auf {x} setzen", cancel: "Abbrechen", currently: "jetzt {x}", noSessions: "Noch keine Ladevorgänge erfasst — sie erscheinen nach der nächsten Ladung.",
+    setLimit: "Auf {x} setzen", cancel: "Abbrechen", currently: "jetzt {x}", noSessions: "Noch keine Ladevorgänge erfasst. Sie erscheinen nach der nächsten Ladung.",
     delta24: "{x} in 24 h", chargedL: "Geladen", drivenL: "Gefahren", rangeLeft: "{x} Reichweite", doneAt: "fertig um {x}", left: "noch {x}",
     weekEnergy: "Energie", weekAvg: "Durchschnitt", tripDetail: "Fahrtdetails", cost: "Kosten", showMore: "{n} weitere anzeigen",
     todayL: "Heute", monthL: "Diesen Monat", tripsN: "{n}×", tiresTitle: "Reifen", tireHint: "niedrig unter {x} bar", tiresOkShort: "Reifen OK",
@@ -446,36 +446,36 @@ const RIGHT_LABELS = {
 /** Localised maintenance item names (the bundled packs are English). */
 const SERVICE_NAMES = {
   sl: {
-    brake_fluid_replace: "Zavorna tekočina — menjava (DOT4)", brake_fluid_inspect: "Zavorna tekočina — pregled",
-    brake_pads_inspect: "Zavorne ploščice — pregled", brake_discs_inspect: "Zavorni diski — pregled",
-    brake_hoses_inspect: "Zavorne cevi in vodi — pregled", tire_rotation: "Menjava položaja pnevmatik",
-    tire_inspect: "Pnevmatike — tlak, obraba, profil", tire_replace: "Pnevmatike — zamenjava",
-    cabin_filter_replace: "Kabinski filter — menjava", cabin_filter_clean: "Kabinski filter — čiščenje",
-    reducer_oil_replace: "Olje reduktorja — menjava", wiper_blades_replace: "Metlice brisalcev — menjava",
-    wiper_blades_inspect: "Metlice brisalcev — pregled", washer_fluid_topup: "Tekočina za pranje stekel — dolivanje",
-    aux_battery_12v_check: "12 V akumulator — pregled", coolant_inspect: "Hladilna tekočina — pregled",
-    lights_horn_check: "Luči, hupa, pranje — preizkus", battery_pack_inspect: "Visokonapetostna baterija — pregled",
-    engine_oil_replace: "Motorno olje in filter — menjava", engine_air_filter_replace: "Zračni filter motorja — menjava",
-    spark_plugs_replace: "Svečke — pregled/menjava", fuel_filter_replace: "Filter goriva — menjava",
-    hvac_system_check: "Klimatska naprava — tesnost in hrup", door_hinges_lube: "Tečaji vrat, pokrova, prtljažnika — mazanje",
-    chassis_bolts_check: "Vijaki podvozja — pritezni moment", drive_motor_inspect: "Pogonski motor in krmilnik — pregled",
-    charging_port_inspect: "Polnilni priključek — čiščenje in pregled", software_update_check: "Programska oprema — preverjanje posodobitev",
+    brake_fluid_replace: "Zavorna tekočina: menjava (DOT4)", brake_fluid_inspect: "Zavorna tekočina: pregled",
+    brake_pads_inspect: "Zavorne ploščice: pregled", brake_discs_inspect: "Zavorni diski: pregled",
+    brake_hoses_inspect: "Zavorne cevi in vodi: pregled", tire_rotation: "Menjava položaja pnevmatik",
+    tire_inspect: "Pnevmatike: tlak, obraba, profil", tire_replace: "Pnevmatike: zamenjava",
+    cabin_filter_replace: "Kabinski filter: menjava", cabin_filter_clean: "Kabinski filter: čiščenje",
+    reducer_oil_replace: "Olje reduktorja: menjava", wiper_blades_replace: "Metlice brisalcev: menjava",
+    wiper_blades_inspect: "Metlice brisalcev: pregled", washer_fluid_topup: "Tekočina za pranje stekel: dolivanje",
+    aux_battery_12v_check: "12 V akumulator: pregled", coolant_inspect: "Hladilna tekočina: pregled",
+    lights_horn_check: "Luči, hupa, pranje: preizkus", battery_pack_inspect: "Visokonapetostna baterija: pregled",
+    engine_oil_replace: "Motorno olje in filter: menjava", engine_air_filter_replace: "Zračni filter motorja: menjava",
+    spark_plugs_replace: "Svečke: pregled/menjava", fuel_filter_replace: "Filter goriva: menjava",
+    hvac_system_check: "Klimatska naprava: tesnost in hrup", door_hinges_lube: "Tečaji vrat, pokrova, prtljažnika: mazanje",
+    chassis_bolts_check: "Vijaki podvozja: pritezni moment", drive_motor_inspect: "Pogonski motor in krmilnik: pregled",
+    charging_port_inspect: "Polnilni priključek: čiščenje in pregled", software_update_check: "Programska oprema: preverjanje posodobitev",
   },
   de: {
-    brake_fluid_replace: "Bremsflüssigkeit — Wechsel (DOT4)", brake_fluid_inspect: "Bremsflüssigkeit — Prüfung",
-    brake_pads_inspect: "Bremsbeläge — Prüfung", brake_discs_inspect: "Bremsscheiben — Prüfung",
-    brake_hoses_inspect: "Bremsleitungen — Prüfung", tire_rotation: "Reifen tauschen (Achswechsel)",
-    tire_inspect: "Reifen — Druck, Verschleiß, Profil", tire_replace: "Reifen — Ersatz",
-    cabin_filter_replace: "Innenraumfilter — Wechsel", cabin_filter_clean: "Innenraumfilter — Reinigung",
-    reducer_oil_replace: "Getriebeöl — Wechsel", wiper_blades_replace: "Wischerblätter — Wechsel",
-    wiper_blades_inspect: "Wischerblätter — Prüfung", washer_fluid_topup: "Scheibenwaschwasser — auffüllen",
-    aux_battery_12v_check: "12-V-Batterie — Prüfung", coolant_inspect: "Kühlmittel — Prüfung",
-    lights_horn_check: "Licht, Hupe, Waschanlage — Funktionsprüfung", battery_pack_inspect: "Hochvoltbatterie — Prüfung",
-    engine_oil_replace: "Motoröl und Filter — Wechsel", engine_air_filter_replace: "Motorluftfilter — Wechsel",
-    spark_plugs_replace: "Zündkerzen — Prüfung/Wechsel", fuel_filter_replace: "Kraftstofffilter — Wechsel",
-    hvac_system_check: "Klimaanlage — Dichtheit und Geräusche", door_hinges_lube: "Scharniere — reinigen und schmieren",
-    chassis_bolts_check: "Fahrwerksschrauben — Drehmoment", drive_motor_inspect: "Antriebsmotor und Steuerung — Prüfung",
-    charging_port_inspect: "Ladeanschluss — Reinigung und Prüfung", software_update_check: "Software — Update prüfen",
+    brake_fluid_replace: "Bremsflüssigkeit: Wechsel (DOT4)", brake_fluid_inspect: "Bremsflüssigkeit: Prüfung",
+    brake_pads_inspect: "Bremsbeläge: Prüfung", brake_discs_inspect: "Bremsscheiben: Prüfung",
+    brake_hoses_inspect: "Bremsleitungen: Prüfung", tire_rotation: "Reifen tauschen (Achswechsel)",
+    tire_inspect: "Reifen: Druck, Verschleiß, Profil", tire_replace: "Reifen: Ersatz",
+    cabin_filter_replace: "Innenraumfilter: Wechsel", cabin_filter_clean: "Innenraumfilter: Reinigung",
+    reducer_oil_replace: "Getriebeöl: Wechsel", wiper_blades_replace: "Wischerblätter: Wechsel",
+    wiper_blades_inspect: "Wischerblätter: Prüfung", washer_fluid_topup: "Scheibenwaschwasser: auffüllen",
+    aux_battery_12v_check: "12-V-Batterie: Prüfung", coolant_inspect: "Kühlmittel: Prüfung",
+    lights_horn_check: "Licht, Hupe, Waschanlage: Funktionsprüfung", battery_pack_inspect: "Hochvoltbatterie: Prüfung",
+    engine_oil_replace: "Motoröl und Filter: Wechsel", engine_air_filter_replace: "Motorluftfilter: Wechsel",
+    spark_plugs_replace: "Zündkerzen: Prüfung/Wechsel", fuel_filter_replace: "Kraftstofffilter: Wechsel",
+    hvac_system_check: "Klimaanlage: Dichtheit und Geräusche", door_hinges_lube: "Scharniere: reinigen und schmieren",
+    chassis_bolts_check: "Fahrwerksschrauben: Drehmoment", drive_motor_inspect: "Antriebsmotor und Steuerung: Prüfung",
+    charging_port_inspect: "Ladeanschluss: Reinigung und Prüfung", software_update_check: "Software: Update prüfen",
   },
 };
 
@@ -638,6 +638,8 @@ const STALE_MINUTES = 120;
  * "cluster" (driver display with gauges) and "console" (car app / centre screen).
  */
 const LOOKS = ["classic", "cluster", "console"];
+/** The look used until the card configuration or the user picks another one. */
+const DEFAULT_LOOK = "console";
 const LOOK_LABELS = {
   classic: "Classic (night or day sky)",
   cluster: "Driver display (gauges around the car)",
@@ -1109,7 +1111,7 @@ async function trimCarPicture(img, flip) {
     : null;
 
   // Nothing to cut away: keep the picture as it is.
-  if (bw >= w * 0.97 && bh >= h * 0.97) return { url: null, attach };
+  if (bw >= w * 0.97 && bh >= h * 0.97) return { url: null, attach, data: pictureDataUrl(img, 0, 0, W, H) };
   const X = Math.floor(bx[0] / scale), Y = Math.floor(by[0] / scale);
   const CW = Math.min(W - X, Math.ceil(bw / scale)), CH = Math.min(H - Y, Math.ceil(bh / scale));
   const out = document.createElement("canvas");
@@ -1117,7 +1119,61 @@ async function trimCarPicture(img, flip) {
   out.height = CH;
   out.getContext("2d").drawImage(img, X, Y, CW, CH, 0, 0, CW, CH);
   const blob = await new Promise((resolve) => out.toBlob(resolve, "image/png"));
-  return blob ? { url: URL.createObjectURL(blob), attach } : { url: null, attach };
+  const copy = pictureDataUrl(img, X, Y, CW, CH);
+  return blob ? { url: URL.createObjectURL(blob), attach, data: copy } : { url: null, attach, data: null };
+}
+
+/*
+ * The car picture is remembered on the device, so the next page load shows
+ * the right car at once instead of the built-in drawing while the picture is
+ * fetched again (its address changes every few minutes, so the browser's own
+ * cache never helps).
+ */
+/** Waits before the car picture is asked for again after a failed load. */
+const PIC_RETRY_MS = [1500, 4000, 10000];
+/** After those, at most this often, with the panel's regular redraws. */
+const PIC_RETRY_SLOW_MS = 30000;
+const PIC_CACHE_PREFIX = "leapmotor-card-picture:";
+const PIC_CACHE_MAX_WIDTH = 1100;
+const PIC_CACHE_MAX_CHARS = 1500000;
+
+/** A part of the picture as a data URL small enough to keep, or null. */
+function pictureDataUrl(img, x, y, w, h) {
+  try {
+    const k = Math.min(1, PIC_CACHE_MAX_WIDTH / w);
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(w * k));
+    canvas.height = Math.max(1, Math.round(h * k));
+    canvas.getContext("2d").drawImage(img, x, y, w, h, 0, 0, canvas.width, canvas.height);
+    // WebP keeps the transparency at a fraction of the size; browsers that cannot write it answer with PNG.
+    const data = canvas.toDataURL("image/webp", 0.92);
+    return typeof data === "string" && data.startsWith("data:image/") && data.length <= PIC_CACHE_MAX_CHARS ? data : null;
+  } catch (_e) {
+    return null; // a picture from another site cannot be copied
+  }
+}
+
+function readPictureCache(entityId) {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(PIC_CACHE_PREFIX + entityId) || "null");
+    if (!value || typeof value !== "object" || typeof value.key !== "string") return null;
+    if (typeof value.data !== "string" || !/^data:image\/(png|webp);base64,/.test(value.data)) return null;
+    const a = value.attach;
+    const attach = a && typeof a === "object" && Number.isFinite(a.x) && Number.isFinite(a.y)
+      ? { x: clamp(a.x, 0, 0.6), y: clamp(a.y, 0.15, 0.8) } : null;
+    const [head, body] = value.data.split(",");
+    const bytes = Uint8Array.from(atob(body), (c) => c.charCodeAt(0));
+    const url = URL.createObjectURL(new Blob([bytes], { type: head.slice(5, head.indexOf(";")) }));
+    return { key: value.key, url, attach };
+  } catch (_e) {
+    return null;
+  }
+}
+
+function writePictureCache(entityId, key, data, attach) {
+  try {
+    if (data) window.localStorage.setItem(PIC_CACHE_PREFIX + entityId, JSON.stringify({ key, data, attach: attach || null }));
+  } catch (_e) { /* no room or no storage: the picture is simply fetched again next time */ }
 }
 
 /**
@@ -2068,6 +2124,7 @@ input[type=range]:focus-visible{outline:2px solid var(--lm-amber-2);outline-offs
   box-shadow:0 0 0 2px color-mix(in srgb,var(--c,#34d399) 45%,transparent),0 0 12px var(--c,#34d399);z-index:1;pointer-events:none}
 .car.charging .plugdot{animation:lm-pulse 1.8s ease-in-out infinite}
 .carbox.svgcar{width:100%}
+.carwait{width:100%;aspect-ratio:460/170}
 .fxaura{position:absolute;left:24%;right:30%;top:6%;height:46%;border-radius:50%;filter:blur(14px);opacity:.8;pointer-events:none;mix-blend-mode:screen;animation:lm-pulse 3s ease-in-out infinite}
 .fxaura.warm{background:radial-gradient(closest-side,rgba(251,146,60,.9),rgba(251,146,60,0))}
 .fxaura.cool{background:radial-gradient(closest-side,rgba(56,189,248,.9),rgba(56,189,248,0))}
@@ -2209,7 +2266,7 @@ class LeapmotorCard extends HTMLElement {
       ? ALL_SECTIONS.filter((s) => config.sections.includes(s))
       : ALL_SECTIONS;
     this._config = {
-      look: LOOKS[0], scene: "auto", language: "auto", confirm_actions: true, backdrop: true, show_image: true, image_flip: false, quick_actions: true,
+      look: DEFAULT_LOOK, scene: "auto", language: "auto", confirm_actions: true, backdrop: true, show_image: true, image_flip: false, quick_actions: true,
       tabs: true, ...config, sections,
     };
     this._page = null;
@@ -2290,7 +2347,7 @@ class LeapmotorCard extends HTMLElement {
   }
 
   _num(value, digits = 0) {
-    if (value == null || !isFinite(value)) return "—";
+    if (value == null || !isFinite(value)) return "–";
     this._nf = this._nf || {};
     const key = `${this._lang}|${digits}`;
     if (!this._nf[key]) {
@@ -2317,7 +2374,7 @@ class LeapmotorCard extends HTMLElement {
 
   _ago(ts) {
     const diff = Date.now() - ts;
-    if (!isFinite(diff)) return "—";
+    if (!isFinite(diff)) return "–";
     if (diff < 60 * 1000) return this._tr("justNow");
     let rtf;
     try {
@@ -2331,7 +2388,7 @@ class LeapmotorCard extends HTMLElement {
   }
 
   _dur(minutes) {
-    if (minutes == null || !isFinite(minutes)) return "—";
+    if (minutes == null || !isFinite(minutes)) return "–";
     const m = Math.max(0, Math.round(minutes));
     const h = Math.floor(m / 60);
     if (h >= 48) return `${Math.round(h / 24)} d`;
@@ -2517,7 +2574,7 @@ class LeapmotorCard extends HTMLElement {
 
   get _look() {
     const look = this._prefs?.look ?? this._config.look;
-    return LOOKS.includes(look) ? look : LOOKS[0];
+    return LOOKS.includes(look) ? look : DEFAULT_LOOK;
   }
 
   get _tabbed() {
@@ -2804,7 +2861,7 @@ class LeapmotorCard extends HTMLElement {
     const driving = this._on("isDriving") === true || this._s("vehicleState")?.state === "driving";
     const gear = String(this._s("gear")?.state || "").toUpperCase();
     return {
-      soc, socTxt: soc == null ? "—" : precise != null ? this._num(precise, 1) : this._num(soc, 0),
+      soc, socTxt: soc == null ? "–" : precise != null ? this._num(precise, 1) : this._num(soc, 0),
       locked: lock ? lock.state === "locked" : null,
       charging, plugged, finished, driving,
       gear: GEARS.includes(gear) ? gear : driving ? "D" : "P",
@@ -2844,12 +2901,14 @@ class LeapmotorCard extends HTMLElement {
   /** The car (official render or drawing) with its state overlays, wallbox and cable. */
   _heroCarHtml(d, { tireTags = false, floor = false } = {}) {
     const picUrl = this._carPicture();
+    // The car's own picture is on its way: keep its place free instead of drawing another car.
+    const waiting = !picUrl && !!this._pic?.waiting;
     const carArt = picUrl
       ? `<img src="${esc(picUrl)}" alt="${esc(this._vehicleName())}"${this._config.image_flip ? ' class="flip"' : ""}>`
-      : carSvg(d.night);
-    const fx = this._carFx({ charging: d.charging, plugged: d.plugged, night: d.night, driving: d.driving, locked: d.locked }, { tirePins: !tireTags });
+      : waiting ? `<div class="carwait" role="img" aria-label="${esc(this._vehicleName())}"></div>` : carSvg(d.night);
+    const fx = waiting ? "" : this._carFx({ charging: d.charging, plugged: d.plugged, night: d.night, driving: d.driving, locked: d.locked }, { tirePins: !tireTags });
     // The wallbox and cable belong to the picture box, so they stay with the car whatever its width.
-    const plug = d.plugged ? this._plugHtml(d.charging, picUrl ? this._pic?.attach : null) : "";
+    const plug = d.plugged && !waiting ? this._plugHtml(d.charging, picUrl ? this._pic?.attach : null) : "";
     const carInner = `<div class="carbox${picUrl ? "" : " svgcar"}">${plug}${carArt}${fx}${tireTags ? this._tireTagsHtml() : ""}</div>`;
     return `${floor ? floorSvg() : ""}<div class="car${d.charging ? " charging" : ""}${d.plugged ? " plugged" : ""}">${carInner}</div>`;
   }
@@ -2875,7 +2934,7 @@ class LeapmotorCard extends HTMLElement {
 
   /** Pressures at the wheels (left · right per axle); the car faces right. */
   _tireTagsHtml() {
-    const one = (v) => v == null ? "—" : `<span${v < TIRE_LOW_BAR ? ' class="low"' : ""}>${this._num(v, 1)}</span>`;
+    const one = (v) => v == null ? "–" : `<span${v < TIRE_LOW_BAR ? ' class="low"' : ""}>${this._num(v, 1)}</span>`;
     const tag = (x, l, r) => {
       const a = this._v(l), b = this._v(r);
       if (a == null && b == null) return "";
@@ -2969,7 +3028,7 @@ class LeapmotorCard extends HTMLElement {
       right = `
         <div class="gauge clickable" data-more="power" style="--c:${OK_C}">
           ${gaugeSvg({ frac: (p ?? 0) / max, color: OK_C, flow: true })}
-          <div class="gin"><div class="gv">${p != null ? this._num(p, 1) : "—"}<small>kW</small></div>${rem != null ? `<div class="gs">${esc(t("left", { x: this._dur(rem) }))}</div>` : ""}</div>
+          <div class="gin"><div class="gv">${p != null ? this._num(p, 1) : "–"}<small>kW</small></div>${rem != null ? `<div class="gs">${esc(t("left", { x: this._dur(rem) }))}</div>` : ""}</div>
           ${fin ? `<div class="gbot"><span class="glab">${esc(t("doneAt", { x: this._time(new Date(fin)) }))}</span></div>` : ""}
         </div>
         <div class="glab">${esc(t("chargingTitle"))}</div>`;
@@ -3046,7 +3105,7 @@ class LeapmotorCard extends HTMLElement {
     const left = `
       <div class="rbox">
         <div class="lbl">${esc(t("range"))}</div>
-        <div class="rng clickable" data-more="${this._ids.range ? "range" : "battery"}">${d.range != null ? this._num(d.range) : "—"}<small>${esc(d.rangeU)}</small></div>
+        <div class="rng clickable" data-more="${this._ids.range ? "range" : "battery"}">${d.range != null ? this._num(d.range) : "–"}<small>${esc(d.rangeU)}</small></div>
         <div class="batt clickable" data-more="battery">
           <div class="bwrap"><div class="bseg"><i class="${fill}" style="width:${clamp(d.soc ?? 0, 0, 100)}%"></i></div>${lim}</div>
           <b>${d.socTxt}<small>%</small></b>
@@ -3073,7 +3132,7 @@ class LeapmotorCard extends HTMLElement {
     const now = new Date();
     const precise = this._v("batteryPrecise");
     const soc = precise ?? this._v("battery");
-    const socTxt = soc == null ? "—" : precise != null ? this._num(precise, 1) : this._num(soc, 0);
+    const socTxt = soc == null ? "–" : precise != null ? this._num(precise, 1) : this._num(soc, 0);
     const lock = this._s("lock");
     const locked = lock ? lock.state === "locked" : null;
     const { charging, plugged } = this._chargeState();
@@ -3186,42 +3245,63 @@ class LeapmotorCard extends HTMLElement {
    * URL of the owned car's picture: the integration's image entity (the
    * official render from the Leapmotor picture package) or a configured URL.
    * The image proxy token rotates every few minutes, so a new URL is preloaded
-   * and only swapped in once it has loaded — no flicker, no broken image.
+   * and only swapped in once it has loaded: no flicker, no broken image.
    */
   _carPicture() {
     const custom = this._config.image || null;
     const pic = custom || !this._config.show_image ? null : this._s("picture");
     const url = custom || (pic && !["unavailable", "unknown"].includes(pic.state) ? pic.attributes?.entity_picture : null);
-    const p = this._pic || (this._pic = { shown: null, pending: null, key: null, pendingKey: null, attach: null, cut: false });
+    const flip = this._config.image_flip ? 1 : 0;
+    const p = this._pic || (this._pic = { shown: null, pending: null, key: null, pendingKey: null, attach: null, cut: false, cachedFor: null, tries: 0, retryAt: 0, waiting: false });
+    // The copy kept on this device, looked up once per car.
+    const cacheId = pic ? `${pic.entity_id}|${flip}` : null;
+    if (cacheId && !p.shown && p.cachedFor !== cacheId) {
+      p.cachedFor = cacheId;
+      const kept = readPictureCache(cacheId);
+      if (kept) {
+        p.shown = kept.url;
+        p.cut = true;
+        p.key = kept.key;
+        p.attach = kept.attach;
+      }
+    }
     if (!url) {
+      p.pending = null;
+      p.pendingKey = null;
+      p.waiting = false;
+      // The picture entity is away for a moment (Home Assistant starting, cloud
+      // offline): the car has not changed, so its remembered picture stays.
+      if (pic && p.shown && p.cachedFor === cacheId) return p.shown;
       if (p.cut && p.shown) URL.revokeObjectURL(p.shown);
       p.shown = null;
       p.cut = false;
       p.key = null;
       p.attach = null;
-      p.pending = null;
-      p.pendingKey = null;
+      p.cachedFor = null;
+      p.tries = 0;
+      p.retryAt = 0;
       return null;
     }
-    // The picture itself only changes with the entity's state; the address
-    // carries a token that rotates every few minutes.
-    const key = `${custom ? url : `${pic.entity_id}|${pic.state}`}|${this._config.image_flip ? 1 : 0}`;
+    // The picture itself only changes with the car's picture package (or, on
+    // older versions, the entity's state); the address carries a token that
+    // rotates every few minutes.
+    const key = `${custom ? url : `${pic.entity_id}|${pic.attributes?.picture_id || pic.state}`}|${flip}`;
     const stale = key !== p.key || (!p.cut && url !== p.shown);
-    if (stale && url !== p.pending) {
+    if (stale && url !== p.pending && Date.now() >= p.retryAt) {
       p.pending = url;
       p.pendingKey = key;
       const img = new Image();
       img.onload = async () => {
-        if (p.pending !== url) return;
+        if (p.pending !== url || this._pic !== p) return;
         let result = null;
         if (key !== p.key || !p.cut) {
           try {
-            result = await trimCarPicture(img, !!this._config.image_flip);
+            result = await trimCarPicture(img, !!flip);
           } catch (_e) {
             result = null; // not readable: show the picture as it is
           }
         }
-        if (p.pending !== url) {
+        if (p.pending !== url || this._pic !== p) {
           if (result?.url) URL.revokeObjectURL(result.url);
           return;
         }
@@ -3232,17 +3312,35 @@ class LeapmotorCard extends HTMLElement {
         p.key = key;
         p.pending = null;
         p.pendingKey = null;
+        p.tries = 0;
+        p.retryAt = 0;
+        p.waiting = false;
+        if (cacheId) writePictureCache(cacheId, key, result?.data, p.attach);
         this._sigs.hero = null;
         this._renderSection("hero");
       };
       img.onerror = () => {
-        if (p.pending === url) {
-          p.pending = null;
-          p.pendingKey = null;
-        }
+        if (p.pending !== url || this._pic !== p) return;
+        p.pending = null;
+        p.pendingKey = null;
+        // Home Assistant may still be fetching the picture: try again shortly,
+        // a few times, then with every regular redraw of the panel.
+        p.tries += 1;
+        const wait = PIC_RETRY_MS[p.tries - 1];
+        p.retryAt = Date.now() + (wait || PIC_RETRY_SLOW_MS);
+        const redraw = () => {
+          if (this._pic !== p || !this.isConnected || !this._sigs) return;
+          this._sigs.hero = null;
+          this._renderSection("hero");
+        };
+        if (wait) setTimeout(redraw, wait + 20);
+        else redraw(); // out of quick retries: show the drawing meanwhile
       };
       img.src = url;
     }
+    // Until the first picture arrives the place stays empty; the built-in
+    // drawing is another car and would only be swapped a moment later.
+    p.waiting = !p.shown && p.tries <= PIC_RETRY_MS.length;
     return p.shown;
   }
 
@@ -3573,8 +3671,8 @@ class LeapmotorCard extends HTMLElement {
     const stats = [
       stat(t("total"), this._num(sum), "km", longest?.km ? `${t("longest")} ${dayName(longest)} · ${this._num(longest.km)} km` : ""),
       stat(t("drivingDays"), `${drivingDays}/7`, ""),
-      stat(t("weekEnergy"), eSum ? this._num(eSum, 1) : "—", eSum ? "kWh" : ""),
-      stat(t("weekAvg"), eKm ? this._num((eSum / eKm) * 100, 1) : "—", eKm ? "kWh/100" : ""),
+      stat(t("weekEnergy"), eSum ? this._num(eSum, 1) : "–", eSum ? "kWh" : ""),
+      stat(t("weekAvg"), eKm ? this._num((eSum / eKm) * 100, 1) : "–", eKm ? "kWh/100" : ""),
     ].join("");
 
     const max = Math.max(1, ...days.map((d) => d.km || 0));
@@ -3586,7 +3684,7 @@ class LeapmotorCard extends HTMLElement {
       return `<div class="wrow${day.today ? " today" : ""}${idle ? " idle" : ""}">
           <span class="wd">${esc(dayName(day))}</span>
           <div class="wbar">${day.km ? `<i style="width:${Math.max(3, ratio * 100)}%;background:linear-gradient(90deg,#2563eb,${top});--g:${top}88"></i>` : ""}</div>
-          <div class="wv"><b>${day.km == null ? "—" : this._num(day.km)}<small>km</small></b>${sub ? `<span>${esc(sub)}</span>` : ""}</div>
+          <div class="wv"><b>${day.km == null ? "–" : this._num(day.km)}<small>km</small></b>${sub ? `<span>${esc(sub)}</span>` : ""}</div>
         </div>`;
     }).join("");
     return `${head}<div class="wstats">${stats}</div><div class="wrows">${rows}</div>`;
@@ -3638,7 +3736,7 @@ class LeapmotorCard extends HTMLElement {
     return `
       ${this._head(t("chargingTitle"), "bolt", chip)}
       <div class="ctop">
-        <div class="clickable" data-more="battery"><div class="soc">${soc != null ? this._num(soc) : "—"}<span>%</span></div>${sub ? `<div class="socsub">${esc(sub)}</div>` : ""}</div>
+        <div class="clickable" data-more="battery"><div class="soc">${soc != null ? this._num(soc) : "–"}<span>%</span></div>${sub ? `<div class="socsub">${esc(sub)}</div>` : ""}</div>
         ${side}
       </div>
       ${bar}
@@ -3663,7 +3761,7 @@ class LeapmotorCard extends HTMLElement {
     const armed = this._isArmed("limitSet");
     const dis = (cond) => (cond ? " disabled" : "");
     return `<div class="lrow${this._busy.limit ? " busy" : ""}">
-        <div><small>${esc(t("chargeLimit"))}</small><b class="${changed ? "pending" : ""}">${shown != null ? this._num(shown) : "—"} %</b>${changed && limit != null
+        <div><small>${esc(t("chargeLimit"))}</small><b class="${changed ? "pending" : ""}">${shown != null ? this._num(shown) : "–"} %</b>${changed && limit != null
           ? `<span class="was">${esc(t("currently", { x: `${this._num(limit)} %` }))}</span>` : ""}</div>
         ${editable ? `<div class="stepper">
           <button class="stp" data-act="limit" data-delta="-1" aria-label="${esc(t("limitDown"))}"${dis(shown != null && shown <= min)}>−</button>
@@ -3730,8 +3828,8 @@ class LeapmotorCard extends HTMLElement {
     const monthBits = [sessions ? t("sessionsN", { n: sessions }) : null, this._money(this._v("monthCost"), currency)].filter(Boolean);
     const em = (bits) => (bits.filter(Boolean).length ? `<em>${esc(bits.filter(Boolean).join(" · "))}</em>` : "");
     return `<div class="csum">
-      <div class="stat clickable" data-more="${lastKey}"><small>${esc(t("lastSession"))}</small><b>${lastE != null ? `${this._num(lastE, 1)}<span>kWh</span>` : "—"}</b>${em(lastBits)}</div>
-      <div class="stat clickable" data-more="${this._ids.monthEnergy ? "monthEnergy" : "monthCost"}"><small>${esc(t("monthCharging"))}</small><b>${monthE != null ? `${this._num(monthE, 1)}<span>kWh</span>` : "—"}</b>${em(monthBits)}</div>
+      <div class="stat clickable" data-more="${lastKey}"><small>${esc(t("lastSession"))}</small><b>${lastE != null ? `${this._num(lastE, 1)}<span>kWh</span>` : "–"}</b>${em(lastBits)}</div>
+      <div class="stat clickable" data-more="${this._ids.monthEnergy ? "monthEnergy" : "monthCost"}"><small>${esc(t("monthCharging"))}</small><b>${monthE != null ? `${this._num(monthE, 1)}<span>kWh</span>` : "–"}</b>${em(monthBits)}</div>
     </div>`;
   }
 
@@ -3754,17 +3852,17 @@ class LeapmotorCard extends HTMLElement {
     }
     const consumption = this._s("avg") ? `
       <div class="aq clickable" data-more="avg">
-        <span class="aqv" style="color:${color}">${avg != null ? this._num(avg, 1) : "—"}</span>
+        <span class="aqv" style="color:${color}">${avg != null ? this._num(avg, 1) : "–"}</span>
         <div class="t"><b>kWh/100 km${rating ? ` <span>· ${esc(rating)}</span>` : ""}</b><small>${esc(t("sixWeek"))}</small>
           <div class="scale">${pos != null ? `<i style="left:${pos * 100}%"></i>` : ""}</div></div>
       </div>` : "";
     // Without a Tires panel the four pressures stay here.
     const tires = this._config.sections.includes("tires") ? "" : TIRES.filter(([k]) => this._s(k)).map(([k, l]) => {
       const v = this._v(k);
-      return `<div class="stat clickable" data-more="${k}"><small>${esc(t(l))}</small><b style="${v != null && v < TIRE_LOW_BAR ? "color:var(--lm-red)" : ""}">${v != null ? this._num(v, 1) : "—"}<span>bar</span></b></div>`;
+      return `<div class="stat clickable" data-more="${k}"><small>${esc(t(l))}</small><b style="${v != null && v < TIRE_LOW_BAR ? "color:var(--lm-red)" : ""}">${v != null ? this._num(v, 1) : "–"}<span>bar</span></b></div>`;
     }).join("");
     const body = `${this._healthHtml()}${this._forecastHtml()}${consumption}${tires ? `<div class="stats" style="margin-top:14px">${tires}</div>` : ""}${split}`;
-    return `${this._head(t("batteryEff"), "battery")}${body.trim() ? body : `<div class="empty">—</div>`}`;
+    return `${this._head(t("batteryEff"), "battery")}${body.trim() ? body : `<div class="empty">–</div>`}`;
   }
 
   _healthHtml() {
@@ -3778,7 +3876,7 @@ class LeapmotorCard extends HTMLElement {
       : t("healthPending");
     return `<div class="health clickable" data-more="health"><span class="sq">${icon("heart")}</span>
       <div><b>${esc(t("health"))}</b><small>${esc(sub)}</small></div>
-      <span class="big2">${soh != null ? `${this._num(soh, 1)} %` : "—"}</span></div>`;
+      <span class="big2">${soh != null ? `${this._num(soh, 1)} %` : "–"}</span></div>`;
   }
 
   /** Where the measured capacity is heading (needs months of full charges). */
@@ -3813,7 +3911,7 @@ class LeapmotorCard extends HTMLElement {
   _tiresHtml() {
     const t = (k, v) => this._tr(k, v);
     const head = this._head(t("tiresTitle"), "tire", `<span class="meta">${esc(t("tireHint", { x: this._num(TIRE_LOW_BAR, 1) }))}</span>`);
-    if (!TIRES.some(([k]) => this._s(k))) return `${head}<div class="empty">—</div>`;
+    if (!TIRES.some(([k]) => this._s(k))) return `${head}<div class="empty">–</div>`;
     const flags = this._tireFlags();
     const words = { low: t("tLow"), uneven: t("tUneven"), dropping: t("tDropping") };
     const area = { tireFL: "fl", tireFR: "fr", tireRL: "rl", tireRR: "rr" };
@@ -3825,7 +3923,7 @@ class LeapmotorCard extends HTMLElement {
       status[k] = st;
       const c = st === "bad" ? BAD_C : st === "warn" ? WARN_C : "";
       return `<div class="tyre clickable${st === "ok" ? "" : ` ${st}`}" data-more="${k}" style="grid-area:${area[k]}${c ? `;--c:${c}` : ""}">
-        <small>${esc(t(`${k.slice(4)}l`))}</small><b>${v != null ? this._num(v, 1) : "—"}<span>bar</span></b>${f.length ? `<em>${esc(f.map((x) => words[x]).join(", "))}</em>` : ""}</div>`;
+        <small>${esc(t(`${k.slice(4)}l`))}</small><b>${v != null ? this._num(v, 1) : "–"}<span>bar</span></b>${f.length ? `<em>${esc(f.map((x) => words[x]).join(", "))}</em>` : ""}</div>`;
     }).join("");
     const wc = (k) => (status[k] === "bad" ? BAD_C : status[k] === "warn" ? WARN_C : "#64748b");
     const car = `<svg class="tcar" viewBox="0 0 60 132" aria-hidden="true">
@@ -3988,7 +4086,7 @@ class LeapmotorCard extends HTMLElement {
       ? `<small><span class="dot pulse" style="--c:#38bdf8;width:6px;height:6px;margin-right:6px;vertical-align:1px"></span>${esc(t("mapLive"))}</small>`
       : `<small>${end ? esc(this._time(end)) : ""}</small>`;
     return `<${tag} class="trip${live ? " live" : ""}${selected ? " sel" : ""}"${pick ? ` data-trip="${live ? "live" : index}"` : ""}>
-      <div class="tt"><b>${start ? esc(this._time(start)) : "—"}</b>${sub}</div>
+      <div class="tt"><b>${start ? esc(this._time(start)) : "–"}</b>${sub}</div>
       <div class="td"><b>${this._num(trip.distance_km ?? 0, 1)}<small>km</small>${vs}</b><span>${esc(bits.map((b) => b.replace(/ /g, "\u00a0")).join(" · ") || (live ? t("drivingNow") : ""))}</span></div>
       <div class="tcx">${cons != null ? `<span class="cons" style="background:${consColor}">${this._num(cons, 1)}</span><small>kWh/100 km</small>` : ""}${eco}</div>
     </${tag}>`;
@@ -4043,7 +4141,7 @@ class LeapmotorCard extends HTMLElement {
     }
     const list = groups.map((g) => {
       const tot = totals[g.key] || { km: 0, kwh: 0 };
-      return `<div class="tgroup"><div class="tgh">${esc(isFinite(g.date) ? this._tripDay(g.date) : "—")}<span>${this._num(tot.km, 1)} km${tot.kwh ? ` · ${this._num(tot.kwh, 1)} kWh` : ""}</span></div>`
+      return `<div class="tgroup"><div class="tgh">${esc(isFinite(g.date) ? this._tripDay(g.date) : "–")}<span>${this._num(tot.km, 1)} km${tot.kwh ? ` · ${this._num(tot.kwh, 1)} kWh` : ""}</span></div>`
         + g.items.map((it) => this._tripRow(it.trip, { live: !!it.live, index: it.index, pick, latest: it.index === 0 })).join("") + `</div>`;
     }).join("");
     const left = recent.length - this._tripLimit;
@@ -4572,7 +4670,7 @@ class LeapmotorCard extends HTMLElement {
       return tiles ? `<div class="subh">${esc(t(label))}</div>${tiles}` : "";
     }).join("");
     const foot = this._config.confirm_actions && body ? `<div class="foot">${esc(t("confirmHint"))}</div>` : "";
-    return `${this._head(t("controls"), "spark")}${body || `<div class="empty">—</div>`}${foot}`;
+    return `${this._head(t("controls"), "spark")}${body || `<div class="empty">–</div>`}${foot}`;
   }
 
   /* ----- settings: theme and language for each user ----- */
@@ -4670,7 +4768,7 @@ class LeapmotorCard extends HTMLElement {
   /** Weekday name for Monday = 0 … Sunday = 6. */
   _weekday(index, style = "long") {
     // 1 January 2024 was a Monday.
-    if (index == null || !Number.isFinite(Number(index))) return "—";
+    if (index == null || !Number.isFinite(Number(index))) return "–";
     const date = new Date(Date.UTC(2024, 0, 1 + ((Math.trunc(Number(index)) % 7) + 7) % 7, 12));
     try {
       return new Intl.DateTimeFormat(this._lang, { weekday: style, timeZone: "UTC" }).format(date);
@@ -4681,7 +4779,7 @@ class LeapmotorCard extends HTMLElement {
 
   _date(value, options = { day: "numeric", month: "short" }) {
     const date = value instanceof Date ? value : new Date(value);
-    if (!isFinite(date)) return "—";
+    if (!isFinite(date)) return "–";
     try {
       return new Intl.DateTimeFormat(this._lang, options).format(date);
     } catch (_e) {
@@ -4698,7 +4796,7 @@ class LeapmotorCard extends HTMLElement {
   /** "07:20" in the user's clock format. */
   _clock(hhmm) {
     const m = /^(\d{1,2}):(\d{2})/.exec(String(hhmm || ""));
-    if (!m) return String(hhmm || "—");
+    if (!m) return String(hhmm || "–");
     const date = new Date();
     date.setHours(+m[1], +m[2], 0, 0);
     return this._time(date);
@@ -4774,7 +4872,7 @@ class LeapmotorCard extends HTMLElement {
       const cls = `${index === target ? " target" : ""}${index === today ? " today" : ""}${km ? "" : " idle"}`;
       return `<div class="wkd${cls}"><small>${esc(this._weekday(index, "short").replace(".", ""))}</small>` +
         `<div class="wkb"><i style="height:${km ? Math.max(8, (km / top) * 100) : 0}%"></i></div>` +
-        `<b>${km != null ? this._num(km) : "—"}</b><em>${first ? esc(this._clock(first.time)) : "&nbsp;"}</em></div>`;
+        `<b>${km != null ? this._num(km) : "–"}</b><em>${first ? esc(this._clock(first.time)) : "&nbsp;"}</em></div>`;
     });
     return `<div class="subh clickable" data-more="nextDeparture">${esc(this._tr("weekTitle"))}<span class="subm">km</span></div><div class="wk">${cols.join("")}</div>`;
   }
@@ -4964,7 +5062,7 @@ class LeapmotorCard extends HTMLElement {
         item.avg_power_kw != null ? `${this._num(item.avg_power_kw, 1)} kW` : null, where || null].filter(Boolean);
       const dc = item.type === "dc";
       return `<div class="chrow"><div class="sd"><b>${esc(this._date(start))}</b><small>${isFinite(start) ? esc(this._time(start)) : ""}</small></div>` +
-        `<div class="sm"><b>${item.energy_kwh != null ? this._num(item.energy_kwh, 1) : "—"}<small>kWh</small></b><span>${esc(bits.join(" · "))}</span></div>` +
+        `<div class="sm"><b>${item.energy_kwh != null ? this._num(item.energy_kwh, 1) : "–"}<small>kWh</small></b><span>${esc(bits.join(" · "))}</span></div>` +
         `<div class="sx">${item.type ? `<span class="pill${dc ? " dc" : ""}">${dc ? "DC" : "AC"}</span>` : ""}${item.cost != null ? `<small>${esc(this._money(item.cost, currency))}</small>` : ""}</div></div>`;
     });
     const left = sessions.length - this._sessLimit;
@@ -5014,7 +5112,7 @@ class LeapmotorCard extends HTMLElement {
         const what = e.kind === "climate"
           ? [{ heat: t("modeHeat"), cool: t("modeCool"), fan: t("modeFan") }[e.mode], e.temperature != null ? `${this._num(e.temperature)} °C` : null].filter(Boolean).join(" ")
           : (e.name || t("autoCabin"));
-        return `<div class="schrow${e.enabled === false ? " off" : ""}"><b>${esc(e.time ? this._clock(e.time) : "—")}</b>` +
+        return `<div class="schrow${e.enabled === false ? " off" : ""}"><b>${esc(e.time ? this._clock(e.time) : "–")}</b>` +
           `<span>${esc([dayList(e.days, e.date), what].filter(Boolean).join(" · "))}</span>${e.enabled === false ? `<span class="pill warn">${esc(t("schedOff"))}</span>` : ""}</div>`;
       });
       body += `<div class="subh clickable" data-more="nextSchedule">${esc(t("schedTitle"))}${next ? `<span class="subm">${esc(t("schedNext", { t: `${this._weekday((new Date(next).getDay() + 6) % 7, "short")} ${this._time(new Date(next))}` }))}</span>` : ""}</div>` +
@@ -5206,7 +5304,7 @@ class LeapmotorCard extends HTMLElement {
     const tiles = badges.map((b) => {
       const level = clamp(b.level || 0, 0, 3);
       const digits = b.id === "full_cycles" || b.id === "frost" ? 1 : 0;
-      const value = b.value != null ? this._num(b.value, Number.isInteger(b.value) ? 0 : digits) : "—";
+      const value = b.value != null ? this._num(b.value, Number.isInteger(b.value) ? 0 : digits) : "–";
       const next = b.next != null ? ` · ${esc(t("bdNext", { x: this._num(b.next) }))}` : "";
       return `<div class="badge l${level}" style="--c:${colors[level]}" title="${esc(t(`bdd_${b.id}`))}">` +
         `<span class="bring" style="--p:${Math.round(clamp(b.progress ?? 0, 0, 1) * 100)}">${icon("medal")}</span>` +
@@ -5262,7 +5360,7 @@ class LeapmotorCard extends HTMLElement {
     const r = this._labResult();
     if (!r) return "";
     const shown = r.now ?? r.full;
-    return `<div class="rlbig">${shown != null ? this._num(shown) : "—"}<small>km</small></div>` +
+    return `<div class="rlbig">${shown != null ? this._num(shown) : "–"}<small>km</small></div>` +
       `<div class="rlsub">${esc(r.now == null ? t("rlFull") : r.soc != null ? t("rlNow", { p: this._num(r.soc) }) : t("rlNowPlain"))}` +
       `${r.now != null && r.full != null ? ` · <b>${this._num(r.full)} km</b> ${esc(t("rlFull"))}` : ""}</div>` +
       `<div class="rlcons"><b>${this._num(r.cons, 1)}</b> kWh/100 km</div>`;

@@ -1,5 +1,5 @@
 blueprint:
-  name: Leapmotor — charging complete
+  name: "Leapmotor: charging complete"
   description: Send a phone notification when a charging session ends, with the battery level and range.
   domain: automation
   source_url: https://github.com/Sabotin/LeapBridge/blob/main/blueprints/automation/leapmotor/charging_complete.yaml
