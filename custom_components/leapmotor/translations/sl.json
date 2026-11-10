@@ -98,6 +98,10 @@
         "data": {
           "password": "Geslo"
         }
+      },
+      "share_invitation": {
+        "title": "Avto je bil deljen s tem računom",
+        "description": "{owner} je s tem računom delil vozilo {car} (VIN se konča na {vin_tail}), povabilo pa še ni sprejeto.\n\nSprejmi ga zdaj in dokončaj nastavitev. Pred potrditvijo se nič ne sprejme."
       }
     },
     "error": {
@@ -111,7 +115,9 @@
       "certificate_import_error": "Uvoz certifikata ni uspel. Preveri certifikat PEM in zasebni ključ.",
       "app_cert_invalid": "Datoteka certifikata ni veljaven certifikat PEM. Preveri, da app_cert.pem vsebuje celoten blok BEGIN/END CERTIFICATE.",
       "app_key_invalid": "Datoteka zasebnega ključa ni veljaven zasebni ključ PEM. Preveri, da app_key.pem vsebuje celoten blok BEGIN/END PRIVATE KEY in ni šifriran.",
-      "certificate_key_mismatch": "Certifikat in zasebni ključ se ne ujemata. Poskrbi, da sta app_cert.pem in app_key.pem ujemajoč se par iz istega vira."
+      "certificate_key_mismatch": "Certifikat in zasebni ključ se ne ujemata. Poskrbi, da sta app_cert.pem in app_key.pem ujemajoč se par iz istega vira.",
+      "share_accept_failed": "Povabila ni bilo mogoče sprejeti. Poskusi znova ali ga sprejmi v aplikaciji Leapmotor.",
+      "share_not_ready": "Povabilo je sprejeto, vendar se avto v računu še ni pojavil. Čez trenutek potrdi znova."
     },
     "abort": {
       "already_configured": "Ta račun je že nastavljen.",
@@ -498,6 +504,96 @@
       },
       "energy_to_charge_limit_kwh": {
         "name": "Energija do meje polnjenja"
+      },
+      "real_range_km": {
+        "name": "Dejanski doseg"
+      },
+      "range_at_charge_limit_km": {
+        "name": "Doseg pri meji polnjenja"
+      },
+      "next_departure": {
+        "name": "Naslednji predvideni odhod"
+      },
+      "next_day_distance_km": {
+        "name": "Pričakovana razdalja naslednji dan"
+      },
+      "next_day_battery_needed": {
+        "name": "Potrebna baterija naslednji dan"
+      },
+      "eco_score": {
+        "name": "Eko ocena"
+      },
+      "eco_score_average": {
+        "name": "Povprečna eko ocena"
+      },
+      "frequent_routes": {
+        "name": "Pogoste poti"
+      },
+      "battery_capacity_trend": {
+        "name": "Trend kapacitete baterije"
+      },
+      "battery_health_in_one_year": {
+        "name": "Zdravje baterije čez eno leto"
+      },
+      "fuel_savings_month": {
+        "name": "Prihranek pri gorivu ta mesec"
+      },
+      "fuel_savings_total": {
+        "name": "Prihranek pri gorivu skupaj"
+      },
+      "co2_saved_month": {
+        "name": "Prihranjen CO2 ta mesec"
+      },
+      "co2_saved_total": {
+        "name": "Prihranjen CO2 skupaj"
+      },
+      "fuel_avoided_total_l": {
+        "name": "Neporabljeno gorivo"
+      },
+      "distance_this_year": {
+        "name": "Prevoženo letos"
+      },
+      "driving_streak_days": {
+        "name": "Zaporedni dnevi vožnje"
+      },
+      "longest_trip_km": {
+        "name": "Najdaljša vožnja"
+      },
+      "lifetime_trips": {
+        "name": "Zabeležene vožnje"
+      },
+      "lifetime_charging_sessions": {
+        "name": "Zabeležena polnjenja"
+      },
+      "achievements": {
+        "name": "Dosežki"
+      },
+      "charging_curve": {
+        "name": "Največja moč polnilne krivulje"
+      },
+      "home_charging_share_percent": {
+        "name": "Delež polnjenja doma"
+      },
+      "parked_since": {
+        "name": "Parkirano od"
+      },
+      "lifetime_consumption_kwh_100km": {
+        "name": "Povprečna poraba od začetka"
+      },
+      "average_daily_distance_km": {
+        "name": "Povprečna dnevna razdalja"
+      },
+      "software_version": {
+        "name": "Različica programske opreme"
+      },
+      "cloud_charging_sessions": {
+        "name": "Polnjenja (oblak)"
+      },
+      "next_scheduled_preconditioning": {
+        "name": "Naslednja načrtovana priprava kabine"
+      },
+      "remote_permissions": {
+        "name": "Dovoljenja za daljinsko upravljanje"
       }
     },
     "binary_sensor": {
@@ -641,6 +737,15 @@
       },
       "speeding": {
         "name": "Prehitra vožnja"
+      },
+      "charge_recommended": {
+        "name": "Priporočeno polnjenje"
+      },
+      "slow_charging": {
+        "name": "Počasno polnjenje"
+      },
+      "next_day_range_sufficient": {
+        "name": "Dovolj za naslednji dan"
       }
     },
     "image": {
@@ -765,6 +870,33 @@
       "healthy_charging": {
         "name": "Zdravo polnjenje"
       }
+    },
+    "update": {
+      "vehicle_software": {
+        "name": "Programska oprema vozila"
+      }
+    },
+    "event": {
+      "activity": {
+        "name": "Dejavnost",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "trip_started": "Vožnja se je začela",
+              "trip_finished": "Vožnja končana",
+              "charging_started": "Polnjenje se je začelo",
+              "charging_finished": "Polnjenje končano",
+              "charging_interrupted": "Polnjenje prekinjeno",
+              "plugged_in": "Kabel priključen",
+              "unplugged": "Kabel odklopljen",
+              "battery_low": "Baterija skoraj prazna",
+              "new_message": "Novo sporočilo",
+              "software_update_available": "Na voljo je posodobitev programske opreme",
+              "achievement_unlocked": "Dosežek odklenjen"
+            }
+          }
+        }
+      }
     }
   },
   "options": {
@@ -791,7 +923,10 @@
           "low_tariff_end": "Nizka tarifa se konča",
           "low_tariff_weekends": "Nizka tarifa ves dan ob vikendih",
           "show_sidebar_panel": "Prikaži nadzorno ploščo Leapmotor v stranski vrstici",
-          "driving_scan_interval": "Interval posodabljanja med vožnjo (minute)"
+          "driving_scan_interval": "Interval posodabljanja med vožnjo (minute)",
+          "fuel_price_l": "Cena goriva na liter (primerjava)",
+          "fuel_l_100km": "Poraba primerljivega avta",
+          "grid_co2_g_kwh": "CO2 tvoje elektrike"
         },
         "data_description": {
           "eco_polling_enabled": "Počasnejši varčni interval uporabi le, ko so vsa vozila zanesljivo zaklenjena, parkirana in odklopljena.",
@@ -804,7 +939,10 @@
           "low_tariff_end": "Na primer 06:00. Okno čez polnoč je podprto.",
           "low_tariff_weekends": "Običajno pri dvotarifnem merjenju (MT/VT).",
           "show_sidebar_panel": "Doda vnos Leapmotor v stransko vrstico s celotno nadzorno ploščo. Izklopi, če ga želiš skriti.",
-          "driving_scan_interval": "Med vožnjo poizveduje tako pogosto, da imata zemljevid vožnje in opozorilo na hitrost več točk. Nikoli ni počasnejši od običajnega intervala."
+          "driving_scan_interval": "Med vožnjo poizveduje tako pogosto, da imata zemljevid vožnje in opozorilo na hitrost več točk. Nikoli ni počasnejši od običajnega intervala.",
+          "fuel_price_l": "Pokaže, koliko bi za isto razdaljo stal avto z motorjem na gorivo. Pusti 0, če želiš samo litre in CO2.",
+          "fuel_l_100km": "Poraba goriva primerljivega avta na 100 km.",
+          "grid_co2_g_kwh": "Grami CO2 na kWh elektrike, s katero polniš. Za lastno sončno elektrarno vpiši 0."
         }
       }
     },
@@ -988,6 +1126,66 @@
           "description": "Neobvezna entiteta Leapmotor, iz katere se določi vozilo."
         }
       }
+    },
+    "get_trips": {
+      "name": "Pridobi vožnje",
+      "description": "Vrne shranjeni dnevnik voženj (do 500 voženj) s časi, razdaljo, energijo, porabo, hitrostmi, eko oceno in imeni območij. Uporabno za izvoz in knjigo voženj.",
+      "fields": {
+        "limit": {
+          "name": "Omejitev",
+          "description": "Koliko najnovejših voženj naj vrne."
+        },
+        "vin": {
+          "name": "VIN",
+          "description": "VIN vozila. Potreben, če je nastavljenih več vozil."
+        },
+        "entity_id": {
+          "name": "ID entitete",
+          "description": "Neobvezna entiteta Leapmotor, iz katere se določi vozilo."
+        }
+      }
+    },
+    "get_charging_sessions": {
+      "name": "Pridobi polnjenja",
+      "description": "Vrne polnjenja, ki jih je zabeležila integracija, in tista, ki jih hrani oblak Leapmotor.",
+      "fields": {
+        "limit": {
+          "name": "Omejitev",
+          "description": "Koliko najnovejših polnjenj naj vrne."
+        },
+        "vin": {
+          "name": "VIN",
+          "description": "VIN vozila. Potreben, če je nastavljenih več vozil."
+        },
+        "entity_id": {
+          "name": "ID entitete",
+          "description": "Neobvezna entiteta Leapmotor, iz katere se določi vozilo."
+        }
+      }
+    },
+    "refresh_cloud_data": {
+      "name": "Osveži podatke iz oblaka",
+      "description": "Takoj znova prebere različico programske opreme, urnike, zgodovino polnjenja in povabila za deljenje, ne da bi čakal na naslednjo redno osvežitev."
+    },
+    "accept_share_invitation": {
+      "name": "Sprejmi povabilo za deljenje",
+      "description": "Sprejme avto, ki je bil deljen z računom te integracije. Integracija se nato znova naloži in doda avto.",
+      "fields": {
+        "vin_tail": {
+          "name": "Konec številke VIN",
+          "description": "Zadnji znaki številke VIN. Potrebno le, če čaka več povabil."
+        }
+      }
+    },
+    "decline_share_invitation": {
+      "name": "Zavrni povabilo za deljenje",
+      "description": "Zavrne povabilo za deljenje avta, ki čaka na računu te integracije.",
+      "fields": {
+        "vin_tail": {
+          "name": "Konec številke VIN",
+          "description": "Zadnji znaki številke VIN. Potrebno le, če čaka več povabil."
+        }
+      }
     }
   },
   "exceptions": {
@@ -999,6 +1197,23 @@
     },
     "session_rejected": {
       "message": "Leapmotor je zavrnil prijavo tudi po ponovni prijavi. Če si v uradni aplikaciji prijavljen z istim računom, daj Home Assistantu svoj (deljeni) račun."
+    }
+  },
+  "issues": {
+    "share_invitation": {
+      "title": "Z računom Leapmotor je bil deljen avto",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Sprejmi deljeni avto",
+            "description": "{owner} je z računom, ki ga uporablja ta integracija, delil vozilo {car} (VIN se konča na {vin_tail}). S potrditvijo sprejmeš povabilo; integracija se nato znova naloži in doda avto."
+          }
+        },
+        "abort": {
+          "entry_not_loaded": "Integracija Leapmotor ni naložena.",
+          "share_accept_failed": "Povabila ni bilo mogoče sprejeti. Poskusi pozneje ali ga sprejmi v aplikaciji Leapmotor."
+        }
+      }
     }
   }
 }

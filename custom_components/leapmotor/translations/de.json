@@ -80,6 +80,10 @@
         "data": {
           "password": "Passwort"
         }
+      },
+      "share_invitation": {
+        "title": "Ein Auto wurde mit diesem Konto geteilt",
+        "description": "{owner} hat den {car} (FIN endet auf {vin_tail}) mit diesem Konto geteilt; die Einladung wurde noch nicht angenommen.\n\nJetzt annehmen, um die Einrichtung abzuschließen. Vor dem Absenden wird nichts angenommen."
       }
     },
     "error": {
@@ -90,7 +94,9 @@
       "no_vehicle": "Dieses Konto hat kein verknüpftes Fahrzeug.",
       "unknown": "Unerwarteter Fehler.",
       "missing_app_cert": "App-Zertifikat/Private-Key fehlen. Beide PEM-Werte einfügen oder app_cert.pem und app_key.pem unter /config/leapmotor ablegen.",
-      "certificate_import_error": "Zertifikatsimport fehlgeschlagen. PEM-Zertifikat und Private-Key prüfen."
+      "certificate_import_error": "Zertifikatsimport fehlgeschlagen. PEM-Zertifikat und Private-Key prüfen.",
+      "share_accept_failed": "Die Einladung konnte nicht angenommen werden. Erneut versuchen oder in der Leapmotor-App annehmen.",
+      "share_not_ready": "Die Einladung wurde angenommen, aber das Auto ist noch nicht im Konto. Gleich noch einmal absenden."
     },
     "abort": {
       "already_configured": "Dieses Konto ist bereits eingerichtet.",
@@ -391,6 +397,96 @@
       },
       "fuel_average_consumption": {
         "name": "Durchschnittsverbrauch Kraftstoff"
+      },
+      "real_range_km": {
+        "name": "Reale Reichweite"
+      },
+      "range_at_charge_limit_km": {
+        "name": "Reichweite am Ladelimit"
+      },
+      "next_departure": {
+        "name": "Nächste erwartete Abfahrt"
+      },
+      "next_day_distance_km": {
+        "name": "Erwartete Strecke am nächsten Tag"
+      },
+      "next_day_battery_needed": {
+        "name": "Benötigter Akku am nächsten Tag"
+      },
+      "eco_score": {
+        "name": "Eco-Wertung"
+      },
+      "eco_score_average": {
+        "name": "Eco-Wertung im Schnitt"
+      },
+      "frequent_routes": {
+        "name": "Häufige Strecken"
+      },
+      "battery_capacity_trend": {
+        "name": "Trend der Akkukapazität"
+      },
+      "battery_health_in_one_year": {
+        "name": "Akkugesundheit in einem Jahr"
+      },
+      "fuel_savings_month": {
+        "name": "Kraftstoffersparnis diesen Monat"
+      },
+      "fuel_savings_total": {
+        "name": "Kraftstoffersparnis gesamt"
+      },
+      "co2_saved_month": {
+        "name": "CO2 gespart diesen Monat"
+      },
+      "co2_saved_total": {
+        "name": "CO2 gespart gesamt"
+      },
+      "fuel_avoided_total_l": {
+        "name": "Nicht verbrannter Kraftstoff"
+      },
+      "distance_this_year": {
+        "name": "Strecke dieses Jahr"
+      },
+      "driving_streak_days": {
+        "name": "Fahrtage in Folge"
+      },
+      "longest_trip_km": {
+        "name": "Längste Fahrt"
+      },
+      "lifetime_trips": {
+        "name": "Erfasste Fahrten"
+      },
+      "lifetime_charging_sessions": {
+        "name": "Erfasste Ladevorgänge"
+      },
+      "achievements": {
+        "name": "Erfolge"
+      },
+      "charging_curve": {
+        "name": "Spitzenleistung der Ladekurve"
+      },
+      "home_charging_share_percent": {
+        "name": "Anteil Laden zu Hause"
+      },
+      "parked_since": {
+        "name": "Geparkt seit"
+      },
+      "lifetime_consumption_kwh_100km": {
+        "name": "Durchschnittsverbrauch gesamt"
+      },
+      "average_daily_distance_km": {
+        "name": "Durchschnittliche Tagesstrecke"
+      },
+      "software_version": {
+        "name": "Softwareversion"
+      },
+      "cloud_charging_sessions": {
+        "name": "Ladevorgänge (Cloud)"
+      },
+      "next_scheduled_preconditioning": {
+        "name": "Nächste geplante Vorklimatisierung"
+      },
+      "remote_permissions": {
+        "name": "Fernsteuerungsrechte"
       }
     },
     "binary_sensor": {
@@ -522,6 +618,15 @@
       },
       "is_driving": {
         "name": "Faehrt"
+      },
+      "charge_recommended": {
+        "name": "Laden empfohlen"
+      },
+      "slow_charging": {
+        "name": "Langsames Laden"
+      },
+      "next_day_range_sufficient": {
+        "name": "Genug für den nächsten Tag"
       }
     },
     "image": {
@@ -619,6 +724,33 @@
       "rearview_mirror_heat": {
         "name": "Spiegelheizung"
       }
+    },
+    "update": {
+      "vehicle_software": {
+        "name": "Fahrzeugsoftware"
+      }
+    },
+    "event": {
+      "activity": {
+        "name": "Aktivität",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "trip_started": "Fahrt begonnen",
+              "trip_finished": "Fahrt beendet",
+              "charging_started": "Laden begonnen",
+              "charging_finished": "Laden beendet",
+              "charging_interrupted": "Laden unterbrochen",
+              "plugged_in": "Eingesteckt",
+              "unplugged": "Ausgesteckt",
+              "battery_low": "Akku fast leer",
+              "new_message": "Neue Nachricht",
+              "software_update_available": "Software-Update verfügbar",
+              "achievement_unlocked": "Erfolg erreicht"
+            }
+          }
+        }
+      }
     }
   },
   "options": {
@@ -636,11 +768,17 @@
           "eco_polling_enabled": "Eco-Polling im geparkten Zustand aktivieren",
           "eco_scan_interval": "Eco-Aktualisierungsintervall in Minuten",
           "abrp_enabled": "ABRP Live-Daten aktivieren",
-          "abrp_token": "ABRP Generic Token"
+          "abrp_token": "ABRP Generic Token",
+          "fuel_price_l": "Kraftstoffpreis pro Liter (Vergleich)",
+          "fuel_l_100km": "Verbrauch des Vergleichsautos",
+          "grid_co2_g_kwh": "CO2 deines Stroms"
         },
         "data_description": {
           "eco_polling_enabled": "Das langsamere Eco-Intervall nur verwenden, wenn alle Fahrzeuge eindeutig verriegelt, geparkt und nicht angesteckt sind.",
-          "eco_scan_interval": "Polling-Intervall im Eco-Modus. Es wird automatisch mindestens auf das normale Aktualisierungsintervall begrenzt."
+          "eco_scan_interval": "Polling-Intervall im Eco-Modus. Es wird automatisch mindestens auf das normale Aktualisierungsintervall begrenzt.",
+          "fuel_price_l": "Zeigt, was ein Verbrenner für dieselbe Strecke gekostet hätte. Bei 0 werden nur Liter und CO2 angezeigt.",
+          "fuel_l_100km": "Kraftstoffverbrauch eines vergleichbaren Verbrenners pro 100 km.",
+          "grid_co2_g_kwh": "Gramm CO2 pro kWh deines Ladestroms. Für eigenen Solarstrom 0 eintragen."
         }
       }
     }
@@ -677,6 +815,83 @@
         "entity_id": {
           "name": "Entitaets-ID",
           "description": "Optionale Leapmotor-Entitaet zur Ermittlung des Zielfahrzeugs."
+        }
+      }
+    },
+    "get_trips": {
+      "name": "Fahrten abrufen",
+      "description": "Gibt das gespeicherte Fahrtenbuch (bis zu 500 Fahrten) mit Zeiten, Strecke, Energie, Verbrauch, Geschwindigkeiten, Eco-Wertung und Zonennamen zurück. Für Exporte und Fahrtenbücher.",
+      "fields": {
+        "limit": {
+          "name": "Limit",
+          "description": "Wie viele der neuesten Fahrten zurückgegeben werden."
+        },
+        "vin": {
+          "name": "FIN",
+          "description": "Ziel-FIN. Nötig, wenn mehrere Fahrzeuge eingerichtet sind."
+        },
+        "entity_id": {
+          "name": "Entitäts-ID",
+          "description": "Optionale Leapmotor-Entität, um das Fahrzeug zu bestimmen."
+        }
+      }
+    },
+    "get_charging_sessions": {
+      "name": "Ladevorgänge abrufen",
+      "description": "Gibt die von der Integration erfassten Ladevorgänge und die der Leapmotor-Cloud zurück.",
+      "fields": {
+        "limit": {
+          "name": "Limit",
+          "description": "Wie viele der neuesten Ladevorgänge zurückgegeben werden."
+        },
+        "vin": {
+          "name": "FIN",
+          "description": "Ziel-FIN. Nötig, wenn mehrere Fahrzeuge eingerichtet sind."
+        },
+        "entity_id": {
+          "name": "Entitäts-ID",
+          "description": "Optionale Leapmotor-Entität, um das Fahrzeug zu bestimmen."
+        }
+      }
+    },
+    "refresh_cloud_data": {
+      "name": "Cloud-Daten aktualisieren",
+      "description": "Liest Softwareversion, Zeitpläne, Ladehistorie und Freigabe-Einladungen sofort neu, statt auf die nächste planmäßige Aktualisierung zu warten."
+    },
+    "accept_share_invitation": {
+      "name": "Freigabe-Einladung annehmen",
+      "description": "Nimmt ein Auto an, das mit dem Konto dieser Integration geteilt wurde. Die Integration wird danach neu geladen und fügt das Auto hinzu.",
+      "fields": {
+        "vin_tail": {
+          "name": "Ende der FIN",
+          "description": "Letzte Zeichen der FIN. Nur nötig, wenn mehrere Einladungen warten."
+        }
+      }
+    },
+    "decline_share_invitation": {
+      "name": "Freigabe-Einladung ablehnen",
+      "description": "Lehnt eine Freigabe-Einladung ab, die für das Konto dieser Integration wartet.",
+      "fields": {
+        "vin_tail": {
+          "name": "Ende der FIN",
+          "description": "Letzte Zeichen der FIN. Nur nötig, wenn mehrere Einladungen warten."
+        }
+      }
+    }
+  },
+  "issues": {
+    "share_invitation": {
+      "title": "Ein Auto wurde mit deinem Leapmotor-Konto geteilt",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Geteiltes Auto annehmen",
+            "description": "{owner} hat den {car} (FIN endet auf {vin_tail}) mit dem Konto dieser Integration geteilt. Absenden, um die Einladung anzunehmen; die Integration wird danach neu geladen und fügt das Auto hinzu."
+          }
+        },
+        "abort": {
+          "entry_not_loaded": "Die Leapmotor-Integration ist nicht geladen.",
+          "share_accept_failed": "Die Einladung konnte nicht angenommen werden. Später erneut versuchen oder in der Leapmotor-App annehmen."
         }
       }
     }

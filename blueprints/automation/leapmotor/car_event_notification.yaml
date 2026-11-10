@@ -1,0 +1,99 @@
+blueprint:
+  name: Leapmotor — notify when something happens with the car
+  description: >-
+    Send a notification for the car events you pick: a trip finished (with
+    distance, energy, cost and eco score), charging started, finished or
+    interrupted, the cable plugged in or removed, a low battery, a new message
+    from the car, a software update, or an achievement. Uses the "Activity"
+    event entity of the car.
+  domain: automation
+  source_url: https://github.com/Sabotin/LeapBridge/blob/main/blueprints/automation/leapmotor/car_event_notification.yaml
+  input:
+    activity_event:
+      name: Activity
+      selector:
+        entity:
+          filter:
+            - integration: leapmotor
+              domain: event
+    event_types:
+      name: Notify for
+      default: [trip_finished, charging_finished, charging_interrupted, new_message, software_update_available]
+      selector:
+        select:
+          multiple: true
+          options:
+            - { label: Trip started, value: trip_started }
+            - { label: Trip finished, value: trip_finished }
+            - { label: Charging started, value: charging_started }
+            - { label: Charging finished, value: charging_finished }
+            - { label: Charging interrupted, value: charging_interrupted }
+            - { label: Plugged in, value: plugged_in }
+            - { label: Unplugged, value: unplugged }
+            - { label: Battery low, value: battery_low }
+            - { label: New message from the car, value: new_message }
+            - { label: Software update available, value: software_update_available }
+            - { label: Achievement reached, value: achievement_unlocked }
+    notify_device:
+      name: Phone
+      selector:
+        device:
+          filter:
+            - integration: mobile_app
+mode: queued
+max: 10
+trigger:
+  - platform: state
+    entity_id: !input activity_event
+    not_from:
+      - unavailable
+      - unknown
+variables:
+  event_types: !input event_types
+  kind: "{{ trigger.to_state.attributes.event_type }}"
+  a: "{{ trigger.to_state.attributes }}"
+condition:
+  - condition: template
+    value_template: "{{ kind in event_types }}"
+action:
+  - domain: mobile_app
+    type: notify
+    device_id: !input notify_device
+    title: >-
+      {{ {
+        'trip_started': 'Trip started',
+        'trip_finished': 'Trip finished',
+        'charging_started': 'Charging started',
+        'charging_finished': 'Charging finished',
+        'charging_interrupted': 'Charging interrupted',
+        'plugged_in': 'Cable plugged in',
+        'unplugged': 'Cable removed',
+        'battery_low': 'Battery low',
+        'new_message': a.get('title') or 'Message from the car',
+        'software_update_available': 'Car software update',
+        'achievement_unlocked': 'Achievement reached'
+      }.get(kind, 'Leapmotor') }}
+    message: >-
+      {% if kind == 'trip_finished' %}
+      {{ a.get('distance_km') if a.get('distance_km') is not none else '?' }} km in {{ a.get('duration_min') | round(0) if a.get('duration_min') is not none else '?' }} min
+      {%- if a.get('from') and a.get('to') %}, {{ a.get('from') }} → {{ a.get('to') }}{% endif %}
+      {%- if a.get('consumption_kwh_100km') is not none %} · {{ a.get('consumption_kwh_100km') }} kWh/100 km{% endif %}
+      {%- if a.get('cost') is not none %} · {{ a.get('cost') }}{% endif %}
+      {%- if a.get('eco_score') is not none %} · eco score {{ a.get('eco_score') }}{% endif %}
+      {% elif kind in ('charging_finished', 'charging_interrupted') %}
+      {{ a.get('energy_kwh') if a.get('energy_kwh') is not none else '?' }} kWh, battery at {{ a.get('end_soc') | round(0) if a.get('end_soc') is not none else '?' }} %
+      {%- if a.get('cost') is not none %} · {{ a.get('cost') }}{% endif %}
+      {%- if kind == 'charging_interrupted' %}. It stopped below the charge limit of {{ a.get('charge_limit') }} % with the cable still in.{% endif %}
+      {% elif kind == 'charging_started' %}
+      Battery at {{ a.get('soc') }} %{% if a.get('power_kw') %}, {{ a.get('power_kw') }} kW{% endif %}.
+      {% elif kind == 'battery_low' %}
+      Battery at {{ a.get('soc') }} %{% if a.get('range_km') is not none %}, about {{ a.get('range_km') | round(0) }} km left{% endif %}.
+      {% elif kind == 'new_message' %}
+      {{ a.get('message') or a.get('title') or '' }}
+      {% elif kind == 'software_update_available' %}
+      Version {{ a.get('latest_version') }} is ready to install (installed: {{ a.get('installed_version') }}).
+      {% elif kind == 'achievement_unlocked' %}
+      {{ a.get('achievement') | replace('_', ' ') | capitalize }}, level {{ a.get('level') }}.
+      {% else %}
+      Battery at {{ a.get('soc') if a.get('soc') is not none else '?' }} %.
+      {% endif %}

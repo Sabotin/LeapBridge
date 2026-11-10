@@ -56,13 +56,13 @@ Ko imaš obe datoteki, nadaljuj z namestitvijo.
 ### Prek HACS (priporočeno)
 
 1. V HACS odpri **⋮ → Poljubni repozitoriji** (*Custom repositories*).
-2. Dodaj `https://github.com/sabotin/leapmotor`, vrsta **Integration**.
+2. Dodaj `https://github.com/Sabotin/LeapBridge`, vrsta **Integration**.
 3. Poišči **Leapmotor** in klikni **Prenesi** (*Download*).
 4. **Znova zaženi** Home Assistant.
 
 ### Ročno
 
-1. Prenesi ZIP: **[sabotin/leapmotor → main.zip](https://github.com/sabotin/leapmotor/archive/refs/heads/main.zip)** in ga razpakiraj.
+1. Prenesi ZIP: **[Sabotin/LeapBridge → main.zip](https://github.com/Sabotin/LeapBridge/archive/refs/heads/main.zip)** in ga razpakiraj.
 2. Mapo `custom_components/leapmotor` kopiraj v svoj Home Assistant, tako da
    obstaja datoteka `/config/custom_components/leapmotor/manifest.json`.
    Kopiraj **celotno** mapo `leapmotor` (vključno z `frontend/` in
@@ -76,7 +76,7 @@ Ko imaš obe datoteki, nadaljuj z namestitvijo.
 mkdir -p /config/custom_components
 ```
 ```bash
-wget -O /tmp/leapmotor.zip https://github.com/sabotin/leapmotor/archive/refs/heads/main.zip
+wget -O /tmp/leapmotor.zip https://github.com/Sabotin/LeapBridge/archive/refs/heads/main.zip
 ```
 ```bash
 rm -rf /tmp/leapmotor-src && unzip -q /tmp/leapmotor.zip -d /tmp/leapmotor-src
@@ -145,15 +145,21 @@ type: custom:leapmotor-card
 (⌘ + Shift + R na macOS). V aplikaciji: *Nastavitve → Aplikacija → Razhroščevanje
 → Ponastavi predpomnilnik vmesnika*.
 
-Kartica ima štiri strani z zavihki na vrhu:
+Kartica ima pet strani z zavihki na vrhu:
 
-- **Pregled** — avto z baterijo in hitrimi gumbi, pregled vozila in daljinsko
-  upravljanje (*Klima* ter *Vrata in varnost*),
-- **Vožnje** — podrobnosti izbrane vožnje (zemljevid, poraba, hitrost, strošek),
-  dnevnik voženj po dnevih in zadnjih 7 dni,
+- **Pregled** — avto z baterijo in hitrimi gumbi, napoved za naslednji dan
+  (priključiti ali ne, običajni odhod, dejanski doseg), pregled vozila,
+  časovnica zadnjih 24 ur in daljinsko upravljanje (*Klima* ter *Vrata in
+  varnost*),
+- **Vožnje** — podrobnosti izbrane vožnje (zemljevid s predvajanjem, poraba,
+  hitrost, strošek, eko ocena), dnevnik voženj po dnevih z izvozom v CSV,
+  zadnjih 7 dni in pogoste poti,
 - **Polnjenje** — polnjenje z mejo polnjenja in ukazi za polnjenje, zadnjih
-  24 ur ter baterija in poraba,
-- **Vozilo** — vzdrževanje, pnevmatike in vpogledi.
+  24 ur, baterija in poraba, polnilna krivulja in zgodovina polnjenj,
+- **Vozilo** — vzdrževanje, pnevmatike, vpogledi, programska oprema avta in
+  sporočila,
+- **Pot** — leto voženj na koledarju, seštevki in rekordi, primerjava z
+  bencinskim avtom, laboratorij dosega in dosežki.
 
 Pika na zavihku pove, da je na tisti strani nekaj za pogledati. Kartica se
 vedno odpre na *Pregledu*; vse na eni strani dobiš s `tabs: false`.
@@ -180,7 +186,8 @@ V nadzorni plošči in kot gumbi v Home Assistantu:
 Temperature, moč ventilatorja, kroženje in mejo za samodejni način nastaviš pri
 vozilu (*Nastavitve → Naprave in storitve → Leapmotor →* vozilo pod računom →
 *Nastavi*). Za vsakodnevno uporabo uvozi načrt **Pre-condition before
-departure** (glej README) in izberi uro in dneve.
+departure** (glej README) in izberi uro in dneve — ali načrt **Pre-condition
+before your usual departure**, ki se ure nauči iz tvojih voženj.
 
 ## Vzdrževanje
 
@@ -205,6 +212,79 @@ servisu v nadzorni plošči pri postavki dvakrat tapni **Opravljeno**.
 - **Dnevnik voženj:** vožnje in polnjenja se zaznajo samodejno iz podatkov
   vozila. Med vožnjo integracija privzeto poizveduje **vsako minuto**
   (*Interval posodabljanja med vožnjo* v nastavitvah računa).
+
+## Kaj se integracija nauči iz tvojih voženj
+
+Vse spodaj se izračuna v tvojem Home Assistantu iz voženj in polnjenj, ki jih
+je integracija zabeležila. Nič se ne pošilja nikamor. Dokler podatkov ni
+dovolj, senzorji ostanejo *neznani* in ne ugibajo.
+
+- **Naslednji predvideni odhod:** iz zadnjih osmih tednov voženj integracija
+  ugotovi, kdaj se z avtom običajno odpelješ na posamezen dan v tednu. Dan
+  dobi običajni odhod, ko si se vsaj trikrat in vsaj ob polovici takih dni
+  odpeljal v istih 45 minutah.
+- **Napoved za naslednji dan:** *Pričakovana razdalja naslednji dan*,
+  *Potrebna baterija naslednji dan*, *Dovolj za naslednji dan* in *Priporočeno
+  polnjenje*. Polnjenje se priporoči, ko je baterije manj, kot je potrebuje
+  običajna razdalja naslednjega dne s 15 % rezerve, ali manj kot 15 %. Ko je
+  avto priključen, priporočila ni.
+- **Dejanski doseg:** doseg iz tvoje porabe pri trenutni zunanji temperaturi,
+  ob podatku iz avta, in *Doseg pri meji polnjenja*.
+- **Eko ocena:** vsaka vožnja dobi oceno od 0 do 100 glede na tvojo običajno
+  porabo na podobnih vožnjah in glede na hitrost. Primerja te s teboj, ne z
+  drugimi vozniki.
+- **Pogoste poti:** poti, ki jih voziš največkrat (Doma → Služba), z običajnim
+  časom, razdaljo, porabo, stroškom in najboljšo vožnjo. Imena so tvoje cone
+  v Home Assistantu.
+- **Napoved baterije:** trend kapacitete na leto iz polnih polnjenj in
+  pričakovano *Zdravje baterije čez eno leto*.
+- **Prihranek v primerjavi z bencinskim avtom:** prihranjen denar, gorivo in
+  CO₂, ta mesec in skupaj. V *Leapmotor → Nastavi* vpiši **ceno goriva na
+  liter**, **porabo primerljivega avta** (privzeto 6,5 l/100 km) in **CO₂
+  tvoje elektrike** (privzeto 250 g/kWh; za lastno sončno elektrarno približno
+  30). Brez cene goriva se litri in CO₂ vseeno prikažejo.
+- **Polnilna krivulja in počasno polnjenje:** moč polnjenja glede na stanje
+  baterije. Senzor *Počasno polnjenje* se vklopi, ko AC polnjenje po desetih
+  minutah ostane pod 70 % moči, ki jo na takem mestu običajno dobiš — na
+  primer, ko polnilnica preklopi na eno fazo. Potrebuje tri prejšnja
+  polnjenja; DC polnjenj ne ocenjuje.
+- **Pot in dosežki:** prevoženo letos, zaporedni dnevi vožnje, najdaljša
+  vožnja in dan, povprečna poraba od začetka, delež polnjenja doma in enajst
+  dosežkov v bronu, srebru in zlatu.
+- **Dogodki:** entiteta *Dejavnost* (`event.<model>_activity`) se sproži ob
+  začetku in koncu vožnje, začetku, koncu in prekinitvi polnjenja, priklopu in
+  odklopu kabla, skoraj prazni bateriji, novem sporočilu, novi programski
+  opremi in doseženem dosežku. Za obvestila na telefon uvozi načrt **Notify
+  when something happens with the car** (glej README).
+
+## Programska oprema, sporočila, zgodovina polnjenj in deljen avto
+
+Ti podatki se berejo iz Leapmotorjevega oblaka redkeje kot stanje vozila
+(programska oprema vsakih 6 ur, zgodovina polnjenj vsako uro, urniki vsakih
+30 minut). Če branje ne uspe, ostane zadnja vrednost. Dejanje
+`leapmotor.refresh_cloud_data` jih prebere takoj.
+
+- **Programska oprema vozila:** nameščena različica in entiteta
+  *Programska oprema vozila*, ki pokaže, ko Leapmotor ponudi novo različico,
+  z opisom novosti. Namestitev še vedno opraviš v avtu. Na voljo samo
+  lastnikovemu računu; deljeni račun tega podatka ne sme brati.
+- **Sporočila:** zadnjih 20 sporočil iz aplikacije Leapmotor, na kartici in v
+  atributu `messages` senzorja *Neprebrana sporočila*.
+- **Zgodovina polnjenj:** polnjenja zadnjih 60 dni iz oblaka z energijo,
+  trajanjem, povprečno močjo, krajem in stroškom po tvojih cenah.
+- **Leto voženj:** razdalja in energija po dnevih za do eno leto nazaj, za
+  koledar na strani *Pot*. Prebere se postopoma, v prvih nekaj posodobitvah.
+- **Urniki in dovoljenja:** *Naslednja načrtovana priprava kabine* pokaže,
+  kdaj se bo sprožil urnik, nastavljen v avtu. *Dovoljenja za daljinsko
+  upravljanje* povedo, kaj sme račun početi z avtom — uporabno pri deljenem
+  računu, kjer manjkajoče dovoljenje pojasni zavrnjen ukaz.
+- **Deljen avto:** če je bil avto deljen z računom in povabilo še ni
+  sprejeto, ti ga namestitev ponudi v sprejem, namesto da se konča brez
+  vozila. Poznejša povabila se pokažejo v *Nastavitve → Popravila*. Brez
+  tvoje potrditve se nič ne sprejme.
+- **Izvoz:** `leapmotor.get_trips` in `leapmotor.get_charging_sessions` vrneta
+  shranjeni dnevnik (do 500 vnosov). Na strani *Vožnje* gumb **CSV** prenese
+  dnevnik voženj za preglednico ali knjigo voženj.
 
 ## Zemljevid vožnje, hitrost in meja polnjenja
 

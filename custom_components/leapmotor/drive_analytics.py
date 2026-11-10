@@ -958,6 +958,8 @@ class DriveAnalytics:
                     if isinstance(v, dict)
                 },
             },
+            # Kept as stored: the insights module owns what is inside.
+            "extra": raw.get("extra") if isinstance(raw.get("extra"), dict) else {},
         }
 
     def as_storage(self) -> dict[str, Any]:
@@ -972,6 +974,7 @@ class DriveAnalytics:
                     "last_session_end": state["last_session_end"],
                     "tires": state["tires"],
                     "maintenance": state["maintenance"],
+                    "extra": state["extra"],
                 }
                 for vin, state in self._vins.items()
             }
@@ -979,6 +982,27 @@ class DriveAnalytics:
 
     def _state(self, vin: str) -> dict[str, Any]:
         return self._vins.setdefault(vin, self._load_vin({}))
+
+    # Read access for the insights module (habits, routes, journey, events).
+    def trips(self, vin: str) -> list[dict[str, Any]]:
+        """Finished trips, oldest first. Entries may gain extra keys."""
+        return self._state(vin)["trips"]
+
+    def sessions(self, vin: str) -> list[dict[str, Any]]:
+        """Finished charging sessions, oldest first."""
+        return self._state(vin)["sessions"]
+
+    def buffer(self, vin: str) -> list[Snapshot]:
+        """The rolling buffer of recent polls."""
+        return self._state(vin)["buffer"]
+
+    def full_charges(self, vin: str) -> dict[str, float]:
+        """Energy at a full charge per day, for the capacity trend."""
+        return self._state(vin)["full_charge"]
+
+    def extra(self, vin: str) -> dict[str, Any]:
+        """Persisted state of the insights module; JSON types only."""
+        return self._state(vin)["extra"]
 
     def log_maintenance(
         self, vin: str, service_type: str, *, km: float | None, ts: float

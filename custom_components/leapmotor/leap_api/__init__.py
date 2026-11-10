@@ -11,6 +11,7 @@ from .exceptions import (
     LeapmotorMissingAppCertError,
     LeapmotorNoVehicleError,
     LeapmotorRemoteCommandUnconfirmedError,
+    LeapmotorShareInvitationPendingError,
 )
 from .crypto import derive_operate_password, derive_session_device_id
 from .models import Vehicle
@@ -24,6 +25,7 @@ __all__ = [
     "LeapmotorMissingAppCertError",
     "LeapmotorNoVehicleError",
     "LeapmotorRemoteCommandUnconfirmedError",
+    "LeapmotorShareInvitationPendingError",
     "REMOTE_ACTION_SPECS",
     "RemoteActionSpec",
     "build_seat_comfort_payload",

@@ -29,6 +29,12 @@
 - **Prikaz vozila:** stanje vrat, prtljažnika, oken, klime, polnjenja in vožnje.
 - **Vzdrževanje:** servisni načrt za T03, B10, C10 in C10 REEV.
 - **Dodatni podatki:** zdravje baterije, praznjenje med parkiranjem in opozorilo ob počasnem izgubljanju tlaka v pnevmatiki.
+- **Uči se tvojih navad:** iz tvojih voženj ugotovi, kdaj se z avtom običajno odpelješ in koliko prevoziš na posamezen dan v tednu. Pove ti, ali je baterije dovolj za jutri, in lahko pred odhodom ogreje avto, brez urnika.
+- **Dejanski doseg:** doseg, izračunan iz tvoje porabe pri trenutni zunanji temperaturi, ob podatku iz avta.
+- **Pot:** leto voženj na koledarju, tvoji rekordi, eko ocena vsake vožnje, dosežki ter prihranek denarja, goriva in CO₂ v primerjavi z bencinskim avtom.
+- **Predvajanje in izvoz voženj:** predvajanje vožnje na zemljevidu in izvoz dnevnika voženj v CSV.
+- **Polnilna krivulja in zgodovina:** moč polnjenja glede na stanje baterije, opozorilo, ko avto polni počasneje kot običajno, in zgodovina polnjenj iz oblaka s krajem in stroškom.
+- **Programska oprema in sporočila:** obvestilo, ko Leapmotor ponudi novo različico programske opreme, z opisom novosti, ter sporočila iz aplikacije Leapmotor.
 - **Upravljanje na daljavo:** zaklepanje, prtljažnik, okna, stražarski način, polnjenje in drugo.
 - **Avtomatizacije:** pripravljene avtomatizacije, ki jih lahko uvoziš v Home Assistant.
 - **Jezik:** integracija je na voljo v slovenščini in angleščini.
@@ -50,10 +56,10 @@
 
 ### Namestitev prek HACS
 
-[![Dodaj v HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Sabotin&repository=Leapmotor&category=integration)
+[![Dodaj v HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Sabotin&repository=LeapBridge&category=integration)
 
 1. V HACS odpri **⋮ → Poljubni repozitoriji**.
-2. Dodaj `https://github.com/Sabotin/Leapmotor` in izberi vrsto **Integration**.
+2. Dodaj `https://github.com/Sabotin/LeapBridge` in izberi vrsto **Integration**.
 3. Poišči **Leapmotor**, klikni **Prenesi** in znova zaženi Home Assistant.
 4. Odpri **Nastavitve → Naprave in storitve → Dodaj integracijo → Leapmotor**.
 5. Naloži oba certifikata in vnesi podatke računa. Po končani namestitvi se v stranski vrstici pojavi Leapmotor.
@@ -72,22 +78,28 @@ Po namestitvi se v stranski vrstici samodejno pojavi **Leapmotor**. Nadzorna plo
 
 Če je ne želiš v stranski vrstici, jo lahko skriješ v **Leapmotor → Nastavi** (stikalo *Prikaži nadzorno ploščo v stranski vrstici*).
 
-Nadzorna plošča ima štiri zavihke in dodatni zavihek **Nastavitve**. Pika ob zavihku pomeni, da je na tisti strani nekaj za pogledati. Spodnje slike prikazujejo temo Aplikacija.
+Nadzorna plošča ima pet zavihkov in dodatni zavihek **Nastavitve**. Pika ob zavihku pomeni, da je na tisti strani nekaj za pogledati. Spodnje slike prikazujejo temo Aplikacija.
 
 <table>
   <tr>
-    <td width="25%" valign="top"><img src="docs/images/sl/stran-pregled.png" alt="Pregled" width="100%"></td>
-    <td width="25%" valign="top"><img src="docs/images/sl/stran-voznje.png" alt="Vožnje" width="100%"></td>
-    <td width="25%" valign="top"><img src="docs/images/sl/stran-polnjenje.png" alt="Polnjenje" width="100%"></td>
-    <td width="25%" valign="top"><img src="docs/images/sl/stran-vozilo.png" alt="Vozilo" width="100%"></td>
+    <td width="20%" valign="top"><img src="docs/images/sl/stran-pregled.png" alt="Pregled" width="100%"></td>
+    <td width="20%" valign="top"><img src="docs/images/sl/stran-voznje.png" alt="Vožnje" width="100%"></td>
+    <td width="20%" valign="top"><img src="docs/images/sl/stran-polnjenje.png" alt="Polnjenje" width="100%"></td>
+    <td width="20%" valign="top"><img src="docs/images/sl/stran-vozilo.png" alt="Vozilo" width="100%"></td>
+    <td width="20%" valign="top"><img src="docs/images/sl/stran-pot.png" alt="Pot" width="100%"></td>
   </tr>
   <tr>
-    <td valign="top"><b>Pregled</b><br><sub>Stanje baterije, hitri gumbi za odklepanje, gretje, hlajenje in okna ter pregled vozila.</sub></td>
-    <td valign="top"><b>Vožnje</b><br><sub>Posamezne vožnje z zemljevidom, hitrostjo, porabo, baterijo in stroškom. Na voljo je tudi dnevnik po dnevih in pregled zadnjih 7 dni.</sub></td>
-    <td valign="top"><b>Polnjenje</b><br><sub>Pregled polnjenja, nastavitev meje polnjenja, podatki za zadnjih 24 ur in zdravje baterije.</sub></td>
-    <td valign="top"><b>Vozilo</b><br><sub>Vzdrževanje, pnevmatike in dodatni podatki o stroških, praznjenju ter porabi glede na temperaturo.</sub></td>
+    <td valign="top"><b>Pregled</b><br><sub>Stanje baterije, hitri gumbi za odklepanje, gretje, hlajenje in okna, napoved za naslednji dan, pregled vozila in dogajanje v zadnjih 24 urah.</sub></td>
+    <td valign="top"><b>Vožnje</b><br><sub>Posamezne vožnje z zemljevidom, predvajanjem, hitrostjo, porabo, baterijo, stroškom in eko oceno. Na voljo so tudi dnevnik po dnevih z izvozom v CSV, zadnjih 7 dni in pogoste poti.</sub></td>
+    <td valign="top"><b>Polnjenje</b><br><sub>Pregled polnjenja, nastavitev meje polnjenja, podatki za zadnjih 24 ur, zdravje baterije, polnilna krivulja in zgodovina polnjenj.</sub></td>
+    <td valign="top"><b>Vozilo</b><br><sub>Vzdrževanje, pnevmatike, dodatni podatki o stroških, praznjenju ter porabi glede na temperaturo, programska oprema avta in sporočila.</sub></td>
+    <td valign="top"><b>Pot</b><br><sub>Leto voženj na koledarju, seštevki in rekordi, primerjava z bencinskim avtom, laboratorij dosega in dosežki.</sub></td>
   </tr>
 </table>
+
+<p align="center">
+  <img src="docs/images/sl/pot.png" alt="Stran Pot" width="100%">
+</p>
 
 Kartico lahko dodaš tudi na svojo obstoječo nadzorno ploščo:
 
@@ -136,6 +148,7 @@ Nekatere nastavitve so na voljo pri računu, druge pa pri posameznem vozilu.
 | Kaj | Kje |
 | --- | --- |
 | Cena polnjenja doma, javno AC in DC, nizka tarifa | **Leapmotor → Nastavi** (zobnik pri računu) |
+| Cena goriva in poraba primerljivega bencinskega avta, CO₂ tvoje elektrike (za izračun prihranka) | **Leapmotor → Nastavi** |
 | PIN, predgretje, hlajenje, kapaciteta baterije, opozorilo na hitrost | Pri **vozilu** pod računom → **Nastavi** |
 | Pogostost beleženja med vožnjo (za zemljevid) | **Leapmotor → Nastavi**, privzeto 1 minuta |
 | Prikaz Leapmotorja v stranski vrstici | **Leapmotor → Nastavi** |
@@ -149,12 +162,16 @@ Za nekatere pogoste stvari so že pripravljene avtomatizacije. Uvoziš jih nepos
 
 | Avtomatizacija | |
 | --- | --- |
-| **Priprava kabine pred odhodom** (izbira ure in dni) | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapmotor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fprecondition_before_departure.yaml) |
-| **Obvestilo, ko je polnjenje končano** | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapmotor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fcharging_complete.yaml) |
-| **Opozorilo, če avto ostane odklenjen** (ali samodejno zaklepanje) | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapmotor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fleft_unlocked.yaml) |
-| **Opomnik za polnjenje** (zvečer, ko je baterija prazna) | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapmotor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fplug_in_reminder.yaml) |
-| **Opozorila** (vrata, okna, pnevmatike, servis) | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapmotor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fattention_alert.yaml) |
-| **Opozorilo za prehitro vožnjo** (hitrost in omejitev na telefon) | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapmotor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fspeed_alert.yaml) |
+| **Priprava kabine pred običajnim odhodom** (uro se nauči iz tvojih voženj) | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapBridge%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fsmart_precondition.yaml) |
+| **Priključi za jutri** (samo ko baterije ni dovolj za naslednji dan) | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapBridge%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fsmart_charge_reminder.yaml) |
+| **Obvestilo, ko se z avtom kaj zgodi** (vožnja, polnjenje, kabel, sporočilo, posodobitev) | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapBridge%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fcar_event_notification.yaml) |
+| **Opozorilo ob počasnem polnjenju** | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapBridge%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fslow_charging_alert.yaml) |
+| **Priprava kabine pred odhodom** (izbira ure in dni) | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapBridge%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fprecondition_before_departure.yaml) |
+| **Obvestilo, ko je polnjenje končano** | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapBridge%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fcharging_complete.yaml) |
+| **Opozorilo, če avto ostane odklenjen** (ali samodejno zaklepanje) | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapBridge%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fleft_unlocked.yaml) |
+| **Opomnik za polnjenje** (zvečer, ko je baterija prazna) | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapBridge%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fplug_in_reminder.yaml) |
+| **Opozorila** (vrata, okna, pnevmatike, servis) | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapBridge%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fattention_alert.yaml) |
+| **Opozorilo za prehitro vožnjo** (hitrost in omejitev na telefon) | [![Uvozi](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSabotin%2FLeapBridge%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fleapmotor%2Fspeed_alert.yaml) |
 
 <br>
 

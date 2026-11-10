@@ -10,15 +10,20 @@ import time
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
+from . import insights
 from .abrp import build_abrp_telemetry, send_abrp_telemetry
 from .api import LeapmotorApiClient
 from .const import (
+    CONF_FUEL_CONSUMPTION,
+    CONF_FUEL_PRICE,
+    CONF_GRID_CO2,
     CONF_LOW_TARIFF_END,
     CONF_LOW_TARIFF_START,
     CONF_LOW_TARIFF_WEEKENDS,
@@ -29,6 +34,7 @@ from .const import (
     DEFAULT_ABRP_API_KEY,
     DEFAULT_STATE_STALE_SECONDS,
     DOMAIN,
+    EVENT_LEAPMOTOR,
     REMOTE_ACTION_COOLDOWN_SECONDS,
 )
 from .leap_api import (
@@ -43,6 +49,8 @@ from .drive_analytics import (
     TIER_PUBLIC_AC,
     TIER_PUBLIC_DC,
     DriveAnalytics,
+    haversine_m,
+    price_session,
     speed_alert,
 )
 from .location import CoordinateResolution, resolve_coordinate
@@ -74,6 +82,30 @@ def _minutes(value: Any) -> int | None:
 
 ANALYTICS_SAVE_DELAY_SECONDS = 60
 DEFAULT_HOME_RADIUS_M = 100.0
+#: Car events waiting for the event entity (e.g. from the poll at startup).
+MAX_PENDING_EVENTS = 20
+#: Extra tolerance on a zone radius for GPS jitter.
+ZONE_MARGIN_M = 50.0
+
+
+
+#: The cloud lists a newly accepted shared car a few seconds after the answer.
+SHARE_RELOAD_DELAY_SECONDS = 8
+
+
+@callback
+def async_reload_after_share_accept(hass: HomeAssistant, entry_id: str) -> None:
+    """Load the entry again once the accepted car had time to appear."""
+
+    @callback
+    def _reload(_now: Any = None) -> None:
+        if hass.config_entries.async_get_entry(entry_id) is not None:
+            hass.async_create_task(hass.config_entries.async_reload(entry_id))
+
+    if SHARE_RELOAD_DELAY_SECONDS <= 0:
+        _reload()
+    else:
+        async_call_later(hass, SHARE_RELOAD_DELAY_SECONDS, _reload)
 
 
 class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
@@ -119,6 +151,7 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
         )
         self._location_sign_save_task: asyncio.Task[None] | None = None
         self._analytics = DriveAnalytics()
+        self._pending_events: dict[str, list[dict[str, Any]]] = {}
         self._maintenance_catalog: dict[str, Any] = {"packs": {}}
         self._analytics_store = Store[dict[str, Any]](
             hass,
@@ -255,11 +288,227 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
             }
         return prices
 
+    def _analytics_zones(self) -> list[dict[str, Any]]:
+        """Home Assistant zones, for naming the places the car drives between."""
+        zones: list[dict[str, Any]] = []
+        for state in self.hass.states.async_all("zone"):
+            attrs = state.attributes
+            try:
+                zones.append(
+                    {
+                        "name": str(attrs.get("friendly_name") or state.name),
+                        "lat": float(attrs["latitude"]),
+                        "lon": float(attrs["longitude"]),
+                        "radius": float(attrs.get("radius") or DEFAULT_HOME_RADIUS_M),
+                        "home": state.entity_id == "zone.home",
+                    }
+                )
+            except (KeyError, TypeError, ValueError):
+                continue
+        return zones
+
+    def _fuel_comparison(self) -> dict[str, Any]:
+        """Fuel price, comparison consumption and grid CO2 from the options."""
+        options = self.config_entry.options
+        result: dict[str, Any] = {}
+        for key, option in (
+            ("price", CONF_FUEL_PRICE),
+            ("l_100km", CONF_FUEL_CONSUMPTION),
+            ("grid_co2_g_kwh", CONF_GRID_CO2),
+        ):
+            try:
+                value = float(options.get(option)) if options.get(option) is not None else None
+            except (TypeError, ValueError):
+                value = None
+            result[key] = value
+        return result
+
+    def _label_cloud_charging(
+        self,
+        vin: str,
+        vehicle_data: dict[str, Any],
+        *,
+        zones: list[dict[str, Any]],
+        prices: dict[str, Any],
+        tz: Any,
+        month_start_ts: float,
+    ) -> None:
+        """Give the cloud's charging sessions a place, a tier and a cost.
+
+        The cached list from the client is never changed; a new one is built.
+        The result keeps the start and end times, so labelling it again (the
+        analysis also runs between polls, e.g. after logging a service) gives
+        the same result.
+        """
+        block = vehicle_data.get("cloud_charging") or {}
+        sessions = block.get("sessions")
+        if not isinstance(sessions, list):
+            return
+        signs = self._location_signs.get(vin) or {}
+        home = self._analytics_home()
+        labelled: list[dict[str, Any]] = []
+        month = {"sessions": 0, "energy_kwh": 0.0, "cost": 0.0, "home_energy_kwh": 0.0,
+                 "public_energy_kwh": 0.0}
+        priced = False
+        for session in sessions:
+            lat, lon = session.get("lat"), session.get("lon")
+            if lat is not None and lon is not None:
+                # The cloud may report absolute values; use the remembered hemisphere.
+                if lat > 0 and signs.get("latitude") == -1:
+                    lat = -lat
+                if lon > 0 and signs.get("longitude") == -1:
+                    lon = -lon
+            at_home = bool(
+                home is not None and lat is not None and lon is not None
+                and haversine_m(lat, lon, home[0], home[1]) <= home[2] + ZONE_MARGIN_M
+            )
+            tier = (
+                TIER_HOME if at_home
+                else TIER_PUBLIC_DC if session.get("type") == "dc"
+                else TIER_PUBLIC_AC
+            )
+            place = None
+            if lat is not None and lon is not None:
+                best: tuple[float, str] | None = None
+                for zone in zones:
+                    distance = haversine_m(lat, lon, zone["lat"], zone["lon"])
+                    if distance <= zone["radius"] + ZONE_MARGIN_M and (
+                        best is None or distance < best[0]
+                    ):
+                        best = (distance, zone["name"])
+                place = best[1] if best else None
+            energy = session.get("energy_kwh")
+            start_ts, end_ts = session.get("start_ts"), session.get("end_ts")
+            cost = None
+            # Without a position the tier is a guess, so no cost is given.
+            if lat is not None and energy is not None and start_ts is not None:
+                cost, _price = price_session(
+                    {"tier": tier, "energy_kwh": energy, "start": start_ts, "end": end_ts or start_ts},
+                    prices,
+                    tz,
+                )
+            labelled.append(
+                {
+                    "start": session.get("start"),
+                    "end": session.get("end"),
+                    "start_ts": start_ts,
+                    "end_ts": end_ts,
+                    "duration_min": session.get("duration_min"),
+                    "energy_kwh": energy,
+                    "type": session.get("type"),
+                    "avg_power_kw": session.get("avg_power_kw"),
+                    "tier": tier if lat is not None else None,
+                    "place": place,
+                    "cost": cost,
+                    "lat": round(lat, 4) if lat is not None else None,
+                    "lon": round(lon, 4) if lon is not None else None,
+                }
+            )
+            if start_ts is not None and start_ts >= month_start_ts:
+                month["sessions"] += 1
+                if energy is not None:
+                    month["energy_kwh"] += energy
+                    key = "home_energy_kwh" if at_home else "public_energy_kwh"
+                    month[key] += energy
+                if cost is not None:
+                    month["cost"] += cost
+                    priced = True
+        vehicle_data["cloud_charging"] = {
+            "sessions": labelled,
+            "window_days": block.get("window_days"),
+            "month": {
+                "sessions": month["sessions"],
+                "energy_kwh": round(month["energy_kwh"], 2),
+                "cost": round(month["cost"], 2) if priced else None,
+                "home_energy_kwh": round(month["home_energy_kwh"], 2),
+                "public_energy_kwh": round(month["public_energy_kwh"], 2),
+            },
+        }
+
+    def _apply_insights(
+        self,
+        vin: str,
+        vehicle_data: dict[str, Any],
+        summary: dict[str, Any],
+        *,
+        now_ts: float,
+        tz: Any,
+        zones: list[dict[str, Any]],
+        prices: dict[str, Any],
+    ) -> None:
+        """Habits, outlook, routes, journey and events on top of the analysis."""
+        limit = speed_alert(vehicle_data, speed_alert_for_vehicle(self.config_entry, vin))
+        trips = self._analytics.trips(vin)
+        result = insights.compute(
+            trips=trips,
+            sessions=self._analytics.sessions(vin),
+            buffer=self._analytics.buffer(vin),
+            full_charge=self._analytics.full_charges(vin),
+            summary=summary,
+            vehicle=vehicle_data,
+            extra=self._analytics.extra(vin),
+            now_ts=now_ts,
+            tz=tz,
+            zones=zones,
+            prices=prices,
+            reference_kwh=battery_reference_for_vehicle(self.config_entry, vin),
+            speed_limit_kmh=limit.get("threshold_kmh"),
+            fuel=self._fuel_comparison(),
+        )
+        events = result.pop("events", [])
+        summary.update(result)
+        # The trip rows were copied before the scores were given: add them.
+        scores = {
+            datetime.fromtimestamp(trip["start"], tz=UTC).isoformat(timespec="seconds"): trip
+            for trip in trips[-60:]
+            if trip.get("eco_score") is not None
+        }
+        for row in [summary.get("last_trip"), *(summary.get("recent_trips") or [])]:
+            scored = scores.get((row or {}).get("start"))
+            if scored is not None:
+                row["eco_score"] = scored["eco_score"]
+                row["eco_vs_usual_pct"] = scored.get("eco_vs_usual_pct")
+        if events:
+            queue = self._pending_events.setdefault(vin, [])
+            queue.extend(events)
+            del queue[:-MAX_PENDING_EVENTS]
+            for event in events:
+                self.hass.bus.async_fire(EVENT_LEAPMOTOR, {"vin": vin, **event})
+
+    def pop_events(self, vin: str) -> list[dict[str, Any]]:
+        """Car events that have not been handed to the event entity yet."""
+        return self._pending_events.pop(vin, [])
+
+    def export_trips(self, vin: str, limit: int = 500) -> list[dict[str, Any]]:
+        """The stored trip log, newest first, with zone names where known."""
+        zones = insights.usable_zones(self._analytics_zones())
+        rows: list[dict[str, Any]] = []
+        for trip in reversed(self._analytics.trips(vin)[-max(1, limit):]):
+            row = {key: value for key, value in trip.items() if not key.startswith("_")}
+            for key in ("start", "end"):
+                if isinstance(row.get(key), (int, float)):
+                    row[key] = datetime.fromtimestamp(row[key], tz=UTC).isoformat(timespec="seconds")
+            row["from"], row["to"] = insights.trip_place_names(trip, zones)
+            rows.append(row)
+        return rows
+
+    def export_sessions(self, vin: str, limit: int = 500) -> list[dict[str, Any]]:
+        """The stored charging sessions, newest first."""
+        rows: list[dict[str, Any]] = []
+        for session in reversed(self._analytics.sessions(vin)[-max(1, limit):]):
+            row = {key: value for key, value in session.items() if not key.startswith("_")}
+            for key in ("start", "end"):
+                if isinstance(row.get(key), (int, float)):
+                    row[key] = datetime.fromtimestamp(row[key], tz=UTC).isoformat(timespec="seconds")
+            rows.append(row)
+        return rows
+
     def _apply_analytics(self, data: dict) -> None:
         """Feed this poll into the trip/charging/battery-health analysis."""
         tz = dt_util.get_time_zone(self.hass.config.time_zone) or UTC
         home = self._analytics_home()
         prices = self._analytics_prices()
+        zones = self._analytics_zones()
         now_ts = time.time()
         for vin, vehicle_data in (data.get("vehicles") or {}).items():
             try:
@@ -278,9 +527,59 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
             except Exception:  # noqa: BLE001 - analytics must never break polling
                 _LOGGER.warning("Leapmotor trip/charging analysis failed", exc_info=True)
                 vehicle_data["analytics"] = {}
+                continue
+            try:
+                self._apply_insights(
+                    vin, vehicle_data, vehicle_data["analytics"],
+                    now_ts=now_ts, tz=tz, zones=zones, prices=prices,
+                )
+            except Exception:  # noqa: BLE001 - insights must never break polling
+                _LOGGER.warning("Leapmotor insights failed", exc_info=True)
+            try:
+                month_start = datetime.fromtimestamp(now_ts, tz=tz).replace(
+                    day=1, hour=0, minute=0, second=0, microsecond=0
+                )
+                self._label_cloud_charging(
+                    vin, vehicle_data, zones=zones, prices=prices, tz=tz,
+                    month_start_ts=month_start.timestamp(),
+                )
+            except Exception:  # noqa: BLE001 - optional data must never break polling
+                _LOGGER.warning("Leapmotor charging history could not be labelled", exc_info=True)
+                vehicle_data["cloud_charging"] = {"sessions": None, "window_days": None, "month": None}
         self._analytics_store.async_delay_save(
             self._analytics.as_storage, ANALYTICS_SAVE_DELAY_SECONDS
         )
+
+    async def _async_backfill_history(self, data: dict) -> None:
+        """Fetch one window of older daily history per poll until it is complete.
+
+        The cloud keeps per-day distance and energy from before the
+        integration was installed; it is read once, a quarter of a year at a
+        time, and then kept up to date from the regular 7-day history.
+        """
+        tz = dt_util.get_time_zone(self.hass.config.time_zone) or UTC
+        today = datetime.now(tz).date()
+        for vin in (data.get("vehicles") or {}):
+            try:
+                extra = self._analytics.extra(vin)
+                window = insights.backfill_request(extra, today=today)
+                if window is None:
+                    continue
+                begin = datetime(window[0].year, window[0].month, window[0].day, tzinfo=tz)
+                end = datetime(
+                    window[1].year, window[1].month, window[1].day, tzinfo=tz
+                ) + timedelta(days=1) - timedelta(seconds=1)
+                rows = await self.hass.async_add_executor_job(
+                    partial(
+                        self.client.fetch_daily_history,
+                        vin,
+                        begin_ms=int(begin.timestamp() * 1000),
+                        end_ms=int(end.timestamp() * 1000),
+                    )
+                )
+                insights.backfill_result(extra, window, rows)
+            except Exception:  # noqa: BLE001 - history is optional
+                _LOGGER.debug("Leapmotor daily history backfill failed", exc_info=True)
 
     def _apply_speed_alerts(self, data: dict) -> None:
         """Compare each car's speed with its alert speed or own speed limit."""
@@ -345,6 +644,9 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
         self._apply_state_freshness(data)
         self._normalize_locations(data)
         self._apply_analytics(data)
+        if self.data is not None:
+            # Not on the first refresh, so setup is never slowed down by it.
+            await self._async_backfill_history(data)
         self._apply_speed_alerts(data)
         self._update_polling_interval(data)
         self._integration_status = {
@@ -464,6 +766,10 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
         ``cooldown=False`` marks a failure that never reached the car, so the
         next command is not held back by the remote-action cooldown.
         """
+        if success and "schedule" in str(action):
+            # A schedule was changed: read the schedules back on the next poll.
+            for kind in ("climate", "battery_heating", "prepare_car"):
+                self.client.invalidate_extras(f"schedule_{kind}")
         remote_data = (result or {}).get("data") if isinstance(result, dict) else None
         info = {
             "action": action,

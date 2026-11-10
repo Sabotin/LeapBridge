@@ -412,6 +412,39 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[LeapmotorBinarySensorEntityDescription, ...] =
             "next": (_an(data, "maintenance", "next") or {}).get("label"),
         },
     ),
+    # Insights.
+    LeapmotorBinarySensorEntityDescription(
+        key="charge_recommended",
+        translation_key="charge_recommended",
+        icon="mdi:battery-alert-variant-outline",
+        value_fn=lambda data: _an(data, "outlook", "charge_recommended"),
+        extra_attrs_fn=lambda data: {
+            key: _an(data, "outlook", key)
+            for key in ("reason", "day", "expected_km", "needed_soc", "soc", "enough",
+                        "limit_ok", "plugged_in")
+        },
+    ),
+    LeapmotorBinarySensorEntityDescription(
+        key="slow_charging",
+        translation_key="slow_charging",
+        device_class=BinarySensorDeviceClass.PROBLEM,
+        icon="mdi:speedometer-slow",
+        value_fn=lambda data: _an(data, "charge_health", "slow"),
+        extra_attrs_fn=lambda data: {
+            key: _an(data, "charge_health", key)
+            for key in ("now_kw", "usual_kw", "tier", "samples")
+        },
+    ),
+    LeapmotorBinarySensorEntityDescription(
+        key="next_day_range_sufficient",
+        translation_key="next_day_range_sufficient",
+        icon="mdi:battery-check-outline",
+        value_fn=lambda data: _an(data, "outlook", "enough"),
+        extra_attrs_fn=lambda data: {
+            key: _an(data, "outlook", key)
+            for key in ("day", "expected_km", "needed_soc", "soc")
+        },
+    ),
 )
 
 

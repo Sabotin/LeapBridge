@@ -12,9 +12,15 @@ import uuid
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, Platform
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import (
+    HomeAssistant,
+    ServiceCall,
+    ServiceResponse,
+    SupportsResponse,
+    callback,
+)
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import device_registry as dr, issue_registry as ir
 import voluptuous as vol
 
 from .api import LeapmotorApiClient
@@ -40,7 +46,8 @@ from .const import (
     STATIC_CERT_STORAGE_DIR,
     SUBENTRY_TYPE_VEHICLE,
 )
-from .coordinator import LeapmotorDataUpdateCoordinator
+from .coordinator import LeapmotorDataUpdateCoordinator, async_reload_after_share_accept
+from .leap_api import LeapmotorApiError
 from .entity_migration import async_remove_obsolete_entities
 from .lock import LOCK_ACTION, UNLOCK_ACTION
 from .remote_helpers import (
@@ -296,15 +303,41 @@ EXPORT_DIAGNOSTICS_FIELDS = vol.Schema(
     }
 )
 
+GET_HISTORY_FIELDS = vol.Schema(
+    {
+        vol.Optional("limit", default=500): vol.All(vol.Coerce(int), vol.Range(min=1, max=500)),
+        vol.Optional("vin"): str,
+        vol.Optional("entity_id"): str,
+    }
+)
+
+SHARE_INVITATION_FIELDS = vol.Schema(
+    {
+        vol.Optional("vin_tail"): vol.All(str, vol.Length(min=4, max=17)),
+    }
+)
+
+#: Services added with the insights and the extra cloud data.
+EXTRA_SERVICES = (
+    "get_trips",
+    "get_charging_sessions",
+    "refresh_cloud_data",
+    "accept_share_invitation",
+    "decline_share_invitation",
+)
+SHARE_ISSUE_PREFIX = "share_invitation_"
+
 PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
     Platform.DEVICE_TRACKER,
+    Platform.EVENT,
     Platform.IMAGE,
     Platform.LOCK,
     Platform.NUMBER,
     Platform.SENSOR,
     Platform.SWITCH,
+    Platform.UPDATE,
 ]
 
 
@@ -344,6 +377,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         static_cert_dir=hass.config.path(STATIC_CERT_STORAGE_DIR),
         history_timezone=hass.config.time_zone,
     )
+    # Software release notes in the language Home Assistant is set to.
+    client.notes_language = hass.config.language
     coordinator = LeapmotorDataUpdateCoordinator(
         hass=hass,
         config_entry=entry,
@@ -371,6 +406,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     await async_remove_obsolete_entities(hass)
+
+    @callback
+    def _sync_share_invitations() -> None:
+        _async_sync_share_invitation_issues(hass, entry, coordinator)
+
+    _sync_share_invitations()
+    entry.async_on_unload(coordinator.async_add_listener(_sync_share_invitations))
+    entry.async_on_unload(lambda: _async_clear_share_invitation_issues(hass, entry))
     await async_setup_frontend(
         hass,
         show_panel=any(
@@ -379,6 +422,64 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         ),
     )
     return True
+
+
+def _share_issue_id(entry: ConfigEntry, vin_tail: str) -> str:
+    return f"{SHARE_ISSUE_PREFIX}{entry.entry_id}_{vin_tail}"
+
+
+@callback
+def _async_sync_share_invitation_issues(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    coordinator: LeapmotorDataUpdateCoordinator,
+) -> None:
+    """Show a repair for each car-share invitation waiting for this account."""
+    try:
+        invitations = (coordinator.data or {}).get("share_invitations") or []
+        wanted: dict[str, dict] = {}
+        for invitation in invitations:
+            vin_tail = str(invitation.get("vin_tail") or "")
+            if vin_tail:
+                wanted[_share_issue_id(entry, vin_tail)] = invitation
+        registry = ir.async_get(hass)
+        prefix = f"{SHARE_ISSUE_PREFIX}{entry.entry_id}_"
+        for (domain, issue_id) in list(registry.issues):
+            if domain == DOMAIN and issue_id.startswith(prefix) and issue_id not in wanted:
+                ir.async_delete_issue(hass, DOMAIN, issue_id)
+        for issue_id, invitation in wanted.items():
+            ir.async_create_issue(
+                hass,
+                DOMAIN,
+                issue_id,
+                is_fixable=True,
+                is_persistent=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key="share_invitation",
+                translation_placeholders={
+                    "owner": str(invitation.get("owner") or "?"),
+                    "car": str(
+                        invitation.get("car_name") or invitation.get("car_type") or "Leapmotor"
+                    ),
+                    "vin_tail": str(invitation.get("vin_tail") or ""),
+                },
+                data={"entry_id": entry.entry_id, "vin_tail": str(invitation.get("vin_tail") or "")},
+            )
+    except Exception:  # noqa: BLE001 - a hint only, never break the integration
+        _LOGGER.debug("Could not update car-share invitation repairs", exc_info=True)
+
+
+@callback
+def _async_clear_share_invitation_issues(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Remove this entry's invitation repairs when it is unloaded."""
+    try:
+        registry = ir.async_get(hass)
+        prefix = f"{SHARE_ISSUE_PREFIX}{entry.entry_id}_"
+        for (domain, issue_id) in list(registry.issues):
+            if domain == DOMAIN and issue_id.startswith(prefix):
+                ir.async_delete_issue(hass, DOMAIN, issue_id)
+    except Exception:  # noqa: BLE001
+        _LOGGER.debug("Could not clear car-share invitation repairs", exc_info=True)
 
 
 def _async_ensure_vehicle_subentries(
@@ -946,6 +1047,91 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         DOMAIN, "reset_maintenance", handle_reset_maintenance, schema=RESET_MAINTENANCE_FIELDS
     )
 
+    async def handle_get_trips(call: ServiceCall) -> ServiceResponse:
+        """Return the stored trip log (for exports and logbooks)."""
+        coordinator, vin = resolve_call_target(call)
+        trips = coordinator.export_trips(vin, call.data.get("limit", 500))
+        return {"count": len(trips), "trips": trips}
+
+    async def handle_get_charging_sessions(call: ServiceCall) -> ServiceResponse:
+        """Return the charging sessions recorded here and by the cloud."""
+        coordinator, vin = resolve_call_target(call)
+        sessions = coordinator.export_sessions(vin, call.data.get("limit", 500))
+        vehicle_data = (coordinator.data or {}).get("vehicles", {}).get(vin) or {}
+        cloud = (vehicle_data.get("cloud_charging") or {}).get("sessions") or []
+        return {"count": len(sessions), "sessions": sessions, "cloud_sessions": cloud}
+
+    async def handle_refresh_cloud_data(call: ServiceCall) -> None:
+        """Read software, schedules, charging history and invitations again now."""
+        domain_data = hass.data.get(DOMAIN) or {}
+        if not domain_data:
+            raise HomeAssistantError("No Leapmotor config entry is loaded.")
+        for coordinator in domain_data.values():
+            coordinator.client.invalidate_extras()
+            await coordinator.async_manual_refresh()
+
+    def make_share_handler(accept: bool):
+        async def handler(call: ServiceCall) -> ServiceResponse:
+            """Accept or decline a car-share invitation waiting for the account."""
+            domain_data = hass.data.get(DOMAIN) or {}
+            if not domain_data:
+                raise HomeAssistantError("No Leapmotor config entry is loaded.")
+            vin_tail = call.data.get("vin_tail")
+            wanted = str(vin_tail or "").upper()
+
+            def cached_match(coordinator) -> bool:
+                pending = (coordinator.data or {}).get("share_invitations") or []
+                return any(
+                    not wanted or wanted.endswith(str(item.get("vin_tail") or "").upper())
+                    or str(item.get("vin_tail") or "").upper().endswith(wanted)
+                    for item in pending
+                )
+
+            # The account whose last poll showed the invitation answers it. When
+            # no poll has seen one yet (it may be minutes old), every account is
+            # asked: the client reads the waiting invitations again itself.
+            matched = [item for item in domain_data.items() if cached_match(item[1])]
+            candidates = matched[:1] or list(domain_data.items())
+            failure: LeapmotorApiError | None = None
+            for entry_id, coordinator in candidates:
+                try:
+                    result = await hass.async_add_executor_job(
+                        partial(coordinator.client.answer_share_invitation, vin_tail, accept=accept)
+                    )
+                except LeapmotorApiError as exc:
+                    failure = exc
+                    continue
+                if accept:
+                    # The shared car needs its own entities: load the entry
+                    # again, a moment later, when the cloud lists the car.
+                    async_reload_after_share_accept(hass, entry_id)
+                else:
+                    await coordinator.async_manual_refresh()
+                return result if call.return_response else None
+            raise HomeAssistantError(
+                str(failure) if failure else "No matching car-share invitation is waiting."
+            ) from failure
+
+        return handler
+
+    hass.services.async_register(
+        DOMAIN, "get_trips", handle_get_trips, schema=GET_HISTORY_FIELDS,
+        supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN, "get_charging_sessions", handle_get_charging_sessions, schema=GET_HISTORY_FIELDS,
+        supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(DOMAIN, "refresh_cloud_data", handle_refresh_cloud_data)
+    hass.services.async_register(
+        DOMAIN, "accept_share_invitation", make_share_handler(True),
+        schema=SHARE_INVITATION_FIELDS, supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN, "decline_share_invitation", make_share_handler(False),
+        schema=SHARE_INVITATION_FIELDS, supports_response=SupportsResponse.OPTIONAL,
+    )
+
 
 def _async_unregister_services(hass: HomeAssistant) -> None:
     """Remove Leapmotor domain services when the last entry unloads."""
@@ -970,7 +1156,10 @@ def _async_unregister_services(hass: HomeAssistant) -> None:
         hass.services.async_remove(DOMAIN, "send_destination")
     if hass.services.has_service(DOMAIN, "export_diagnostics"):
         hass.services.async_remove(DOMAIN, "export_diagnostics")
-    for service_name in ("log_maintenance", "reset_maintenance", "preheat_cabin", "precool_cabin", "precondition_cabin"):
+    for service_name in (
+        "log_maintenance", "reset_maintenance", "preheat_cabin", "precool_cabin",
+        "precondition_cabin", *EXTRA_SERVICES,
+    ):
         if hass.services.has_service(DOMAIN, service_name):
             hass.services.async_remove(DOMAIN, service_name)
 
