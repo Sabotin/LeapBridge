@@ -23,6 +23,14 @@ class LeapmotorNoVehicleError(LeapmotorApiError):
     """The account login worked, but no vehicle is linked to the account."""
 
 
+class LeapmotorShareInvitationPendingError(LeapmotorNoVehicleError):
+    """No vehicle yet, but a car-share invitation is waiting to be accepted."""
+
+    def __init__(self, invitations: list[dict]) -> None:
+        super().__init__("A car-share invitation is waiting for this account.")
+        self.invitations = invitations
+
+
 class LeapmotorRemoteCommandUnconfirmedError(LeapmotorApiError):
     """The cloud accepted a remote command, but its result could not be confirmed.
 

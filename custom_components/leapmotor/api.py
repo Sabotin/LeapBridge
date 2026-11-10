@@ -12,9 +12,11 @@ import tempfile
 import threading
 import time
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta, tzinfo
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
 import requests
@@ -77,6 +79,18 @@ from .leap_api import (
     derive_operate_password,
     derive_session_device_id,
 )
+from .cloud_extras import (
+    daily_rows,
+    decode_permissions,
+    messages_for_vin,
+    normalize_charge_records,
+    normalize_messages,
+    normalize_schedule,
+    normalize_share_invitations,
+    normalize_software_info,
+    public_invitation,
+    software_unavailable,
+)
 from .history_helpers import (
     normalize_weekly_consumption,
     seven_day_window_ms,
@@ -103,6 +117,30 @@ from .p12 import derive_account_p12_password
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 _LOGGER = logging.getLogger(__name__)
+
+# --- Extra read-only data ----------------------------------------------------
+# These change slowly, so they are refreshed on their own schedule instead of
+# on every poll. A failed read keeps the last good value and is retried later;
+# it never fails the vehicle update.
+#: Messages fetched with the unread count on every poll.
+INBOX_PAGE_SIZE = 20
+SOFTWARE_TTL_SECONDS = 6 * 3600
+CHARGING_HISTORY_TTL_SECONDS = 3600
+CHARGING_HISTORY_DAYS = 60
+CHARGING_HISTORY_PAGE_SIZE = 50
+CHARGING_HISTORY_MAX_PAGES = 2
+SCHEDULES_TTL_SECONDS = 1800
+SHARE_INVITATIONS_TTL_SECONDS = 6 * 3600
+#: After a failed extra read, wait this long before asking again.
+EXTRA_RETRY_SECONDS = 900
+#: The cloud said this account may not read it: ask again once a day.
+EXTRA_DENIED_SECONDS = 24 * 3600
+#: getAppointment command ids of the schedules that can be read back.
+SCHEDULE_COMMANDS: dict[str, str] = {
+    "climate": "171",
+    "battery_heating": "161",
+    "prepare_car": "361",
+}
 
 
 def _redact_vin_for_log(vin: str | None) -> str:
@@ -158,6 +196,12 @@ class LeapmotorApiClient:
         # token) can never invalidate a command another thread is sending.
         self._api_lock = threading.RLock()
         self.status_path_resolver = VehicleStatusPathResolver()
+        #: Slow-changing extra reads: (kind, key) -> (next refresh, value).
+        self._extras: dict[tuple[str, str], tuple[float, Any]] = {}
+        #: Language for software release notes; the app language when unset.
+        self.notes_language: str | None = None
+        #: Pending car-share invitations, with the fields needed to answer them.
+        self.share_invitations: list[dict[str, Any]] = []
         cert_dir = Path(static_cert_dir) if static_cert_dir else Path(__file__).resolve().parent
         self.static_cert = str(cert_dir / STATIC_APP_CERT)
         self.static_key = str(cert_dir / STATIC_APP_KEY)
@@ -861,6 +905,17 @@ class LeapmotorApiClient:
             "account_p12_password_source": self.account_p12_password_source,
         }
         notifications = self._fetch_account_notifications()
+        messages = notifications.pop("messages", []) if isinstance(notifications, dict) else []
+        self.share_invitations = self._cached_extra(
+            "share_invitations",
+            "account",
+            self._get_share_invitations,
+            ttl=SHARE_INVITATIONS_TTL_SECONDS,
+            fallback=[],
+        )
+        result["share_invitations"] = [
+            public_invitation(invitation) for invitation in self.share_invitations
+        ]
         for vehicle in vehicles:
             status = self.get_vehicle_status(vehicle)
             mileage = self._fetch_optional_read(
@@ -906,8 +961,119 @@ class LeapmotorApiClient:
                 history_timezone=self.history_timezone,
             )
             vehicle_data["notifications"] = notifications
+            vehicle_data["inbox"] = {
+                "unread_count": (
+                    notifications.get("unread_count") if isinstance(notifications, dict) else None
+                ),
+                "messages": messages_for_vin(messages, vehicle.vin),
+            }
+            vehicle_data.update(self._fetch_vehicle_extras(vehicle))
             result["vehicles"][vehicle.vin] = vehicle_data
         return result
+
+    def _cached_extra(
+        self,
+        kind: str,
+        key: str,
+        fetcher: Callable[[], Any],
+        *,
+        ttl: float,
+        fallback: Any,
+        denied: Any = None,
+    ) -> Any:
+        """Return slow-changing optional data, refreshing it once it is due.
+
+        A failed read keeps the last good value (``fallback`` before the
+        first success). When the cloud says the account has no permission the
+        ``denied`` value is kept for a day. Nothing raised here can fail the
+        vehicle update.
+        """
+        now = time.monotonic()
+        slot = self._extras.get((kind, key))
+        if slot is not None and now < slot[0]:
+            return slot[1]
+        try:
+            value = fetcher()
+        except LeapmotorApiError as exc:
+            _LOGGER.debug("Leapmotor optional read failed for %s: %s", kind, exc)
+            if "permission" in str(exc).lower():
+                value = fallback if denied is None else denied
+                self._extras[(kind, key)] = (now + EXTRA_DENIED_SECONDS, value)
+                return value
+            value = slot[1] if slot is not None else fallback
+            self._extras[(kind, key)] = (now + EXTRA_RETRY_SECONDS, value)
+            return value
+        except Exception:  # noqa: BLE001 - optional data must never break polling
+            _LOGGER.warning(
+                "Leapmotor optional read for %s returned unexpected data", kind, exc_info=True
+            )
+            value = slot[1] if slot is not None else fallback
+            self._extras[(kind, key)] = (now + EXTRA_RETRY_SECONDS, value)
+            return value
+        self._extras[(kind, key)] = (now + ttl, value)
+        return value
+
+    def invalidate_extras(self, kind: str | None = None) -> None:
+        """Refresh the extra reads (or one kind of them) on the next poll."""
+        # May be called from the event loop while a poll runs in a worker
+        # thread: copy the keys in one step and tolerate concurrent changes.
+        for slot in list(self._extras):
+            if kind is None or slot[0] == kind:
+                self._extras.pop(slot, None)
+
+    def _fetch_vehicle_extras(self, vehicle: Vehicle) -> dict[str, Any]:
+        """Software, charging history, schedules and permissions for one car."""
+        if vehicle.is_shared:
+            # The cloud only gives the software version to the owner's account.
+            software = software_unavailable("shared_account")
+        else:
+            software = self._cached_extra(
+                "software",
+                vehicle.vin,
+                lambda: normalize_software_info(
+                    self.get_software_info(vehicle).get("data"),
+                    self.notes_language or self.language,
+                ),
+                ttl=SOFTWARE_TTL_SECONDS,
+                fallback=software_unavailable("unavailable"),
+                denied=software_unavailable("no_permission"),
+            )
+        sessions = self._cached_extra(
+            "charging_history",
+            vehicle.vin,
+            lambda: normalize_charge_records(self.get_charging_history(vehicle)),
+            ttl=CHARGING_HISTORY_TTL_SECONDS,
+            fallback=None,
+        )
+        schedules = {
+            kind: self._cached_extra(
+                f"schedule_{kind}",
+                vehicle.vin,
+                lambda kind=kind, cmd_id=cmd_id: normalize_schedule(
+                    self._get_appointment_controls(vehicle.vin, cmd_id, f"{kind} schedule"),
+                    kind,
+                ),
+                ttl=SCHEDULES_TTL_SECONDS,
+                fallback=None,
+            )
+            for kind, cmd_id in SCHEDULE_COMMANDS.items()
+        }
+        return {
+            "software": software,
+            "cloud_charging": {
+                "sessions": sessions,
+                "window_days": CHARGING_HISTORY_DAYS,
+            },
+            "schedules": schedules,
+            "permissions": decode_permissions(
+                {
+                    "rights": vehicle.rights,
+                    "module_rights": vehicle.module_rights,
+                    "abilities": vehicle.abilities,
+                    "is_shared": vehicle.is_shared,
+                }
+            ),
+        }
 
     def _fetch_optional_read(
         self,
@@ -928,6 +1094,7 @@ class LeapmotorApiClient:
             "unread_count": None,
             "last_message_title": None,
             "last_message_time": None,
+            "messages": [],
         }
         try:
             headers = self._build_signed_headers()
@@ -941,21 +1108,22 @@ class LeapmotorApiClient:
             body = self._parse_api_body(resp["status_code"], resp["body"], "unread count")
             unread = self._extract_unread_count(body.get("data"))
 
-            list_headers = self._build_message_list_headers()
+            list_headers = self._build_message_list_headers(page_size=INBOX_PAGE_SIZE)
             list_headers.update(self._auth_headers(content_type="application/x-www-form-urlencoded"))
             resp = self._post_with_curl(
                 path="/carownerservice/oversea/message/v1/list",
                 headers=list_headers,
-                data="pageNo=1&pageSize=1",
+                data=f"pageNo=1&pageSize={INBOX_PAGE_SIZE}",
                 cert=self.account_cert,
             )
             body = self._parse_api_body(resp["status_code"], resp["body"], "message list")
             messages = self._extract_message_list(body.get("data"))
-            latest = messages[0] if messages else {}
+            latest = _latest_message(messages)
             return {
                 "unread_count": unread,
                 "last_message_title": latest.get("title"),
                 "last_message_time": latest.get("sendTime"),
+                "messages": normalize_messages(messages),
             }
         except LeapmotorApiError as exc:
             _LOGGER.debug("Leapmotor notification fetch failed: %s", exc)
@@ -1320,6 +1488,251 @@ class LeapmotorApiClient:
                 f"car picture package failed with HTTP {response['status_code']}"
             )
         return response["body"]
+
+    # ------------------------------------------------------------------
+    # Extra read-only data, ported from leapmotor-api 0.6.0 (AGPL-3.0)
+    # ------------------------------------------------------------------
+
+    def get_software_info(self, vehicle: Vehicle) -> dict[str, Any]:
+        """Fetch the installed software version and a pending OTA update.
+
+        Only the account that owns the car may read it; for a shared account
+        the cloud answers "No such permission".
+        """
+        headers = self._build_signed_headers(vin=vehicle.vin)
+        headers.update(self._auth_headers(content_type="application/x-www-form-urlencoded"))
+        response = self._post_with_curl(
+            path="/carownerservice/oversea/hotspot/fetch",
+            headers=headers,
+            data=f"vin={requests.utils.quote(vehicle.vin, safe='')}",
+            cert=self.account_cert,
+        )
+        return self._parse_api_body(response["status_code"], response["body"], "software info")
+
+    def get_charging_history(
+        self,
+        vehicle: Vehicle,
+        *,
+        days: int = CHARGING_HISTORY_DAYS,
+        page_size: int = CHARGING_HISTORY_PAGE_SIZE,
+        max_pages: int = CHARGING_HISTORY_MAX_PAGES,
+    ) -> list[dict[str, Any]]:
+        """Fetch the charging sessions the cloud recorded over the last days."""
+        end_date = datetime.now(UTC).date()
+        start_date = end_date - timedelta(days=days)
+        timezone = "GMT+00:00"
+        records: list[dict[str, Any]] = []
+        for page_num in range(1, max_pages + 1):
+            body_params = {
+                "vin": vehicle.vin,
+                "timeZone": timezone,
+                "startTime": start_date.isoformat(),
+                "endTime": end_date.isoformat(),
+                "pageNum": str(page_num),
+                "pageSize": str(page_size),
+            }
+            headers = self._build_charging_daily_detail_headers(body_params=body_params)
+            headers.update(self._auth_headers(content_type="application/json"))
+            body = json.dumps(
+                {
+                    "vin": vehicle.vin,
+                    "timeZone": timezone,
+                    "startTime": start_date.isoformat(),
+                    "endTime": end_date.isoformat(),
+                    "pageNum": page_num,
+                    "pageSize": page_size,
+                },
+                separators=(",", ":"),
+            )
+            response = self._post_with_curl(
+                path="/carownerservice/charge/daily/detail/page",
+                headers=headers,
+                data=body,
+                cert=self.account_cert,
+            )
+            parsed = self._parse_api_body(
+                response["status_code"], response["body"], "charging history"
+            )
+            page = (parsed.get("data") or {}).get("list") or []
+            records.extend(item for item in page if isinstance(item, dict))
+            if len(page) < page_size:
+                break
+        return records
+
+    def get_mileage_energy_history(
+        self, vehicle: Vehicle, *, begin_ms: int, end_ms: int
+    ) -> dict[str, Any]:
+        """Fetch per-day distance and energy for any window (epoch milliseconds)."""
+        headers = self._build_mileage_energy_detail_headers(
+            vin=vehicle.vin,
+            begintime=str(begin_ms),
+            endtime=str(end_ms),
+        )
+        headers.update(self._auth_headers(content_type="application/x-www-form-urlencoded"))
+        body = (
+            f"endtime={end_ms}"
+            f"&begintime={begin_ms}"
+            f"&vin={requests.utils.quote(vehicle.vin, safe='')}"
+        )
+        response = self._post_with_curl(
+            path="/carownerservice/oversea/drivingRecord/v1/mileage/energy/detail",
+            headers=headers,
+            data=body,
+            cert=self.account_cert,
+        )
+        return self._parse_api_body(
+            response["status_code"], response["body"], "mileage energy history"
+        )
+
+    def fetch_daily_history(
+        self, vin: str, *, begin_ms: int, end_ms: int
+    ) -> list[dict[str, Any]] | None:
+        """Per-day distance and energy for one car, or None when it is not available.
+
+        Used to fill in the days before the integration was installed. It
+        never raises and never renews the session; the next poll does that.
+        """
+        with self._api_lock:
+            if not self.token:
+                return None
+            try:
+                vehicle = next(
+                    (item for item in self.get_vehicle_list() if item.vin == vin), None
+                )
+                if vehicle is None:
+                    return None
+                data = self.get_mileage_energy_history(
+                    vehicle, begin_ms=begin_ms, end_ms=end_ms
+                ).get("data")
+                if not isinstance(data, dict):
+                    # No usable answer: report "not available" so it is asked again.
+                    return None
+                summary = summarize_mileage_energy_detail(
+                    data.get("detail"),
+                    None,
+                    car_type=vehicle.car_type,
+                    local_timezone=self.history_timezone,
+                )
+                return daily_rows(summary.get("daily_detail"))
+            except LeapmotorApiError as exc:
+                _LOGGER.debug("Leapmotor daily history read failed: %s", exc)
+                return None
+            except Exception:  # noqa: BLE001 - history is optional
+                _LOGGER.warning(
+                    "Leapmotor daily history returned unexpected data", exc_info=True
+                )
+                return None
+
+    def _get_appointment_controls(
+        self, vin: str, cmd_id: str, label: str
+    ) -> list[dict[str, Any]]:
+        """Read the ``controls`` list of one schedule type from getAppointment."""
+        headers = self._build_signed_headers(vin=vin, body_params={"cmdId": cmd_id})
+        headers.update(self._auth_headers(content_type="application/x-www-form-urlencoded"))
+        response = self._post_with_curl(
+            path="/carownerservice/oversea/vehicle/v1/app/remote/ctl/getAppointment",
+            headers=headers,
+            data=(
+                f"vin={requests.utils.quote(vin, safe='')}"
+                f"&cmdId={requests.utils.quote(cmd_id, safe='')}"
+            ),
+            cert=self.account_cert,
+        )
+        try:
+            response_body = json.loads(response["body"])
+        except ValueError as exc:
+            self._record_api_result(
+                label, status_code=response["status_code"], code=None, message="non_json"
+            )
+            raise LeapmotorApiError(f"{label} returned non-JSON response") from exc
+        if not isinstance(response_body, dict):
+            raise LeapmotorApiError(f"{label} returned an unexpected response")
+        result_code = response_body.get("result", response_body.get("code"))
+        message = response_body.get("message")
+        self._record_api_result(
+            label, status_code=response["status_code"], code=result_code, message=message
+        )
+        if response["status_code"] != 200 or result_code != 0:
+            raise LeapmotorApiError(f"Leapmotor {label} failed: {message or 'no message'}")
+        data = response_body.get("data")
+        if isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except ValueError:
+                return []
+        controls = data.get("controls") if isinstance(data, dict) else None
+        return [item for item in controls or [] if isinstance(item, dict)]
+
+    def _get_share_invitations(self) -> list[dict[str, Any]]:
+        """Fetch the car-share invitations waiting for this account."""
+        headers = self._build_signed_headers()
+        headers.update(self._auth_headers(content_type="application/x-www-form-urlencoded"))
+        response = self._post_with_curl(
+            path="/carownerservice/oversea/sharecar/getsharemsg",
+            headers=headers,
+            data="",
+            cert=self.account_cert,
+        )
+        body = self._parse_api_body(
+            response["status_code"], response["body"], "share invitations"
+        )
+        return normalize_share_invitations(body.get("data"))
+
+    def answer_share_invitation(self, vin_tail: str | None, *, accept: bool) -> dict[str, Any]:
+        """Accept or decline a car-share invitation waiting for this account.
+
+        ``vin_tail`` picks the invitation by the last characters of the VIN;
+        it may be left out when exactly one invitation is waiting.
+        """
+        with self._api_lock:
+            if not self.token:
+                self._ensure_static_cert_files()
+                self.login()
+            try:
+                invitations = self._get_share_invitations()
+            except LeapmotorApiError as exc:
+                if not _is_token_error(exc):
+                    raise
+                self._recover_session(exc)
+                invitations = self._get_share_invitations()
+            self.share_invitations = invitations
+            wanted = str(vin_tail or "").strip().upper()
+            matches = [
+                item for item in invitations
+                if not wanted or str(item["_vin"]).upper().endswith(wanted)
+            ]
+            if not matches:
+                raise LeapmotorApiError("No matching car-share invitation is waiting.")
+            if len(matches) > 1:
+                raise LeapmotorApiError(
+                    "Several car-share invitations are waiting; give the last characters of the VIN."
+                )
+            invitation = matches[0]
+            auth = self._auth_headers(content_type="application/x-www-form-urlencoded")
+            body_params = {
+                "shareUserId": invitation["_owner_id"],
+                "userId": auth["userId"],
+                "carCode": invitation["_vin"],
+                "state": "yes" if accept else "no",
+            }
+            headers = self._build_signed_headers(body_params=body_params)
+            headers.update(auth)
+            response = self._post_with_curl(
+                path="/carownerservice/oversea/sharecar/setokmsg",
+                headers=headers,
+                data=urlencode(body_params),
+                cert=self.account_cert,
+            )
+            result = self._parse_api_body(
+                response["status_code"], response["body"], "share invitation answer"
+            )
+            self.invalidate_extras("share_invitations")
+            return {
+                "accepted": accept,
+                "car_type": invitation.get("car_type"),
+                "vin_tail": invitation.get("vin_tail"),
+                "code": result.get("code"),
+            }
 
     def _remote_control(
         self,
@@ -2634,6 +3047,18 @@ def normalize_vehicle(
         },
         "raw_updated_at": time.time(),
     }
+
+
+def _latest_message(messages: list[dict[str, Any]]) -> dict[str, Any]:
+    """The newest message of a page (the cloud lists the newest first)."""
+    if not messages:
+        return {}
+    best, best_time = messages[0], _safe_float(messages[0].get("sendTime"))
+    for message in messages[1:]:
+        sent = _safe_float(message.get("sendTime"))
+        if sent is not None and (best_time is None or sent > best_time):
+            best, best_time = message, sent
+    return best
 
 
 def _support_raw_signals(signal: dict[str, Any]) -> dict[str, Any]:

@@ -30,7 +30,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
+from .cloud_extras import next_schedule_run
 from .const import DOMAIN
 from .coordinator import LeapmotorDataUpdateCoordinator
 from .entity_helpers import build_vehicle_display_name, vehicle_feature_supported
@@ -100,10 +102,19 @@ OPTIONAL_SENSOR_PATHS = {
 }
 
 
-MONETARY_KEYS = {"last_charge_session_cost", "charging_cost_month", "driving_cost_month"}
+MONETARY_KEYS = {
+    "last_charge_session_cost", "charging_cost_month", "driving_cost_month",
+    "fuel_savings_month", "fuel_savings_total",
+}
 CURRENCY_PER_100KM_KEYS = {"driving_cost_per_100km"}
 DAY_TOTAL_KEYS = {"trips_today_distance_km"}
-MONTH_TOTAL_KEYS = {"trips_month_distance_km", "charging_cost_month", "charged_energy_month_kwh", "driving_cost_month"}
+MONTH_TOTAL_KEYS = {
+    "trips_month_distance_km", "charging_cost_month", "charged_energy_month_kwh", "driving_cost_month",
+    "fuel_savings_month", "co2_saved_month",
+}
+YEAR_TOTAL_KEYS = {"distance_this_year"}
+#: Sensors that only make sense for the account that owns the car.
+OWNER_ONLY_KEYS = {"software_version"}
 
 
 def _analytics(data: dict[str, Any], *path: str) -> Any:
@@ -120,6 +131,69 @@ def _record_attrs(record: Any, *, skip: str) -> dict[str, Any]:
     if not isinstance(record, dict):
         return {}
     return {k: v for k, v in record.items() if k != skip}
+
+
+def _iso_datetime(value: Any) -> datetime | None:
+    """A timezone-aware datetime from an ISO string, else None."""
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=UTC)
+
+
+def _lifetime_consumption(data: dict[str, Any]) -> float | None:
+    """kWh/100 km over the car's whole life, from the cloud's lifetime totals."""
+    history = data.get("history") or {}
+    try:
+        km = float(history.get("total_mileage_km"))
+        kwh = float(history.get("total_energy_kwh"))
+    except (TypeError, ValueError):
+        return None
+    if km < 100 or kwh <= 0:
+        return None
+    value = kwh / km * 100
+    return round(value, 1) if 5 <= value <= 60 else None
+
+
+def _parked_since(data: dict[str, Any]) -> datetime | None:
+    """When the last trip ended, while the car is not driving."""
+    if (data.get("status") or {}).get("is_driving") is True or _analytics(data, "current_trip"):
+        return None
+    return _iso_datetime(_analytics(data, "last_trip", "end"))
+
+
+def _home_charging_share(data: dict[str, Any]) -> float | None:
+    month = _analytics(data, "month_charging") or {}
+    home, public = month.get("home_energy_kwh"), month.get("public_energy_kwh")
+    if home is None or public is None or home + public <= 0:
+        return None
+    return round(home / (home + public) * 100, 1)
+
+
+def _earned_badges(data: dict[str, Any]) -> int | None:
+    badges = _analytics(data, "achievements")
+    if not isinstance(badges, list):
+        return None
+    return sum(1 for badge in badges if (badge.get("level") or 0) > 0)
+
+
+def _curve_peak(data: dict[str, Any]) -> float | None:
+    curve = _analytics(data, "charge_curve") or {}
+    shown = curve.get("current") or curve.get("last") or {}
+    powers = [point[1] for point in shown.get("points") or []]
+    return max(powers) if powers else None
+
+
+def _schedule_entries(data: dict[str, Any]) -> list[dict[str, Any]]:
+    schedules = data.get("schedules") or {}
+    return [
+        entry
+        for kind in ("climate", "prepare_car")
+        for entry in schedules.get(kind) or []
+    ]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -863,6 +937,9 @@ SENSOR_DESCRIPTIONS: tuple[LeapmotorSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: (data.get("notifications") or {}).get("unread_count"),
+        extra_attrs_fn=lambda data: {
+            "messages": (data.get("inbox") or {}).get("messages") or [],
+        },
     ),
     LeapmotorSensorEntityDescription(
         key="last_message_title",
@@ -1043,6 +1120,351 @@ SENSOR_DESCRIPTIONS: tuple[LeapmotorSensorEntityDescription, ...] = (
         value_fn=lambda data: _analytics(data, "charge_plan", "energy_kwh"),
         extra_attrs_fn=lambda data: _record_attrs(_analytics(data, "charge_plan"), skip="energy_kwh"),
     ),
+    # Insights: what the car's own history says about tomorrow and the long run.
+    LeapmotorSensorEntityDescription(
+        key="real_range_km",
+        translation_key="real_range_km",
+        native_unit_of_measurement=UnitOfLength.KILOMETERS,
+        device_class=SensorDeviceClass.DISTANCE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+        icon="mdi:map-marker-radius",
+        value_fn=lambda data: _analytics(data, "real_range", "km"),
+        extra_attrs_fn=lambda data: _record_attrs(_analytics(data, "real_range"), skip="km"),
+    ),
+    LeapmotorSensorEntityDescription(
+        key="range_at_charge_limit_km",
+        translation_key="range_at_charge_limit_km",
+        native_unit_of_measurement=UnitOfLength.KILOMETERS,
+        device_class=SensorDeviceClass.DISTANCE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+        icon="mdi:map-marker-check",
+        value_fn=lambda data: _analytics(data, "real_range", "at_limit_km"),
+        extra_attrs_fn=lambda data: {
+            "full_km": _analytics(data, "real_range", "full_km"),
+            "consumption_kwh_100km": _analytics(data, "real_range", "consumption_kwh_100km"),
+        },
+    ),
+    LeapmotorSensorEntityDescription(
+        key="next_departure",
+        translation_key="next_departure",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        icon="mdi:clock-start",
+        value_fn=lambda data: _iso_datetime(_analytics(data, "habits", "next_departure", "at")),
+        extra_attrs_fn=lambda data: {
+            **{
+                key: value
+                for key, value in (_analytics(data, "habits", "next_departure") or {}).items()
+                if key not in {"at", "in_minutes"}
+            },
+            "learned_from_weeks": _analytics(data, "habits", "weeks"),
+            "weekdays": _analytics(data, "habits", "weekdays") or [],
+        },
+    ),
+    LeapmotorSensorEntityDescription(
+        key="next_day_distance_km",
+        translation_key="next_day_distance_km",
+        native_unit_of_measurement=UnitOfLength.KILOMETERS,
+        device_class=SensorDeviceClass.DISTANCE,
+        suggested_display_precision=0,
+        icon="mdi:calendar-arrow-right",
+        value_fn=lambda data: _analytics(data, "outlook", "expected_km"),
+        extra_attrs_fn=lambda data: _record_attrs(_analytics(data, "outlook"), skip="expected_km"),
+    ),
+    LeapmotorSensorEntityDescription(
+        key="next_day_battery_needed",
+        translation_key="next_day_battery_needed",
+        native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=0,
+        icon="mdi:battery-clock",
+        value_fn=lambda data: _analytics(data, "outlook", "needed_soc"),
+        extra_attrs_fn=lambda data: {
+            "day": _analytics(data, "outlook", "day"),
+            "expected_kwh": _analytics(data, "outlook", "expected_kwh"),
+            "reserve_soc": _analytics(data, "outlook", "reserve_soc"),
+        },
+    ),
+    LeapmotorSensorEntityDescription(
+        key="eco_score",
+        translation_key="eco_score",
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+        icon="mdi:leaf",
+        value_fn=lambda data: _analytics(data, "eco", "last"),
+        extra_attrs_fn=lambda data: _record_attrs(_analytics(data, "eco"), skip="last"),
+    ),
+    LeapmotorSensorEntityDescription(
+        key="eco_score_average",
+        translation_key="eco_score_average",
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+        icon="mdi:leaf-circle",
+        value_fn=lambda data: _analytics(data, "eco", "average"),
+        extra_attrs_fn=lambda data: {
+            "trips": _analytics(data, "eco", "trips"),
+            "previous_average": _analytics(data, "eco", "previous_average"),
+            "best": _analytics(data, "eco", "best"),
+        },
+    ),
+    LeapmotorSensorEntityDescription(
+        key="frequent_routes",
+        translation_key="frequent_routes",
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:routes",
+        value_fn=lambda data: (
+            len(_analytics(data, "routes", "routes"))
+            if isinstance(_analytics(data, "routes", "routes"), list) else None
+        ),
+        extra_attrs_fn=lambda data: {
+            "routes": _analytics(data, "routes", "routes") or [],
+            "places": _analytics(data, "routes", "places") or [],
+            "place_count": _analytics(data, "routes", "place_count"),
+        },
+    ),
+    LeapmotorSensorEntityDescription(
+        key="battery_capacity_trend",
+        translation_key="battery_capacity_trend",
+        native_unit_of_measurement="%/y",
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
+        icon="mdi:chart-line-variant",
+        value_fn=lambda data: _analytics(data, "battery_forecast", "trend_pct_per_year"),
+        extra_attrs_fn=lambda data: _record_attrs(
+            _analytics(data, "battery_forecast"), skip="trend_pct_per_year"
+        ),
+    ),
+    LeapmotorSensorEntityDescription(
+        key="battery_health_in_one_year",
+        translation_key="battery_health_in_one_year",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        icon="mdi:battery-heart-outline",
+        value_fn=lambda data: _analytics(data, "battery_forecast", "soh_in_1_year"),
+    ),
+    LeapmotorSensorEntityDescription(
+        key="fuel_savings_month",
+        translation_key="fuel_savings_month",
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        suggested_display_precision=2,
+        icon="mdi:piggy-bank",
+        value_fn=lambda data: _analytics(data, "savings", "month", "saved"),
+        extra_attrs_fn=lambda data: {
+            **_record_attrs(_analytics(data, "savings", "month"), skip="saved"),
+            **(_analytics(data, "savings", "assumptions") or {}),
+        },
+    ),
+    LeapmotorSensorEntityDescription(
+        key="fuel_savings_total",
+        translation_key="fuel_savings_total",
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        suggested_display_precision=0,
+        icon="mdi:piggy-bank-outline",
+        value_fn=lambda data: _analytics(data, "savings", "lifetime", "saved"),
+        extra_attrs_fn=lambda data: _record_attrs(
+            _analytics(data, "savings", "lifetime"), skip="saved"
+        ),
+    ),
+    LeapmotorSensorEntityDescription(
+        key="co2_saved_month",
+        translation_key="co2_saved_month",
+        native_unit_of_measurement="kg",
+        device_class=SensorDeviceClass.WEIGHT,
+        state_class=SensorStateClass.TOTAL,
+        suggested_display_precision=0,
+        icon="mdi:molecule-co2",
+        value_fn=lambda data: _analytics(data, "savings", "month", "co2_saved_kg"),
+    ),
+    LeapmotorSensorEntityDescription(
+        key="co2_saved_total",
+        translation_key="co2_saved_total",
+        native_unit_of_measurement="kg",
+        device_class=SensorDeviceClass.WEIGHT,
+        state_class=SensorStateClass.TOTAL,
+        suggested_display_precision=0,
+        icon="mdi:molecule-co2",
+        value_fn=lambda data: _analytics(data, "savings", "lifetime", "co2_saved_kg"),
+        extra_attrs_fn=lambda data: _analytics(data, "savings", "assumptions") or {},
+    ),
+    LeapmotorSensorEntityDescription(
+        key="fuel_avoided_total_l",
+        translation_key="fuel_avoided_total_l",
+        native_unit_of_measurement=UnitOfVolume.LITERS,
+        device_class=SensorDeviceClass.VOLUME,
+        state_class=SensorStateClass.TOTAL,
+        suggested_display_precision=0,
+        icon="mdi:gas-station-off",
+        value_fn=lambda data: _analytics(data, "savings", "lifetime", "fuel_litres"),
+    ),
+    LeapmotorSensorEntityDescription(
+        key="distance_this_year",
+        translation_key="distance_this_year",
+        native_unit_of_measurement=UnitOfLength.KILOMETERS,
+        device_class=SensorDeviceClass.DISTANCE,
+        state_class=SensorStateClass.TOTAL,
+        suggested_display_precision=0,
+        icon="mdi:calendar-star",
+        value_fn=lambda data: _analytics(data, "journey", "year", "km"),
+        extra_attrs_fn=lambda data: {
+            "year": _analytics(data, "journey", "year"),
+            "totals": _analytics(data, "journey", "totals"),
+            "records": _analytics(data, "journey", "records"),
+            "months": _analytics(data, "journey", "months") or [],
+            "calendar": _analytics(data, "journey", "calendar"),
+        },
+    ),
+    LeapmotorSensorEntityDescription(
+        key="driving_streak_days",
+        translation_key="driving_streak_days",
+        native_unit_of_measurement=UnitOfTime.DAYS,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:fire",
+        value_fn=lambda data: (
+            (_analytics(data, "journey", "records", "current_streak_days") or 0)
+            if _analytics(data, "journey") else None
+        ),
+        extra_attrs_fn=lambda data: {
+            "best": _analytics(data, "journey", "records", "best_streak_days"),
+        },
+    ),
+    LeapmotorSensorEntityDescription(
+        key="longest_trip_km",
+        translation_key="longest_trip_km",
+        native_unit_of_measurement=UnitOfLength.KILOMETERS,
+        device_class=SensorDeviceClass.DISTANCE,
+        suggested_display_precision=1,
+        icon="mdi:map-marker-path",
+        value_fn=lambda data: _analytics(data, "journey", "records", "longest_trip", "km"),
+        extra_attrs_fn=lambda data: {
+            "date": _analytics(data, "journey", "records", "longest_trip", "date"),
+        },
+    ),
+    LeapmotorSensorEntityDescription(
+        key="lifetime_trips",
+        translation_key="lifetime_trips",
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        icon="mdi:counter",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: _analytics(data, "journey", "totals", "trips"),
+    ),
+    LeapmotorSensorEntityDescription(
+        key="lifetime_charging_sessions",
+        translation_key="lifetime_charging_sessions",
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        icon="mdi:counter",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: _analytics(data, "journey", "totals", "charging_sessions"),
+    ),
+    LeapmotorSensorEntityDescription(
+        key="achievements",
+        translation_key="achievements",
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:trophy",
+        value_fn=_earned_badges,
+        extra_attrs_fn=lambda data: {"badges": _analytics(data, "achievements") or []},
+    ),
+    LeapmotorSensorEntityDescription(
+        key="charging_curve",
+        translation_key="charging_curve",
+        native_unit_of_measurement=UnitOfPower.KILO_WATT,
+        device_class=SensorDeviceClass.POWER,
+        suggested_display_precision=1,
+        icon="mdi:chart-bell-curve-cumulative",
+        value_fn=_curve_peak,
+        extra_attrs_fn=lambda data: {
+            **(_analytics(data, "charge_curve") or {}),
+            "usual_power_kw": _analytics(data, "charge_health", "usual_kw"),
+        },
+    ),
+    LeapmotorSensorEntityDescription(
+        key="home_charging_share_percent",
+        translation_key="home_charging_share_percent",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+        icon="mdi:home-lightning-bolt",
+        value_fn=_home_charging_share,
+    ),
+    LeapmotorSensorEntityDescription(
+        key="parked_since",
+        translation_key="parked_since",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        icon="mdi:parking",
+        value_fn=_parked_since,
+    ),
+    LeapmotorSensorEntityDescription(
+        key="lifetime_consumption_kwh_100km",
+        translation_key="lifetime_consumption_kwh_100km",
+        native_unit_of_measurement=CONSUMPTION_KWH_PER_100KM,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        icon="mdi:chart-timeline-variant",
+        value_fn=_lifetime_consumption,
+    ),
+    LeapmotorSensorEntityDescription(
+        key="average_daily_distance_km",
+        translation_key="average_daily_distance_km",
+        native_unit_of_measurement="km/d",
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        icon="mdi:calendar-range",
+        value_fn=lambda data: _analytics(data, "journey", "totals", "km_per_day"),
+    ),
+    # More from the cloud: software, charging history, schedules, permissions.
+    LeapmotorSensorEntityDescription(
+        key="software_version",
+        translation_key="software_version",
+        icon="mdi:car-cog",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: (data.get("software") or {}).get("installed_version"),
+        extra_attrs_fn=lambda data: {
+            key: (data.get("software") or {}).get(key)
+            for key in ("installed_at", "update_available", "latest_version",
+                        "update_size_mb", "update_packages", "reason")
+        },
+    ),
+    LeapmotorSensorEntityDescription(
+        key="cloud_charging_sessions",
+        translation_key="cloud_charging_sessions",
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:ev-station",
+        value_fn=lambda data: (
+            len((data.get("cloud_charging") or {}).get("sessions"))
+            if isinstance((data.get("cloud_charging") or {}).get("sessions"), list) else None
+        ),
+        extra_attrs_fn=lambda data: {
+            "window_days": (data.get("cloud_charging") or {}).get("window_days"),
+            "month": (data.get("cloud_charging") or {}).get("month"),
+            "sessions": (data.get("cloud_charging") or {}).get("sessions") or [],
+        },
+    ),
+    LeapmotorSensorEntityDescription(
+        key="next_scheduled_preconditioning",
+        translation_key="next_scheduled_preconditioning",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        icon="mdi:calendar-clock",
+        value_fn=lambda data: None,
+        extra_attrs_fn=lambda data: {
+            "schedules": data.get("schedules") or {},
+        },
+    ),
+    LeapmotorSensorEntityDescription(
+        key="remote_permissions",
+        translation_key="remote_permissions",
+        icon="mdi:shield-key",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: (
+            len((data.get("permissions") or {}).get("rights") or [])
+            if (data.get("permissions") or {}).get("rights_known") else None
+        ),
+        extra_attrs_fn=lambda data: {
+            key: (data.get("permissions") or {}).get(key)
+            for key in ("shared", "rights", "modules", "abilities")
+        },
+    ),
 )
 
 
@@ -1071,6 +1493,10 @@ class LeapmotorSensor(CoordinatorEntity[LeapmotorDataUpdateCoordinator], SensorE
     _unrecorded_attributes = frozenset({
         "recent_trips", "recent_sessions", "current_trip", "current_session", "items",
         "efficiency_by_temperature",
+        # Lists and tables the dashboard reads; they do not belong in the recorder.
+        "weekdays", "routes", "places", "months", "calendar", "totals", "records", "badges",
+        "current", "last", "usual", "messages", "sessions", "schedules", "departure",
+        "rights", "modules", "abilities",
     })
 
     def __init__(
@@ -1127,9 +1553,12 @@ class LeapmotorSensor(CoordinatorEntity[LeapmotorDataUpdateCoordinator], SensorE
     def last_reset(self) -> datetime | None:
         """Daily and monthly totals restart at local midnight / the 1st."""
         key = self.entity_description.key
-        if key not in DAY_TOTAL_KEYS and key not in MONTH_TOTAL_KEYS:
+        if key not in DAY_TOTAL_KEYS and key not in MONTH_TOTAL_KEYS and key not in YEAR_TOTAL_KEYS:
             return None
         period = _analytics(self.vehicle_data, "period") or {}
+        if key in YEAR_TOTAL_KEYS:
+            start = _iso_datetime(period.get("month_start"))
+            return start.replace(month=1) if start is not None else None
         value = period.get("day_start" if key in DAY_TOTAL_KEYS else "month_start")
         try:
             return datetime.fromisoformat(value) if value else None
@@ -1143,6 +1572,9 @@ class LeapmotorSensor(CoordinatorEntity[LeapmotorDataUpdateCoordinator], SensorE
             return _coordinator_timestamp(
                 self.coordinator.integration_status.get("last_successful_update_at")
             )
+        if self.entity_description.key == "next_scheduled_preconditioning":
+            run = next_schedule_run(_schedule_entries(self.vehicle_data), dt_util.now())
+            return _iso_datetime((run or {}).get("at"))
         value = self.entity_description.value_fn(self.vehicle_data)
         if self.entity_description.key in WHOLE_KILOMETER_KEYS:
             return _whole_number_if_possible(value)
@@ -1314,6 +1746,8 @@ def _whole_number_if_possible(value: Any) -> Any:
 def _should_create_sensor(vehicle_data: dict[str, Any], key: str) -> bool:
     """Return whether a sensor is supported by the current vehicle payload."""
     if not vehicle_feature_supported(vehicle_data["vehicle"], key):
+        return False
+    if key in OWNER_ONLY_KEYS and (vehicle_data.get("vehicle") or {}).get("is_shared"):
         return False
     path = OPTIONAL_SENSOR_PATHS.get(key)
     if path is None:

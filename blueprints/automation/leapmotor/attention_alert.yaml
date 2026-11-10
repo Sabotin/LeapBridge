@@ -5,7 +5,7 @@ blueprint:
     trunk or sunroof open), when a tire looks low, uneven or slowly leaking,
     or when maintenance becomes due.
   domain: automation
-  source_url: https://github.com/sabotin/leapmotor/blob/main/blueprints/automation/leapmotor/attention_alert.yaml
+  source_url: https://github.com/Sabotin/LeapBridge/blob/main/blueprints/automation/leapmotor/attention_alert.yaml
   input:
     problem_sensors:
       name: Problem sensors

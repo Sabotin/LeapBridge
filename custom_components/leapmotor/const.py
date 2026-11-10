@@ -43,6 +43,14 @@ CONF_SPEED_ALERT = "speed_alert_kmh"
 #: Factory vehicle PIN; prefilled in setup and vehicle settings, changeable.
 DEFAULT_OPERATION_PASSWORD = "0000"
 CONF_SHOW_PANEL = "show_sidebar_panel"
+# Comparison with a combustion car (savings and CO2).
+CONF_FUEL_PRICE = "fuel_price_l"
+CONF_FUEL_CONSUMPTION = "fuel_l_100km"
+CONF_GRID_CO2 = "grid_co2_g_kwh"
+DEFAULT_FUEL_CONSUMPTION = 6.5
+DEFAULT_GRID_CO2 = 250
+#: Fired on the Home Assistant bus for every car event (trip finished, …).
+EVENT_LEAPMOTOR = "leapmotor_event"
 
 SUBENTRY_TYPE_VEHICLE = "vehicle"
 
