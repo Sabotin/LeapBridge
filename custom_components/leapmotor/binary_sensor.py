@@ -101,6 +101,13 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[LeapmotorBinarySensorEntityDescription, ...] =
         icon="mdi:ev-plug-type2",
         device_class=BinarySensorDeviceClass.PLUG,
         value_fn=lambda data: data["charging"].get("is_plugged_in"),
+        # Set while the cable is not read from the current status: kept from the
+        # last complete one, or seen earlier and held until the car drives.
+        extra_attrs_fn=lambda data: {
+            key: data["charging"][key]
+            for key in ("cable_state_source", "cable_state_seen_at")
+            if data["charging"].get(key) is not None
+        },
     ),
     LeapmotorBinarySensorEntityDescription(
         key="is_regening",

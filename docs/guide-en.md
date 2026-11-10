@@ -323,10 +323,12 @@ copied to every car, so set it on the intended vehicle.
 - **T03:** daily energy is reported in Wh and converted to kWh
   (`daily_detail.energy_raw` keeps the source value). Charging-schedule writes
   are not supported; use the car or the official app. Read-only charge-limit
-  values can be stale (`reliability: unverified`). A standing T03 with the
-  cable in and no charge running (a wallbox pause, or waiting for its
-  schedule) is reported as connected (`plugged_in`, EVCC `B`), also while it
-  is switched on. While the car sleeps, the cloud can answer with a reduced
+  values can be stale (`reliability: unverified`). A T03 with the cable in and
+  no charge running (a wallbox pause, waiting for its schedule, a finished
+  charge) reports nothing of the cable, so once the cable has been seen the
+  car counts as connected (`plugged_in`, EVCC `B`) until it drives; a cable
+  taken out of a car that stays parked is only noticed at the next drive.
+  While the car sleeps, the cloud can answer with a reduced
   status (battery 0 %, no charge fields; the official app shows it like
   that): the battery level and cable state of the last complete status are
   kept. The schedule shows the start time set in the car; the

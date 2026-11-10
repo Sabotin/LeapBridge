@@ -200,5 +200,39 @@ class T03CableConnectedTests(unittest.TestCase):
                     self.assertIs(self.connected(**{**state, **extra}), False)
 
 
+class T03CableEvidenceTests(unittest.TestCase):
+    """What in one status shows the cable of a standing T03."""
+
+    OFF = {"1010": 0, "1319": 0, "1149": 0, "1197": 0, "1258": 0, "1177": 368.2}
+
+    def evidence(self, **overrides: object) -> str | None:
+        return signals.t03_cable_evidence({**self.OFF, **overrides})
+
+    def test_current_into_a_switched_off_car_is_a_cable(self) -> None:
+        for current in (-2.6, -1.0, "-2.6", -16):
+            with self.subTest(current=current):
+                self.assertEqual(self.evidence(**{"1178": current}), "inflow")
+
+    def test_no_sign_of_a_cable(self) -> None:
+        for extra in ({"1178": 0.0}, {"1178": -0.9}, {"1178": 0.9}, {"1178": 6}, {"1178": None},
+                      {"1178": float("nan")}, {"1178": "bad"}, {}):
+            with self.subTest(extra=extra):
+                self.assertIsNone(self.evidence(**extra))
+
+    def test_inflow_needs_a_switched_off_car_standing_in_park(self) -> None:
+        for extra in ({"1258": 1}, {"1010": 1}, {"1010": 2}, {"1010": 3}, {"1319": 12}, {"1149": 5},
+                      {"1010": None, "1319": None}, {"1010": 16777215, "1319": None}):
+            with self.subTest(extra=extra):
+                self.assertIsNone(self.evidence(**{"1178": -8, **extra}))
+        self.assertEqual(self.evidence(**{"1178": -8, "1010": None}), "inflow")
+        self.assertEqual(self.evidence(**{"1178": -8, "1258": None}), "inflow")
+
+    def test_charge_state_and_connector_flag_are_named(self) -> None:
+        for state in (1, 2, 3, 4, 6):
+            self.assertEqual(self.evidence(**{"1149": state, "1258": 1}), "charge_state")
+        self.assertEqual(self.evidence(**{"1197": 1, "1178": 0.9, "1258": 1}), "connector_flag")
+        self.assertIsNone(self.evidence(**{"1149": 4, "1010": 3}))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -116,7 +116,7 @@ from .signal_helpers import (
     nonzero_state,
     stationary_charge_inflow,
     steering_wheel_heating_state,
-    t03_cable_connected,
+    t03_cable_evidence,
     vehicle_precludes_charging,
     window_open_state,
 )
@@ -2869,13 +2869,17 @@ def normalize_vehicle(
     battery_percent = signal.get("1204")
     if not battery_reported and _safe_float(battery_percent) == 0:
         battery_percent = None
-    # The regular checks take a T03 for unplugged while it is switched on and
-    # in the charge states only this model reports with the cable in.
-    cable_in = t03 and t03_cable_connected(signal)
     # On the T03 the charge-state code can read "not charging" with the cable
     # in (#75) and the car may be switched on while it charges. Either makes
     # the regular checks deny a real session, so measured inflow decides.
     measured_charge = t03 and stationary_charge_inflow(signal)
+    # The regular checks take a T03 for unplugged while it is switched on and
+    # in the charge states only this model reports with the cable in. What
+    # shows the cable is kept: battery_memory holds it until the car drives.
+    cable_evidence = t03_cable_evidence(signal) if t03 else None
+    if measured_charge and cable_evidence is None:
+        cable_evidence = "inflow"
+    cable_in = cable_evidence is not None
     connection_state = "charging" if measured_charge else _charging_connection_state(signal)
     if cable_in and connection_state in (None, "unplugged"):
         connection_state = "plugged_in"
@@ -3000,6 +3004,7 @@ def normalize_vehicle(
             "is_regening": _is_regening(signal),
             "connection_state": connection_state,
             "battery_data_reported": battery_reported,
+            "cable_evidence": cable_evidence,
             "charge_limit_percent": charge_plan.get("percent"),
             "charge_limit_source": "config_3" if config.get("3") else "named_status",
             "charge_limit_reliability": "unverified" if t03 else "reported",

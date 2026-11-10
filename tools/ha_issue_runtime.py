@@ -229,7 +229,11 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
             ({"1149": 2, "1178": -8, "1197": 0, "1200": 120}, ("C", "on", "off")),
             ({"1149": 0, "1178": 0, "1197": 1, "1200": 0}, ("B", "on", "unknown")),
             ({"1149": 2, "1178": -8, "1197": 0, "1200": 60}, ("C", "on", "off")),
-            ({"1149": 0, "1178": 0, "1197": 0, "1200": 0}, ("A", "off", "off")),
+            # A T03 with the cable in and no charge running reports nothing of it:
+            # the cable that was seen stays in until the car drives.
+            ({"1149": 0, "1178": 0, "1197": 0, "1200": 0}, ("B", "on", "off")),
+            ({"1149": 0, "1178": 12, "1197": 0, "1200": 0, "1010": 3, "1319": 30}, ("A", "off", "off")),
+            ({"1149": 0, "1178": 0, "1197": 0, "1200": 0, "1010": 0, "1319": 0}, ("A", "off", "off")),
         ):
             data = self.api.normalize_vehicle(vehicle, {"data": {"signal": signals}}, None)
             self.client.fetch_data.return_value = {"vehicles": {VIN: data}}

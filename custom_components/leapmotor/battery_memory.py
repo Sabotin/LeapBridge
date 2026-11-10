@@ -7,9 +7,14 @@ The official app shows that as it is: 0 % and no cable.
 
 Nothing about the battery or the cable is measured while those electronics
 sleep, so what the last complete status said is kept until the next complete
-status, or until the car has moved. Plugging in and charging both wake the
-electronics; a cable taken out of a sleeping car is noticed when the car is
-next switched on.
+status, or until the car has moved.
+
+The cable of a T03 needs more than that. While it waits for its charging
+schedule, or after the charge has ended, even its complete status reads like
+that of an unplugged car. The cable only shows at times (see
+``signal_helpers.t03_cable_evidence``), so once it has been seen the car
+counts as plugged in until it drives. A cable taken out of a car that then
+stays parked is not noticed before the next drive.
 
 This module has no Home Assistant imports.
 """
@@ -19,6 +24,9 @@ from __future__ import annotations
 from typing import Any
 
 SOURCE = "last_complete_status"
+CABLE_SEEN = "seen_since_last_drive"
+#: Current into the pack that shows a cable in a trail written before the cable was held.
+_TRAIL_INFLOW_A = -1.0
 
 #: Charging keys kept from the last complete status, where the reduced one has none.
 _CHARGING_KEYS = ("is_plugged_in", "dc_cable_connected")
@@ -68,6 +76,7 @@ def remember(vehicle_data: dict[str, Any], seen_at: float) -> dict[str, Any] | N
             "remaining_minutes": charging.get("remaining_charge_minutes"),
             "ready": diagnostics.get("raw_signal_1258"),
             "gear": diagnostics.get("raw_signal_1010"),
+            "cable_evidence": charging.get("cable_evidence"),
         },
     }
 
@@ -138,6 +147,60 @@ def restore(vehicle_data: dict[str, Any], memory: dict[str, Any] | None) -> bool
     return filled or cable
 
 
+def _cable_from_trail(memory: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Find the cable in the trail of a memory written before the cable was held.
+
+    The last entry that shows a cable counts, unless the car was in a gear
+    after it.
+    """
+    found = None
+    for item in (memory or {}).get("trail") or []:
+        if not isinstance(item, dict):
+            continue
+        if item.get("gear") not in (0, None):
+            found = None
+            continue
+        current = _number(item.get("current_a"))
+        inflow = current is not None and current <= _TRAIL_INFLOW_A and item.get("ready") in (0, None)
+        if item.get("is_plugged_in") is True or inflow:
+            found = {
+                "since": item.get("seen_at"),
+                "evidence": "inflow" if inflow else "status",
+                "evidence_at": item.get("seen_at"),
+            }
+    return found
+
+
+def _cable_seen(
+    vehicle_data: dict[str, Any],
+    memory: dict[str, Any] | None,
+    seen_at: float,
+) -> dict[str, Any] | None:
+    """Return the cable that counts as in: seen in this status, or held from before."""
+    held = (memory or {}).get("cable_seen") if "cable_seen" in (memory or {}) else _cable_from_trail(memory)
+    held = dict(held) if isinstance(held, dict) else None
+    evidence = (vehicle_data.get("charging") or {}).get("cable_evidence")
+    if not evidence or (held and held.get("evidence") == evidence):
+        return held
+    return {
+        "since": (held or {}).get("since") or int(seen_at),
+        "evidence": evidence,
+        "evidence_at": int(seen_at),
+    }
+
+
+def _hold_cable(vehicle_data: dict[str, Any], cable: dict[str, Any]) -> None:
+    """Show a car whose status does not show its cable as plugged in."""
+    charging = vehicle_data.get("charging")
+    if not isinstance(charging, dict) or charging.get("is_plugged_in") is True:
+        return
+    charging["is_plugged_in"] = True
+    if charging.get("connection_state") in (None, "unplugged"):
+        charging["connection_state"] = "plugged_in"
+    charging["cable_state_source"] = CABLE_SEEN
+    charging["cable_state_seen_at"] = cable.get("evidence_at")
+
+
 def update(
     memories: dict[str, dict[str, Any]],
     vehicles: dict[str, Any] | None,
@@ -152,21 +215,29 @@ def update(
     for vin, vehicle_data in (vehicles or {}).items():
         if not isinstance(vehicle_data, dict):
             continue
-        complete = remember(vehicle_data, seen_at)
-        if complete is not None:
-            previous = memories.get(vin) or {}
-            complete = _with_trail(complete, previous)
-            if {**previous, "seen_at": 0} != {**complete, "seen_at": 0}:
+        previous = memories.get(vin)
+        moved = bool(previous) and has_moved(vehicle_data, previous)
+        # It drove since: the cable that was seen is out.
+        cable = _cable_seen(vehicle_data, None if moved else previous, seen_at)
+        if remember(vehicle_data, seen_at) is None:
+            if moved:
+                del memories[vin]
                 changed = True
-            memories[vin] = complete
+                continue
+            restore(vehicle_data, previous)
+            if cable:
+                _hold_cable(vehicle_data, cable)
+            if previous is not None and previous.get("cable_seen", ...) != cable:
+                previous["cable_seen"] = cable
+                changed = True
             continue
-        memory = memories.get(vin)
-        if memory and has_moved(vehicle_data, memory):
-            # It drove since: what the last complete status said is over.
-            del memories[vin]
+        if cable:
+            _hold_cable(vehicle_data, cable)
+        complete = _with_trail(remember(vehicle_data, seen_at), previous)
+        complete["cable_seen"] = cable
+        if {**(previous or {}), "seen_at": 0} != {**complete, "seen_at": 0}:
             changed = True
-            continue
-        restore(vehicle_data, memory)
+        memories[vin] = complete
     return changed
 
 
@@ -181,4 +252,4 @@ def from_storage(stored: Any) -> dict[str, dict[str, Any]]:
     }
 
 
-__all__ = ["SOURCE", "from_storage", "has_moved", "is_reduced", "remember", "restore", "update"]
+__all__ = ["CABLE_SEEN", "SOURCE", "from_storage", "has_moved", "is_reduced", "remember", "restore", "update"]

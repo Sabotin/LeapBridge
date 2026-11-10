@@ -316,6 +316,21 @@ class OctoberChargingTests(unittest.TestCase):
                 self.assertEqual(
                     tuple(result[k] for k in ("is_plugged_in", "is_charging", "connection_state")), expected)
 
+    def test_t03_current_into_the_switched_off_car_shows_the_cable(self):
+        """Right after plugging in, before the wait for 23:00: 2.6 A into the pack, nothing else."""
+        off = {"1010": 0, "1319": 0, "1149": 0, "1197": 0, "1258": 0, "1177": 368.2, "1200": 0}
+        result = self.normalize(**{**off, "1178": -2.6})
+        self.assertEqual(
+            tuple(result[k] for k in ("is_plugged_in", "is_charging", "connection_state", "cable_evidence")),
+            (True, False, "plugged_in", "inflow"))
+        # Minutes later the status is that of an unplugged car; the memory holds the cable.
+        result = self.normalize(**{**off, "1178": 0.0})
+        self.assertEqual(
+            tuple(result[k] for k in ("is_plugged_in", "connection_state", "cable_evidence")),
+            (False, "unplugged", None))
+        self.assertEqual(self.normalize(**{**off, "1178": -8, "1200": 190})["cable_evidence"], "inflow")
+        self.assertIsNone(self.normalize("C10", **{**off, "1178": -2.6})["cable_evidence"])
+
     def test_other_models_do_not_get_the_t03_cable_rule(self):
         for model in ("B10", "C10", "B05"):
             for signals in ({"1149": 6, "1178": 0}, {"1149": 4, "1178": 0.9, "1258": 1}):

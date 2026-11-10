@@ -4,6 +4,26 @@
 below; from this release on, HACS installs releases instead of the latest
 commit.
 
+## 0.7.10: a T03 stays plugged in until it drives
+
+- **T03: plugged in while it waits for its schedule, and after the charge.**
+  A T03 with the cable in and no charge running reports exactly what an
+  unplugged one does (charge state 0, connector flag 0, no current), also in
+  a complete status; measured on a car waiting for 23:00. The cable only
+  shows at times: while charging, in some charge states, and as current
+  flowing into the pack of the switched-off car right after plugging in
+  (2.6 A on that car, below the 3 A that counts as charging). Once the cable
+  has been seen, the car now counts as plugged in until it drives: a gear, a
+  speed or a changed odometer takes the cable out. This is kept across
+  restarts, and a car that was plugged in under 0.7.9 is recognised from what
+  0.7.9 stored. **Limit:** a cable taken out of a car that then stays parked
+  is only noticed at the next drive. Other models, which report their cable,
+  are unchanged.
+- The cable sensor carries `cable_state_source` (`seen_since_last_drive` or
+  `last_complete_status`) and `cable_state_seen_at` while the cable is not
+  read from the current status. The diagnostics block
+  `last_complete_battery_status` shows the held cable as `cable_seen`.
+
 ## 0.7.9: battery level and cable state while the car sleeps
 
 - **A sleeping car no longer shows 0 % and "not plugged in".** When a T03 is

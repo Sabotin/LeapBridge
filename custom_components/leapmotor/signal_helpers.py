@@ -141,6 +141,39 @@ def t03_cable_connected(signals: dict[str, object]) -> bool:
     return state == 0 and _safe_int(signals.get("1197")) == 1
 
 
+#: From this much current into the pack of a switched-off car the cable counts as seen.
+CABLE_INFLOW_MIN_A = 1.0
+
+
+def t03_cable_evidence(signals: dict[str, object]) -> str | None:
+    """Return what in this status shows a cable in a standing T03, or None.
+
+    A T03 that waits for its charging schedule reports exactly what an
+    unplugged one does: charge state 0, connector flag 0, no current. The
+    cable shows only at times: in the charge states and the connector flag of
+    ``t03_cable_connected``, and as current flowing into the pack of a car
+    that is switched off and stands in Park (2.6 A right after plugging in on
+    a car that then waited for 23:00). A switched-off car cannot regenerate,
+    so that current comes from a cable. None means "no sign of a cable in
+    this status", not "unplugged".
+    """
+    if not t03_cable_connected(signals):
+        gear = _safe_int(signals.get("1010"))
+        speed = _safe_float(signals.get("1319"))
+        if gear in {1, 2, 3} or (speed is not None and speed > 0):
+            return None
+        if gear != 0 and speed != 0:
+            # Standstill has to be reported, not assumed from missing data.
+            return None
+        if nonzero_state(signals.get("1258")) is True or _safe_int(signals.get("1149")) == 5:
+            return None
+        current = _safe_float(signals.get("1178"))
+        if current is not None and current <= -CABLE_INFLOW_MIN_A:
+            return "inflow"
+        return None
+    return "charge_state" if _safe_int(signals.get("1149")) in T03_CONNECTED_STATES else "connector_flag"
+
+
 #: Charge state, pack voltage and current, connector flag, remaining charge time.
 BATTERY_SIGNALS = ("1149", "1177", "1178", "1197", "1200")
 
