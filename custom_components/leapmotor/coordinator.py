@@ -45,7 +45,7 @@ from .leap_api import (
     LeapmotorAuthError,
     LeapmotorMissingAppCertError,
 )
-from . import battery_memory
+from . import battery_memory, charge_now
 from .drive_analytics import (
     STORAGE_VERSION as ANALYTICS_STORAGE_VERSION,
     TIER_HOME,
@@ -73,6 +73,7 @@ GPS_SIGN_STORAGE_VERSION = 1
 BATTERY_MEMORY_STORAGE_VERSION = 1
 #: A charging car changes its values every poll; they are written at most this often.
 BATTERY_MEMORY_SAVE_DELAY_SECONDS = 60
+CHARGE_NOW_STORAGE_VERSION = 1
 
 
 def _minutes(value: Any) -> int | None:
@@ -171,6 +172,15 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
             BATTERY_MEMORY_STORAGE_VERSION,
             f"{DOMAIN}.battery_memory.{config_entry.entry_id}",
         )
+        # Schedules "charge now" switched off, as last written to storage, and
+        # the cars whose schedule is being switched on again right now.
+        self._charge_now_store = Store[dict[str, dict[str, Any]]](
+            hass,
+            CHARGE_NOW_STORAGE_VERSION,
+            f"{DOMAIN}.charge_now.{config_entry.entry_id}",
+        )
+        self._charge_now_saved: dict[str, dict[str, Any]] = {}
+        self._schedule_resuming: set[str] = set()
         self._analytics = DriveAnalytics()
         self._pending_events: dict[str, list[dict[str, Any]]] = {}
         self._maintenance_catalog: dict[str, Any] = {"packs": {}}
@@ -253,6 +263,93 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
                 lambda: {vin: dict(memory) for vin, memory in self._battery_memory.items()},
                 BATTERY_MEMORY_SAVE_DELAY_SECONDS,
             )
+
+    async def async_load_charge_now(self) -> None:
+        """Load the schedules "charge now" switched off, so a restart still switches them on."""
+        paused = charge_now.from_storage(await self._charge_now_store.async_load())
+        self._charge_now_saved = {vin: dict(pause) for vin, pause in paused.items()}
+        self.client.paused_schedules.update(paused)
+
+    def _apply_charge_now(self, data: dict[str, Any]) -> None:
+        """Show a schedule that is off for one charge, and switch it on again when that is over."""
+        now = time.time()
+        paused = self.client.paused_schedules
+        vehicles = data.get("vehicles") or {}
+        for vin, vehicle_data in vehicles.items():
+            pause = paused.get(vin)
+            reason = charge_now.observe(pause, vehicle_data, now) if pause else None
+            charge_now.apply(vehicle_data, pause)
+            if (
+                pause
+                and reason
+                and vin not in self._schedule_resuming
+                and charge_now.may_try(pause, now)
+                and self.operation_password_configured(vin)
+            ):
+                self._schedule_resuming.add(vin)
+                self.config_entry.async_create_background_task(
+                    self.hass,
+                    self._async_resume_charging_schedule(vin, reason, data),
+                    f"{DOMAIN}_resume_charging_schedule_{vin[-4:]}",
+                )
+        self._save_charge_now()
+
+    def _show_charge_now(self, vin: str, polled: dict[str, Any]) -> None:
+        """Bring the data entities read in line with the paused schedules, between polls."""
+        for data in (self.data, polled):
+            vehicle_data = ((data or {}).get("vehicles") or {}).get(vin)
+            if isinstance(vehicle_data, dict):
+                charge_now.apply(vehicle_data, self.client.paused_schedules.get(vin))
+
+    def _save_charge_now(self) -> None:
+        """Write the paused schedules when they changed."""
+        current = {vin: dict(pause) for vin, pause in self.client.paused_schedules.items()}
+        if current != self._charge_now_saved:
+            self._charge_now_saved = current
+            self._charge_now_store.async_delay_save(lambda: dict(self._charge_now_saved), 0)
+
+    async def _async_resume_charging_schedule(
+        self, vin: str, reason: str, polled: dict[str, Any]
+    ) -> None:
+        """Switch the schedule on again after the charge that "charge now" started.
+
+        ``polled`` is the data of the poll that found the schedule due. This
+        can end before that poll does, so the outcome is written into it too.
+        """
+        # Imported here: remote_helpers imports this module.
+        from .remote_helpers import format_remote_error
+
+        action = "resume_charging_schedule"
+        try:
+            _LOGGER.info(
+                "Leapmotor switches the charging schedule of ***%s back on (%s)", vin[-4:], reason
+            )
+            try:
+                result = await self.hass.async_add_executor_job(
+                    self.client.resume_charging_schedule, vin
+                )
+            except LeapmotorApiError as exc:
+                error = format_remote_error(exc)
+                pause = self.client.paused_schedules.get(vin)
+                if pause is not None and not charge_now.failed(pause, error, time.time()):
+                    self.client.paused_schedules.pop(vin, None)
+                    _LOGGER.warning(
+                        "Leapmotor could not switch the charging schedule of ***%s back on "
+                        "after %s attempts (%s). Switch it on in the car or in the card.",
+                        vin[-4:],
+                        charge_now.RESUME_MAX_ATTEMPTS,
+                        error,
+                    )
+                self._show_charge_now(vin, polled)
+                self.record_remote_action(vin, action, success=False, error=error, cooldown=False)
+            else:
+                self._show_charge_now(vin, polled)
+                self.record_remote_action(vin, action, success=True, result=result)
+            self._apply_single_remote_result(polled, vin, self._last_remote_results[vin])
+        finally:
+            self._schedule_resuming.discard(vin)
+            self._save_charge_now()
+        await self.async_request_refresh()
 
     async def async_load_analytics(self) -> None:
         """Load the trip log, charging sessions and full-charge history."""
@@ -686,6 +783,7 @@ class LeapmotorDataUpdateCoordinator(DataUpdateCoordinator[dict]):
         # First, so everything below works with the kept values.
         self._apply_battery_memory(data)
         self._stabilize_vehicle_states(data)
+        self._apply_charge_now(data)
         self._apply_state_freshness(data)
         self._normalize_locations(data)
         self._apply_analytics(data)

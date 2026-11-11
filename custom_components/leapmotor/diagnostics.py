@@ -79,6 +79,8 @@ async def async_get_config_entry_diagnostics(
                 "raw_signals": _raw_signals_from_diagnostics(diagnostics),
                 # What the last complete status said, kept while the car sleeps.
                 "last_complete_battery_status": _battery_memory(coordinator, vin),
+                # The schedule "charge now" switched off, until it is switched on again.
+                "charging_schedule_paused": _paused_schedule(coordinator, vin),
                 "diagnostics": _redact(diagnostics),
                 "location": {
                     "location_source": vehicle_data.get("location", {}).get("location_source"),
@@ -209,6 +211,13 @@ def _battery_memory(coordinator: Any, vin: str) -> dict[str, Any] | None:
     getter = getattr(coordinator, "battery_memory_for", None)
     memory = getter(vin) if callable(getter) else None
     return _redact(memory) if isinstance(memory, dict) else None
+
+
+def _paused_schedule(coordinator: Any, vin: str) -> dict[str, Any] | None:
+    """Return the schedule that is off for one charge, if there is one."""
+    paused = getattr(getattr(coordinator, "client", None), "paused_schedules", None)
+    pause = paused.get(vin) if isinstance(paused, dict) else None
+    return _redact(dict(pause)) if isinstance(pause, dict) else None
 
 
 def _redact(value: Any) -> Any:

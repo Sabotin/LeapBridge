@@ -304,6 +304,12 @@ Ti podatki se berejo iz Leapmotorjevega oblaka redkeje kot stanje vozila
   izbereš vrednost (na T03 od 50 do 100 % po 5 %) in jo pošlješ z dvojnim
   tapom na **Nastavi**, ali z entiteto *Meja polnjenja*. Na T03 se
   pošlje tako kot v LeapConnectu; če avto ukaza ne potrdi, se pošlje še enkrat.
+- **Polni zdaj na T03:** T03 nima ukaza za začetek polnjenja, zato **Polni
+  zdaj** izklopi urnik polnjenja; priključen avto, ki je čakal na urnik, takrat
+  začne polniti. Integracija urnik sama znova vklopi, ko je to polnjenje
+  končano: pet minut po tem, ko avto neha polniti, ko se avto odpelje, ali po
+  36 urah brez polnjenja. Če vklop ne uspe, poskusi štirikrat, na četrt ure,
+  in nato to zapiše v dnevnik. Polnjenja na T03 na daljavo ni mogoče ustaviti.
 - **Živa slika avta:** avto na nadzorni plošči pokaže odprta vrata,
   prtljažnik in okna, nizek tlak v pnevmatikah, odklenjen avto, gretje ali
   hlajenje, stražo, vožnjo in polnjenje. Če oznake stojijo na napačnem koncu

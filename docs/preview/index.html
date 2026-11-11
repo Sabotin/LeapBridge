@@ -25,6 +25,7 @@
     <a href="?state=charging">Charging · night</a>
     <a href="?state=plugged&page=charging">Plugged in · waiting for the schedule</a>
     <a href="?state=plugged&page=charging&schedule=start">Plugged in · start time only (T03)</a>
+    <a href="?state=plugged&page=charging&schedule=start&paused=1">Plugged in · charge now sent (T03)</a>
     <a href="?state=parked&scene=day">Parked · day</a>
     <a href="?state=attention">Needs attention</a>
     <a href="?state=driving">Driving · too fast</a>
@@ -60,6 +61,7 @@
     const driving = scenario === "driving";
     const waiting = scenario === "plugged"; // plugged in, the charging schedule has not started yet
     const startOnly = q.get("schedule") === "start"; // a T03: the schedule is a switch and a start time
+    const paused = q.get("paused") === "1"; // charge now was sent: the schedule is off for this charge
 
     /* ---------- 24 h timeline (hours ago) ---------- */
     const events = [
@@ -158,7 +160,7 @@
     add("switch.c10_steering_wheel_heating", "steering_wheel_heat", "off", meta);
     add("switch.c10_mirror_heating", "rearview_mirror_heat", "off", meta);
     add("switch.c10_charging_schedule", "charging_schedule", "on", meta);
-    add("time.c10_set_charging_schedule_start", "charging_schedule_start", "23:00:00", { ...meta, schedule_enabled: true,
+    add("time.c10_set_charging_schedule_start", "charging_schedule_start", "23:00:00", { ...meta, schedule_enabled: !paused, schedule_paused: paused,
       schedule_start: "23:00", schedule_end: startOnly ? null : "06:00",
       schedule_days: startOnly ? null : ["mon", "tue", "wed", "thu", "fri"],
       repeat_weekly: startOnly ? null : true, auto_recharge: startOnly ? null : false,
@@ -373,7 +375,8 @@
         { kind: "climate", enabled: false, time: "16:00", days: [5], id: "b", mode: "cool", temperature: 20, fan_speed: 5 }], battery_heating: null, prepare_car: [] } });
     const shared = q.get("shared") === "1";
     add("sensor.c10_remote_permissions", "remote_permissions", 6, { ...meta, shared,
-      rights: ["lock", "find_car", "trunk", "climate", "quick_climate", "windows", "start_stop_charging"], modules: ["basic", "vehicle_control"], abilities: [] });
+      // A T03 has no start/stop charging command.
+      rights: ["lock", "find_car", "trunk", "climate", "quick_climate", "windows", ...(startOnly ? [] : ["start_stop_charging"])], modules: ["basic", "vehicle_control"], abilities: [] });
     const msg = (id, title, message, hoursAgo, read) => ({ id: String(id), title, message, time: iso(now - hoursAgo * HOUR), ts: (now - hoursAgo * HOUR) / 1000, read, type: 1 });
     add("sensor.c10_unread_message_count", "unread_message_count", 1, { ...meta, messages: [
       msg(41, "Charging complete", "Your vehicle has finished charging. The battery is at 90 %.", 26, false),
@@ -457,6 +460,13 @@
           S[id] = { ...S[id], state: `${data.start_time}:00`, last_updated: iso(Date.now()), attributes: { ...S[id].attributes,
             schedule_enabled: data.enabled, schedule_start: data.start_time, schedule_end: data.end_time,
             schedule_days: data.days, repeat_weekly: data.repeat_weekly } };
+          const el = window.__card || window.__panel;
+          if (el) el.hass = { ...hass, states: { ...S } };
+        }
+        if (service === "press" && startOnly && String(data?.entity_id || "").endsWith("start_charging")) {
+          // A T03 charges now by having its schedule switched off for this charge.
+          const id = "time.c10_set_charging_schedule_start";
+          S[id] = { ...S[id], last_updated: iso(Date.now()), attributes: { ...S[id].attributes, schedule_enabled: false, schedule_paused: true } };
           const el = window.__card || window.__panel;
           if (el) el.hass = { ...hass, states: { ...S } };
         }

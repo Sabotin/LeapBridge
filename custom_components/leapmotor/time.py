@@ -112,7 +112,8 @@ class LeapmotorChargingScheduleTime(
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """The whole schedule, so dashboards need only one entity."""
-        view = schedule_view(self.vehicle_data.get("charging"))
+        charging = self.vehicle_data.get("charging") or {}
+        view = schedule_view(charging)
         days = view["days"]
         return {
             "vin": self.vin,
@@ -123,6 +124,9 @@ class LeapmotorChargingScheduleTime(
             "repeat_weekly": view["repeat_weekly"],
             "auto_recharge": view["auto_recharge"],
             "charge_limit_percent": view["charge_limit_percent"],
+            # "Charge now" switched the schedule off for one charge; it goes back on afterwards.
+            "schedule_paused": bool(charging.get("charging_schedule_paused")),
+            "schedule_paused_since": charging.get("charging_schedule_paused_since"),
             "operation_password_configured": self.coordinator.operation_password_configured(
                 self.vin
             ),

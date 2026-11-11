@@ -1125,7 +1125,7 @@
     },
     "charging_start": {
       "name": "Laden starten",
-      "description": "Startet das Laden bei angestecktem Kabel. Fahrzeug-PIN erforderlich."
+      "description": "Startet das Laden bei angestecktem Kabel. Ein T03 hat keinen Startbefehl: sein Ladeplan wird für diese eine Ladung aus- und danach wieder eingeschaltet. Fahrzeug-PIN erforderlich."
     },
     "charging_stop": {
       "name": "Laden stoppen",

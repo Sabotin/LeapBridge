@@ -925,7 +925,7 @@ export_diagnostics:
         text:
 charging_start:
   name: Start charging
-  description: Start charging while the cable is plugged in. Requires the configured Vehicle PIN. Ported from LeapConnect.
+  description: Start charging while the cable is plugged in. A T03 has no start command; its charging schedule is switched off for this one charge and back on afterwards. Requires the configured Vehicle PIN. Ported from LeapConnect.
   fields:
     vin:
       name: VIN

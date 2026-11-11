@@ -266,8 +266,17 @@ copied to every car, so set it on the intended vehicle.
 - **Charge limit on the T03** is sent like LeapConnect does (leapmotor-api
   0.6.0): command 190 built from the cloud's charging schedule, range
   50–100 % in steps of 5. If the car does not confirm it, it is sent once
-  more; the same value twice is harmless. Switching the T03 charging schedule
-  on or off stays unsupported.
+  more; the same value twice is harmless. The *Charging schedule* switch
+  stays unsupported on the T03; the schedule editor and *Charge now* do
+  switch it.
+- **Charge now on the T03:** the T03 has no command that starts a charge, so
+  *Charge now* (and `leapmotor.charging_start`) switches its charging schedule
+  off; a plugged-in car that was waiting then starts. The integration switches
+  the schedule on again when that charge is over: five minutes after the car
+  stopped charging, when it drives, or after 36 hours without a charge. If
+  that fails it is tried four times, a quarter of an hour apart, and then
+  written to the log. Commands to a T03 carry the start time and charge limit
+  the car last reported, not the cloud's older copy.
 - **Battery health** needs at least three days with a full (100 %) charge.
 - **What the integration learns** comes only from the trips and charging
   sessions it has recorded in your Home Assistant; nothing is sent anywhere.
@@ -321,9 +330,9 @@ copied to every car, so set it on the intended vehicle.
   unknown with `energy_unavailable_reason: unreliable_source`. Raw values,
   dates, mileage and coverage remain available; no scaling is applied.
 - **T03:** daily energy is reported in Wh and converted to kWh
-  (`daily_detail.energy_raw` keeps the source value). Charging-schedule writes
-  are not supported; use the car or the official app. Read-only charge-limit
-  values can be stale (`reliability: unverified`). A T03 with the cable in and
+  (`daily_detail.energy_raw` keeps the source value). It has no remote
+  command to start or stop a charge (see *Charge now on the T03* above).
+  Read-only charge-limit values can be stale (`reliability: unverified`). A T03 with the cable in and
   no charge running (a wallbox pause, waiting for its schedule, a finished
   charge) reports nothing of the cable, so once the cable has been seen the
   car counts as connected (`plugged_in`, EVCC `B`) until it drives; a cable
@@ -372,7 +381,7 @@ permissions.
 | `leapmotor.preheat_cabin` | 🔒 | Heat with the vehicle preset; optional `temperature`, `fan_speed`, `recirculate` |
 | `leapmotor.precool_cabin` | 🔒 | Cool with A/C using the vehicle preset; same optional fields |
 | `leapmotor.precondition_cabin` | 🔒 | Cool when warm outside, otherwise heat |
-| `leapmotor.charging_start` / `leapmotor.charging_stop` | 🔒 | Start or stop charging while plugged in |
+| `leapmotor.charging_start` / `leapmotor.charging_stop` | 🔒 | Start or stop charging while plugged in. A T03 has neither command: start switches its charging schedule off for this one charge and back on afterwards, stop is refused |
 | `leapmotor.sunroof_open` / `leapmotor.sunroof_close` | 🔒 | Sunroof, on cars that report one |
 | `leapmotor.log_maintenance` | no | `service_type`, optional `odometer_km`, `date` |
 | `leapmotor.reset_maintenance` | no | Forget a logged service |

@@ -9,7 +9,7 @@
  * setup is needed. Add the card with:  type: custom:leapmotor-card
  */
 
-const CARD_VERSION = "1.3.2";
+const CARD_VERSION = "1.3.3";
 const MODULE_BASE = new URL(".", import.meta.url);
 
 /* ------------------------------------------------------------------ */
@@ -305,6 +305,7 @@ Object.assign(STRINGS.en, {
   rlNow: "with {p} % now", rlFull: "from 100 %", rlNote: "An estimate tuned to your own consumption: air drag grows with the square of speed, and heating or cooling costs more the further it is from 20 °C.",
   rlNeedData: "The range lab needs your average consumption first.",
   fcTitle: "Capacity trend", fcStable: "stable", fcSub: "{x} % per year · {n} full charges", fc90: "90 % around {d}",
+  schPaused: "off for this charge", schPausedSub: "back on after the charge", schPausedRow: "Charge now sent · the schedule is back on after this charge",
   schEdit: "Edit", schStart: "Start", schEnd: "End", schDays: "Days", schOn: "Schedule on",
   schRepeat: "Repeat weekly", schRecharge: "Auto recharge", schSave: "Save", schNone: "No schedule set",
   schWeekly: "every week", schOnce: "once", schNeedTime: "Set the start and the end.", schNeedDay: "Choose at least one day.",
@@ -367,6 +368,7 @@ Object.assign(STRINGS.sl, {
   rlNow: "s trenutnimi {p} %", rlFull: "s 100 %", rlNote: "Ocena, umerjena na tvojo porabo: zračni upor raste s kvadratom hitrosti, gretje in hlajenje pa staneta več, čim dlje je od 20 °C.",
   rlNeedData: "Laboratorij dosega najprej potrebuje tvojo povprečno porabo.",
   fcTitle: "Trend kapacitete", fcStable: "stabilno", fcSub: "{x} % na leto · {n} polnih polnjenj", fc90: "90 % okoli {d}",
+  schPaused: "izklopljen za to polnjenje", schPausedSub: "po polnjenju se znova vklopi", schPausedRow: "Polni zdaj poslano · urnik se po tem polnjenju znova vklopi",
   schEdit: "Uredi", schStart: "Začetek", schEnd: "Konec", schDays: "Dnevi", schOn: "Urnik vklopljen",
   schRepeat: "Ponovi vsak teden", schRecharge: "Samodejno dopolnjevanje", schSave: "Shrani", schNone: "Urnik ni nastavljen",
   schWeekly: "vsak teden", schOnce: "enkrat", schNeedTime: "Nastavi začetek in konec.", schNeedDay: "Izberi vsaj en dan.",
@@ -429,6 +431,7 @@ Object.assign(STRINGS.de, {
   rlNow: "mit {p} % jetzt", rlFull: "ab 100 %", rlNote: "Eine Schätzung, abgestimmt auf deinen eigenen Verbrauch: Der Luftwiderstand wächst mit dem Quadrat des Tempos, Heizen und Kühlen kosten umso mehr, je weiter es von 20 °C entfernt ist.",
   rlNeedData: "Das Reichweiten-Labor braucht zuerst deinen Durchschnittsverbrauch.",
   fcTitle: "Kapazitätstrend", fcStable: "stabil", fcSub: "{x} % pro Jahr · {n} Vollladungen", fc90: "90 % etwa {d}",
+  schPaused: "für diese Ladung aus", schPausedSub: "nach dem Laden wieder ein", schPausedRow: "Jetzt laden gesendet · der Ladeplan ist nach dieser Ladung wieder ein",
   schEdit: "Bearbeiten", schStart: "Beginn", schEnd: "Ende", schDays: "Tage", schOn: "Ladeplan ein",
   schRepeat: "Jede Woche wiederholen", schRecharge: "Automatisch nachladen", schSave: "Speichern", schNone: "Kein Ladeplan eingestellt",
   schWeekly: "jede Woche", schOnce: "einmalig", schNeedTime: "Beginn und Ende festlegen.", schNeedDay: "Mindestens einen Tag wählen.",
@@ -4319,7 +4322,24 @@ class LeapmotorCard extends HTMLElement {
       start: hhmm(a.schedule_start), end: hhmm(a.schedule_end),
       days: Array.isArray(a.schedule_days) ? SCHED_DAYS.filter((d) => a.schedule_days.includes(d)) : null,
       enabled: flag(a.schedule_enabled), repeat: flag(a.repeat_weekly), recharge: flag(a.auto_recharge),
+      // "Charge now" switched it off for one charge; the integration switches it on again afterwards.
+      paused: a.schedule_paused === true,
     };
+  }
+
+  /** Whether the car takes the start/stop charging command; a T03 does not. Unknown rights count as yes. */
+  _canToggleCharge() {
+    const rights = this._s("permissions")?.attributes?.rights;
+    return !Array.isArray(rights) || !rights.length || rights.includes("start_stop_charging");
+  }
+
+  /** Charge now was sent and the charge has not started yet: plugged in, schedule off for this charge, below the limit. */
+  _schedPausedWaiting() {
+    const now = this._schedNow();
+    const { charging, plugged, finished } = this._chargeState();
+    if (!now || !now.paused || !plugged || charging || finished) return false;
+    const soc = this._v("battery"), limit = this._currentLimit();
+    return !(soc != null && limit != null && soc >= limit);
   }
 
   /** Plugged in with the schedule on, and the charge has not started: not charging, not complete, below the limit. */
@@ -4374,6 +4394,9 @@ class LeapmotorCard extends HTMLElement {
   /** "Charging not started yet · starts at 23:00" while the plugged-in car waits for its schedule; Charge now where the car can be told to. */
   _schedNowHtml(hero = false) {
     const wait = this._schedWait();
+    if (!wait && this._schedPausedWaiting()) {
+      return `<div class="schnow${hero ? " hs" : ""}"><span>${icon("bolt")}${esc(this._tr("schPausedRow"))}</span></div>`;
+    }
     if (!wait) return "";
     const t = (k, v) => this._tr(k, v);
     const text = wait.text;
@@ -4412,8 +4435,8 @@ class LeapmotorCard extends HTMLElement {
     if (!d) {
       // A car whose schedule is a start time only (T03) has no end to show.
       const known = !!now.start;
-      const state = now.enabled == null ? "" : ` · ${now.enabled ? t("on") : t("off")}`;
-      const sub = [this._schedDaysText(now.days), now.repeat == null ? "" : now.repeat ? t("schWeekly") : t("schOnce")].filter(Boolean).join(" · ");
+      const state = now.paused ? ` · ${t("schPaused")}` : now.enabled == null ? "" : ` · ${now.enabled ? t("on") : t("off")}`;
+      const sub = [this._schedDaysText(now.days), now.repeat == null ? "" : now.repeat ? t("schWeekly") : t("schOnce"), now.paused ? t("schPausedSub") : ""].filter(Boolean).join(" · ");
       return `<div class="lrow sch">
         <div><small>${esc(t("schedule") + state)}</small>${known
           ? `<b>${esc(now.end ? `${this._clock(now.start)} – ${this._clock(now.end)}` : t("schFrom", { t: this._clock(now.start) }))}</b>${sub ? `<span class="schsub">${esc(sub)}</span>` : ""}`
@@ -4904,9 +4927,12 @@ class LeapmotorCard extends HTMLElement {
     swDef("sentry", "access", "sentry", t("sentry"), "cctv", "#f472b6");
     btn("find", "access", "findBtn", t("findCar"), "find", "#f472b6");
     const { plugged, charging } = this._chargeState();
+    // A car without the start/stop command (T03) cannot be stopped from here, and
+    // is started by switching its schedule off: only offered while that schedule is on.
+    const toggle = this._canToggleCharge();
     if (plugged) {
-      if (charging) btn("charge", "charging", "stopChargeBtn", t("stopCharge"), "plug", "#f6a823");
-      else btn("charge", "charging", "startChargeBtn", t("startCharge"), "bolt", "#34d399");
+      if (charging) { if (toggle) btn("charge", "charging", "stopChargeBtn", t("stopCharge"), "plug", "#f6a823"); }
+      else if (toggle || this._schedNow()?.enabled === true) btn("charge", "charging", "startChargeBtn", t("startCharge"), "bolt", "#34d399");
     }
     swDef("schedule", "charging", "chargeSchedule", t("schedule"), "calendar", "#a78bfa");
     swDef("preheat", "charging", "preheat", t("preheat"), "battery", "#34d399");
@@ -4916,7 +4942,7 @@ class LeapmotorCard extends HTMLElement {
   }
 
   _controlsSig() {
-    return [this._sig(["lock", "climateSwitch", "preheat", "steeringHeat", "mirrorHeat", "chargeSchedule", "trunk", "sunshadePos", "isPlugged", "isCharging", "connection", "interior", "sentry", "healthyCharging", "skylight", "preheatBtn", "precoolBtn", "preconditionBtn", "outdoor"]),
+    return [this._sig(["lock", "climateSwitch", "preheat", "steeringHeat", "mirrorHeat", "chargeSchedule", "trunk", "sunshadePos", "isPlugged", "isCharging", "connection", "interior", "sentry", "healthyCharging", "skylight", "preheatBtn", "precoolBtn", "preconditionBtn", "outdoor", "schedStart", "permissions"]),
       this._sig(WINDOWS), JSON.stringify(this._armed), JSON.stringify(this._busy)].join("#");
   }
 

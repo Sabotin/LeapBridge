@@ -1065,7 +1065,7 @@
     },
     "charging_start": {
       "name": "Začni polnjenje",
-      "description": "Začni polnjenje, ko je kabel priključen. Potreben je PIN vozila."
+      "description": "Začni polnjenje, ko je kabel priključen. T03 nima ukaza za začetek: urnik polnjenja se izklopi za to eno polnjenje in se po njem znova vklopi. Potreben je PIN vozila."
     },
     "charging_stop": {
       "name": "Ustavi polnjenje",

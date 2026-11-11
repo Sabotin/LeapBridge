@@ -89,3 +89,24 @@ def charging_plan_control_supported(car_type: object) -> bool:
     instead (as LeapConnect does); switching its schedule stays unsupported.
     """
     return str(car_type or "").strip().upper() != "T03"
+
+
+#: ``rightList`` code of the start/stop charging command (193).
+RIGHT_START_STOP_CHARGING = "193"
+
+
+def remote_charge_toggle_supported(car_type: object, rights: object) -> bool:
+    """Return whether the car takes the start/stop charging command (193).
+
+    The T03 has no such command: the cloud's right list of a T03 does not
+    carry 193 (leapmotor-api 0.6.0 documents it for the C10 and B10 only), and
+    a T03 that waits for its schedule does not start on it. A T03 whose right
+    list does carry 193 is believed. Other models are not restricted here.
+    """
+    if str(car_type or "").strip().upper() != "T03":
+        return True
+    if isinstance(rights, (list, tuple, set, frozenset)):
+        codes = {str(code).strip() for code in rights}
+    else:
+        codes = {part.strip() for part in str(rights or "").split(",")}
+    return RIGHT_START_STOP_CHARGING in codes

@@ -1850,6 +1850,111 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
                 self.assertIn(f"component.leapmotor.entity.time.{key}.name", strings, language)
         self.hass.data["leapmotor"][entry.entry_id].cancel_scheduled_followup_refreshes()
 
+    # ------------------------------------------------------------------
+    # Charge now on a T03: the schedule is off for one charge
+    # ------------------------------------------------------------------
+
+    async def test_t03_charge_now_pauses_the_schedule_and_switches_it_on_after_the_charge(self):
+        cloud = {"chargeEnable": 1, "chargesoc": 90, "starttime": "23:55", "endtime": "09:37",
+                 "cycles": "1,2,3,4,5,6,7", "circulation": 1, "recharge": 0}
+        entry = await self.load_entry()
+        coordinator = self.hass.data["leapmotor"][entry.entry_id]
+        self.client.get_charge_schedule = Mock(return_value=dict(cloud))
+        # What the car's last complete status said: set to 23:00 and 80 % on its screen.
+        self.client._car_plan_values[VIN] = {"start": "23:00", "limit": 80}
+
+        def sent():
+            kwargs = self.client._remote_control_raw.call_args.kwargs
+            self.assertEqual(kwargs["cmd_id"], "190")
+            return kwargs["action_label"], json.loads(kwargs["cmd_content"])
+
+        async def poll(*, charging):
+            data = deepcopy(self.client.fetch_data.return_value)
+            data["vehicles"][VIN]["charging"].update(is_charging=charging, battery_data_reported=True)
+            self.client.fetch_data.return_value = data
+            await coordinator.async_refresh()
+            await self.hass.async_block_till_done(wait_background_tasks=True)
+
+        def paused():
+            return self.state_of("time", "charging_schedule_start").attributes["schedule_paused"]
+
+        self.assertFalse(paused())
+        registry = entity_registry.async_get(self.hass)
+        button = registry.async_get_entity_id("button", "leapmotor", f"{VIN}_charging_start")
+        await self.hass.services.async_call("button", "press", {"entity_id": button}, blocking=True)
+        await self.hass.async_block_till_done()
+        # No command 193: the schedule is switched off, with the car's own start time and limit.
+        self.assertEqual(sent(), ("charge_now", {**cloud, "chargeEnable": 0, "chargesoc": 80,
+                                                 "starttime": "23:00"}))
+        self.assertEqual(self.client._remote_control_raw.call_count, 1)
+        self.assertTrue(coordinator.data["vehicles"][VIN]["remote_control"]["success"])
+        self.assertTrue(paused())
+        from custom_components.leapmotor.diagnostics import async_get_config_entry_diagnostics
+        report = await async_get_config_entry_diagnostics(self.hass, entry)
+        self.assertEqual(report["vehicles"]["***123456"]["charging_schedule_paused"]["plan"]["starttime"],
+                         "23:00")
+
+        # While the car charges, and right after the charge ends, nothing is sent.
+        await poll(charging=True)
+        await poll(charging=False)
+        self.assertEqual(self.client._remote_control_raw.call_count, 1)
+        self.assertTrue(paused())
+
+        # A restart in between keeps the paused schedule.
+        await self.hass.async_block_till_done()
+        kept = deepcopy(self.client.paused_schedules)
+        self.assertTrue(kept[VIN]["charge_seen"])
+        self.client.paused_schedules.clear()
+        await self.hass.config_entries.async_reload(entry.entry_id)
+        await self.hass.async_block_till_done()
+        coordinator = self.hass.data["leapmotor"][entry.entry_id]
+        self.assertEqual(self.client.paused_schedules, kept)
+        self.assertEqual(self.client._remote_control_raw.call_count, 1)
+
+        # Five minutes without a charge: the schedule goes back on by itself.
+        self.client.paused_schedules[VIN]["idle_since"] -= 600
+        await poll(charging=False)
+        self.assertEqual(sent(), ("resume_charging_schedule", {**cloud, "chargesoc": 80,
+                                                               "starttime": "23:00"}))
+        self.assertEqual(self.client.paused_schedules, {})
+        self.assertFalse(paused())
+        remote = coordinator.data["vehicles"][VIN]["remote_control"]
+        self.assertEqual((remote["action"], remote["success"]), ("resume_charging_schedule", True))
+
+        # The T03 cannot be stopped remotely, and the error says so.
+        coordinator._last_remote_results.clear()
+        self.client._remote_control_raw.reset_mock()
+        with self.assertRaisesRegex(HomeAssistantError, "no remote command to stop"):
+            await self.hass.services.async_call("leapmotor", "charging_stop", {"vin": VIN}, blocking=True)
+        self.client._remote_control_raw.assert_not_called()
+        coordinator.cancel_scheduled_followup_refreshes()
+
+    async def test_t03_schedule_that_cannot_be_switched_back_on_is_retried_then_given_up(self):
+        entry = await self.load_entry()
+        coordinator = self.hass.data["leapmotor"][entry.entry_id]
+        from custom_components.leapmotor import charge_now
+        self.client.paused_schedules[VIN] = {
+            "since": 1000, "charge_seen": True, "idle_since": 1000,
+            "plan": {"chargeEnable": 1, "chargesoc": 80, "starttime": "23:00"}}
+        self.client._remote_control_raw.side_effect = self.api.LeapmotorApiError("car offline")
+        for attempt in range(1, charge_now.RESUME_MAX_ATTEMPTS + 1):
+            await coordinator.async_refresh()
+            await self.hass.async_block_till_done(wait_background_tasks=True)
+            self.assertEqual(self.client._remote_control_raw.call_count, attempt)
+            if attempt < charge_now.RESUME_MAX_ATTEMPTS:
+                pause = self.client.paused_schedules[VIN]
+                self.assertEqual((pause["attempts"], pause["last_error"]), (attempt, "car offline"))
+                # Not again before the waiting time is over.
+                await coordinator.async_refresh()
+                await self.hass.async_block_till_done(wait_background_tasks=True)
+                self.assertEqual(self.client._remote_control_raw.call_count, attempt)
+                pause["next_try"] = 0
+        self.assertEqual(self.client.paused_schedules, {})
+        remote = coordinator.data["vehicles"][VIN]["remote_control"]
+        self.assertEqual((remote["action"], remote["success"], remote["error"]),
+                         ("resume_charging_schedule", False, "car offline"))
+        coordinator.cancel_scheduled_followup_refreshes()
+
 
 if __name__ == "__main__":
     unittest.main()

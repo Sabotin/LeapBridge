@@ -4,6 +4,37 @@
 below; from this release on, HACS installs releases instead of the latest
 commit.
 
+## 0.7.11: Charge now on the T03
+
+- **T03: *Charge now* starts the charge.** The button sent the start-charging
+  command (193), which a T03 does not have: the cloud lists it for the C10 and
+  B10 only, and a T03 that waits for its schedule does not start on it. On a
+  T03 the button now switches the charging schedule off (command 190), so the
+  plugged-in car starts at once, and the integration switches the schedule on
+  again by itself when that charge is over: five minutes after the car stopped
+  charging, or when it drives, or after 36 hours without a charge. This
+  survives a restart of Home Assistant. If the schedule cannot be switched
+  back on, it is tried four times, a quarter of an hour apart, and then
+  written to the log. Changing the schedule yourself in between ends this:
+  what you set stays. Other models still get command 193.
+  **Not yet seen on a car:** that a waiting T03 starts when its schedule is
+  switched off remotely.
+- **T03: commands no longer write an old start time or limit back to the
+  car.** The charge limit, the schedule editor and *Charge now* build command
+  190 from the cloud's copy of the schedule, which does not follow a change
+  made on the car's screen. They now carry the start time and the charge limit
+  the car itself reported in its last complete status.
+- **T03: *Stop charging* says that it cannot.** The T03 has no remote stop
+  either; the action now fails with that reason instead of sending a command
+  the car ignores.
+- **Card 1.3.3:** while the schedule is off for one charge, the schedule row
+  says **off for this charge · back on after the charge**, and until the
+  charge starts the first card says so too. *Stop charging* is not shown for a
+  car without that command, and *Start charging* only while its schedule is on.
+- The schedule-start entity carries `schedule_paused` and
+  `schedule_paused_since`; the diagnostics download has the block
+  `charging_schedule_paused`.
+
 ## 0.7.10: a T03 stays plugged in until it drives
 
 - **T03: plugged in while it waits for its schedule, and after the charge.**

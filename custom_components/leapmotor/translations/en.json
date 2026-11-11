@@ -1065,7 +1065,7 @@
     },
     "charging_start": {
       "name": "Start charging",
-      "description": "Start charging while plugged in. Requires the vehicle PIN."
+      "description": "Start charging while plugged in. A T03 has no start command: its charging schedule is switched off for this one charge and back on afterwards. Requires the vehicle PIN."
     },
     "charging_stop": {
       "name": "Stop charging",

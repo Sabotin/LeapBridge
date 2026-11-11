@@ -206,6 +206,63 @@ def build_schedule_command(
     )
 
 
+def is_enabled(schedule: dict[str, Any] | None) -> bool:
+    """Return whether a schedule in the cloud's format (getAppointment 190) is switched on."""
+    return _flag((schedule or {}).get("chargeEnable")) == 1
+
+
+def with_car_values(
+    schedule: dict[str, Any] | None,
+    car: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """The cloud's schedule with the start time and charge limit the car itself reports.
+
+    The cloud keeps the plan of the last command it was sent and does not
+    follow a change made on the car's screen. A command built from its copy
+    alone would write an old start time or limit back to the car. ``car``
+    holds ``start`` and ``limit`` from the car's last complete status; a value
+    it does not have is left as the cloud has it.
+    """
+    result = dict(schedule or {})
+    car = car or {}
+    start = parse_time(car.get("start"))
+    if start is not None:
+        result["starttime"] = start.strftime("%H:%M")
+    limit = _percent(car.get("limit"))
+    if limit is not None and limit >= 1:
+        result["chargesoc"] = limit
+    return result
+
+
+def schedule_switch_command(schedule: dict[str, Any] | None, *, enabled: bool) -> str:
+    """Command 190 content that switches the schedule on or off and changes nothing else.
+
+    ``schedule`` is in the cloud's format. Every field it has is kept; one it
+    leaves out (a plan that is a start time only has no end time, weekdays or
+    recharge flag) gets the default leapmotor-api 0.6.0 sends. Raises
+    ValueError when the charge limit is not known: a guessed one would change
+    the car's limit.
+    """
+    schedule = schedule or {}
+    limit = _percent(schedule.get("chargesoc"))
+    if limit is None or limit < 1:
+        raise ValueError(
+            "The car's charge limit is not known, so its charging schedule cannot be switched."
+        )
+    return json.dumps(
+        {
+            "chargeEnable": int(bool(enabled)),
+            "chargesoc": limit,
+            "circulation": schedule.get("circulation", 0),
+            "cycles": schedule.get("cycles") or format_cycles(ALL_DAYS),
+            "endtime": schedule.get("endtime") or "08:00",
+            "recharge": schedule.get("recharge", 0),
+            "starttime": schedule.get("starttime") or "00:00",
+        },
+        separators=(",", ":"),
+    )
+
+
 def schedule_view(charging: dict[str, Any] | None) -> dict[str, Any]:
     """The schedule as entities and the dashboard show it.
 
@@ -336,9 +393,12 @@ __all__ = [
     "plan_is_reported",
     "build_schedule_command",
     "format_cycles",
+    "is_enabled",
     "normalize_days",
     "normalize_time",
     "parse_cycles",
     "parse_time",
+    "schedule_switch_command",
     "schedule_view",
+    "with_car_values",
 ]
