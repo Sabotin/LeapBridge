@@ -178,6 +178,65 @@ class PayloadTests(unittest.TestCase):
                 self.build(current, **kwargs)
 
 
+class StartOnlyPayloadTests(unittest.TestCase):
+    """A T03's schedule: on or off, a start time and the limit; the rest stays as the cloud has it."""
+
+    #: The cloud's copy on the reported T03: an old command's plan, 23:55 to 09:37.
+    CLOUD = {"chargeEnable": 1, "chargesoc": 80, "starttime": "23:55", "endtime": "09:37",
+             "cycles": "1,2,3,4,5,6,7", "circulation": 0, "recharge": 0}
+
+    def build(self, schedule, **kwargs):
+        return json.loads(cs.start_only_schedule_command(schedule, **kwargs))
+
+    def test_only_the_cars_own_settings_change(self):
+        self.assertEqual(self.build(self.CLOUD, start_time="22:00", enabled=True), {
+            "chargeEnable": 1, "chargesoc": 80, "circulation": 0, "cycles": "1,2,3,4,5,6,7",
+            "endtime": "09:37", "recharge": 0, "starttime": "22:00"})
+        self.assertEqual(self.build(self.CLOUD, enabled=False, charge_limit_percent=90), {
+            **self.CLOUD, "chargeEnable": 0, "chargesoc": 90, "starttime": "23:55"})
+
+    def test_weekly_repetition_is_never_switched_on_here(self):
+        # A plan set in the official app: a start time only.
+        app_plan = {"chargeEnable": 0, "chargesoc": 100, "circulation": 0, "starttime": "20:16"}
+        self.assertEqual(self.build(app_plan, start_time="22:00", enabled=True), {
+            "chargeEnable": 1, "chargesoc": 100, "circulation": 0, "cycles": "1,2,3,4,5,6,7",
+            "endtime": "08:00", "recharge": 0, "starttime": "22:00"})
+        for nothing in (None, "", "x"):
+            plan = {**app_plan, "circulation": nothing, "recharge": nothing, "cycles": nothing}
+            sent = self.build(plan, start_time="22:00", enabled=True)
+            self.assertEqual((sent["circulation"], sent["recharge"], sent["cycles"]),
+                             (0, 0, "1,2,3,4,5,6,7"), nothing)
+        # What the cloud has is kept as it is, also a value this module does not know.
+        self.assertEqual(self.build({**self.CLOUD, "circulation": "1", "cycles": "1,1,1,1,1,0,0"},
+                                    enabled=True)["circulation"], 1)
+
+    def test_what_is_not_known_is_never_guessed(self):
+        cases = (
+            ({"chargesoc": 80, "chargeEnable": 1}, {"enabled": True}, "start time"),
+            ({"starttime": "23:00", "chargeEnable": 1}, {"enabled": True}, "charge limit"),
+            ({"starttime": "23:00", "chargesoc": 80}, {"start_time": "22:00"}, "is on"),
+            ({}, {"start_time": "25:00", "enabled": True, "charge_limit_percent": 80},
+             "Not a time of day"),
+            ({}, {"start_time": "22:00", "enabled": True, "charge_limit_percent": 0}, "1-100"),
+        )
+        for schedule, kwargs, message in cases:
+            with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
+                cs.start_only_schedule_command(schedule, **kwargs)
+        # Everything given: nothing has to be known.
+        self.assertEqual(self.build(None, start_time="5:30", enabled=False, charge_limit_percent=70), {
+            "chargeEnable": 0, "chargesoc": 70, "circulation": 0, "cycles": "1,2,3,4,5,6,7",
+            "endtime": "08:00", "recharge": 0, "starttime": "05:30"})
+
+    def test_switching_keeps_the_cloud_values_and_never_sends_null(self):
+        sent = json.loads(cs.schedule_switch_command(
+            {"chargesoc": 80, "starttime": "23:00", "circulation": None, "recharge": None},
+            enabled=False))
+        self.assertEqual(sent, {"chargeEnable": 0, "chargesoc": 80, "circulation": 0,
+                                "cycles": "1,2,3,4,5,6,7", "endtime": "08:00", "recharge": 0,
+                                "starttime": "23:00"})
+        self.assertEqual(json.loads(cs.schedule_switch_command(self.CLOUD, enabled=True)), self.CLOUD)
+
+
 class ClientTests(unittest.TestCase):
     def setUp(self):
         self.client = api.LeapmotorApiClient(username="synthetic", password="synthetic")
@@ -233,26 +292,68 @@ class ClientTests(unittest.TestCase):
         self.client.get_charge_schedule.return_value = {
             "chargeEnable": 1, "chargesoc": 90, "starttime": "23:00", "endtime": "06:30",
             "cycles": "1,2,3,4,5", "circulation": 1, "recharge": 0}
-        self.client.set_charging_schedule(VIN, start_time="22:00", days=["sat", "sun"])
+        self.client.set_charging_schedule(VIN, start_time="22:00")
+        # Everything the car has no setting for stays as the cloud has it.
         self.assertEqual(self.sent(), {
-            "chargeEnable": 1, "chargesoc": 90, "circulation": 1, "cycles": "6,7",
+            "chargeEnable": 1, "chargesoc": 90, "circulation": 1, "cycles": "1,2,3,4,5",
             "endtime": "06:30", "recharge": 0, "starttime": "22:00"})
         self.client.get_vehicle_status.assert_not_called()
+
+    def test_t03_card_save_from_the_report(self):
+        """The reported save: start 22:00, schedule on; the car's screen says 23:00."""
+        self.vehicle.car_type = "T03"
+        self.client.get_charge_schedule.return_value = dict(StartOnlyPayloadTests.CLOUD)
+        self.client._car_plan_values[VIN] = {"start": "23:00", "limit": 80, "seen_at": 0.0}
+        self.client.set_charging_schedule(VIN, start_time="22:00", enabled=True)
+        # The plan this car took from LeapConnect, with only the start time changed:
+        # weekly repetition stays off, no end time is made up.
+        self.assertEqual(self.sent(), {
+            "chargeEnable": 1, "chargesoc": 80, "circulation": 0, "cycles": "1,2,3,4,5,6,7",
+            "endtime": "09:37", "recharge": 0, "starttime": "22:00"})
+
+    def test_t03_refuses_what_its_schedule_does_not_have(self):
+        self.vehicle.car_type = "T03"
+        self.client.get_charge_schedule.return_value = dict(StartOnlyPayloadTests.CLOUD)
+        cases = (
+            ({"end_time": "08:00"}, "it has no end time\\. "),
+            ({"days": ["mon"], "repeat_weekly": True},
+             "it has no weekdays or weekly repetition\\. "),
+            ({"end_time": "08:00", "days": [1], "repeat_weekly": True, "auto_recharge": False},
+             "it has no end time, weekdays, weekly repetition or auto recharge\\. "),
+        )
+        for extra, message in cases:
+            with self.subTest(extra=extra), self.assertRaisesRegex(api.LeapmotorApiError, message):
+                self.client.set_charging_schedule(VIN, start_time="22:00", enabled=True, **extra)
+        self.client._remote_control_raw.assert_not_called()
+        self.client.get_charge_schedule.assert_not_called()
+
+    def test_t03_start_time_alone_keeps_the_switch_or_asks_for_it(self):
+        self.vehicle.car_type = "T03"
+        self.client.get_charge_schedule.return_value = {**StartOnlyPayloadTests.CLOUD,
+                                                        "chargeEnable": 0}
+        self.client.set_charging_schedule(VIN, start_time="21:00")
+        self.assertEqual((self.sent()["chargeEnable"], self.sent()["starttime"]), (0, "21:00"))
+        self.client._remote_control_raw.reset_mock()
+        self.client._sent_charge_plans.clear()
+        self.client.get_charge_schedule.return_value = {"chargesoc": 80, "starttime": "23:00"}
+        with self.assertRaisesRegex(api.LeapmotorApiError, "whether it should be on"):
+            self.client.set_charging_schedule(VIN, start_time="21:00")
+        self.client._remote_control_raw.assert_not_called()
 
     def test_t03_limit_range_and_one_repeat_when_unconfirmed(self):
         self.vehicle.car_type = "T03"
         with self.assertRaisesRegex(api.LeapmotorApiError, "50-100"):
-            self.client.set_charging_schedule(VIN, start_time="1:00", end_time="2:00",
+            self.client.set_charging_schedule(VIN, start_time="1:00", enabled=True,
                                               charge_limit_percent=40)
         self.client._remote_control_raw.assert_not_called()
         unconfirmed = api.LeapmotorRemoteCommandUnconfirmedError("no result yet")
         self.client._remote_control_raw.side_effect = [unconfirmed, {"code": 0}]
-        self.client.set_charging_schedule(VIN, start_time="1:00", end_time="2:00",
+        self.client.set_charging_schedule(VIN, start_time="1:00", enabled=True,
                                           charge_limit_percent=80)
         self.assertEqual(self.client._remote_control_raw.call_count, 2)
         self.client._remote_control_raw.side_effect = [unconfirmed, unconfirmed]
         with self.assertRaises(api.LeapmotorRemoteCommandUnconfirmedError):
-            self.client.set_charging_schedule(VIN, start_time="1:00", end_time="2:00",
+            self.client.set_charging_schedule(VIN, start_time="1:00", enabled=True,
                                               charge_limit_percent=80)
 
     def test_other_models_are_not_sent_twice(self):

@@ -31,6 +31,20 @@ class LeapmotorShareInvitationPendingError(LeapmotorNoVehicleError):
         self.invitations = invitations
 
 
+class LeapmotorCommandNotDeliveredError(LeapmotorApiError):
+    """The cloud refused a remote command and did not pass it on to the car.
+
+    It answered the command request itself with ``code`` and gave no command
+    id, so nothing reached the car and the command may be sent again later.
+    Code 137 is the known case: it came while the car could not be reached
+    (asleep or without signal) and stopped once the car was online again.
+    """
+
+    def __init__(self, message: str, *, code: object) -> None:
+        super().__init__(message)
+        self.code = code
+
+
 class LeapmotorRemoteCommandUnconfirmedError(LeapmotorApiError):
     """The cloud accepted a remote command, but its result could not be confirmed.
 

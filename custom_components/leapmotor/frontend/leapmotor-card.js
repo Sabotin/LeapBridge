@@ -9,7 +9,7 @@
  * setup is needed. Add the card with:  type: custom:leapmotor-card
  */
 
-const CARD_VERSION = "1.3.3";
+const CARD_VERSION = "1.3.4";
 const MODULE_BASE = new URL(".", import.meta.url);
 
 /* ------------------------------------------------------------------ */
@@ -311,6 +311,8 @@ Object.assign(STRINGS.en, {
   schWeekly: "every week", schOnce: "once", schNeedTime: "Set the start and the end.", schNeedDay: "Choose at least one day.",
   schWaiting: "Charging not started yet, waiting for the schedule.", schChargeNow: "Charge now", schStartsAt: "Charging not started yet · starts at {t}", schFrom: "from {t}",
   schRechargeOff: "Switched off in this card for now: what it does in the car is not confirmed yet. Saving keeps the car's setting.",
+  schStartOnly: "This car's schedule is a start time only, as on its own screen: no end time or weekdays.",
+  schNeedStart: "Set the start time.",
 });
 Object.assign(STRINGS.sl, {
   pageJourney: "Pot", sectionFailed: "Tega dela trenutno ni mogoče prikazati.", schedOnce: "enkrat", rlNowPlain: "s trenutno baterijo",
@@ -374,6 +376,8 @@ Object.assign(STRINGS.sl, {
   schWeekly: "vsak teden", schOnce: "enkrat", schNeedTime: "Nastavi začetek in konec.", schNeedDay: "Izberi vsaj en dan.",
   schWaiting: "Polnjenje se še ni začelo, čaka na urnik.", schChargeNow: "Polni zdaj", schStartsAt: "Polnjenje se še ni začelo · začetek ob {t}", schFrom: "od {t}",
   schRechargeOff: "V tej kartici za zdaj onemogočeno: ni še potrjeno, kaj stikalo naredi v avtu. Shranjevanje ohrani nastavitev avta.",
+  schStartOnly: "Urnik tega avta je samo začetni čas, kot na njegovem zaslonu: brez konca in dni v tednu.",
+  schNeedStart: "Nastavi začetni čas.",
 });
 Object.assign(STRINGS.de, {
   pageJourney: "Reise", sectionFailed: "Dieser Teil kann gerade nicht angezeigt werden.", schedOnce: "einmalig", rlNowPlain: "mit dem aktuellen Akkustand",
@@ -437,6 +441,8 @@ Object.assign(STRINGS.de, {
   schWeekly: "jede Woche", schOnce: "einmalig", schNeedTime: "Beginn und Ende festlegen.", schNeedDay: "Mindestens einen Tag wählen.",
   schWaiting: "Laden noch nicht gestartet, wartet auf den Ladeplan.", schChargeNow: "Jetzt laden", schStartsAt: "Laden noch nicht gestartet · Start um {t}", schFrom: "ab {t}",
   schRechargeOff: "In dieser Karte vorerst deaktiviert: Was der Schalter im Auto bewirkt, ist noch nicht bestätigt. Beim Speichern bleibt die Einstellung des Autos erhalten.",
+  schStartOnly: "Die Ladeplanung dieses Autos ist nur eine Startzeit, wie auf seinem Bildschirm: ohne Endzeit und Wochentage.",
+  schNeedStart: "Startzeit einstellen.",
 });
 
 /** What a shared account may do, in words (rights the cloud lists for the car). */
@@ -1689,6 +1695,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .sched .lset{margin-top:0}
 .sched small{display:block;font-size:13px;color:var(--lm-muted)}
 .schgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.schgrid.one{grid-template-columns:minmax(0,1fr)}
 .schf{display:grid;gap:6px;min-width:0}
 .schf input{width:100%;min-width:0;min-height:46px;padding:8px 10px;border-radius:13px;border:1px solid var(--lm-line);background:rgba(255,255,255,.04);color:var(--lm-text);font:600 16px var(--lm-mono);color-scheme:dark}
 .schf input:focus-visible,.dchip:focus-visible,.tgl:focus-visible{outline:2px solid var(--lm-amber);outline-offset:1px}
@@ -4324,6 +4331,8 @@ class LeapmotorCard extends HTMLElement {
       enabled: flag(a.schedule_enabled), repeat: flag(a.repeat_weekly), recharge: flag(a.auto_recharge),
       // "Charge now" switched it off for one charge; the integration switches it on again afterwards.
       paused: a.schedule_paused === true,
+      // A T03: on or off and a start time, as on its own screen; no end, days or repetition.
+      startOnly: a.start_time_only === true,
     };
   }
 
@@ -4418,6 +4427,7 @@ class LeapmotorCard extends HTMLElement {
   }
 
   _schedProblem(d) {
+    if (d.startOnly) return d.start ? "" : this._tr("schNeedStart");
     if (!d.start || !d.end) return this._tr("schNeedTime");
     if (!d.days.length) return this._tr("schNeedDay");
     return "";
@@ -4448,6 +4458,20 @@ class LeapmotorCard extends HTMLElement {
     const problem = this._schedProblem(d);
     const time = (key, label) => `<label class="schf"><small>${esc(t(label))}</small><input type="time" data-sched="${key}" value="${esc(d[key])}" required></label>`;
     const toggle = (key, label, off = false) => `<button class="tgl${d[key] ? " on" : ""}" data-act="schedflag" data-flag="${key}" role="switch" aria-checked="${d[key] ? "true" : "false"}"${off ? ' disabled aria-describedby="schedinfo"' : ""}>${esc(t(label))}<i></i></button>`;
+    const buttons = `<div class="schhint" id="schedhint">${esc(problem)}</div>
+        <div class="lset">
+          <button class="btn primary${armed ? " armed" : ""}" id="schedsave" data-act="schedsave"${problem ? " disabled" : ""}>${icon("check")}${esc(armed ? t("tapConfirm") : t("schSave"))}</button>
+          <button class="btn" data-act="schedcancel">${esc(t("cancel"))}</button></div>`;
+    if (d.startOnly) {
+      // The car's own screen has a start time and a switch: nothing else to set.
+      return `<div class="sched${this._busy.sched ? " busy" : ""}">
+        <small>${esc(t("schedule"))}</small>
+        <div class="schgrid one">${time("start", "schStart")}</div>
+        <div class="schtg">${toggle("enabled", "schOn")}
+          <div class="schinfo"><b aria-hidden="true">i</b><span>${esc(t("schStartOnly"))}</span></div></div>
+        ${buttons}
+      </div>`;
+    }
     return `<div class="sched${this._busy.sched ? " busy" : ""}">
         <small>${esc(t("schedule"))}</small>
         <div class="schgrid">${time("start", "schStart")}${time("end", "schEnd")}</div>
@@ -4457,10 +4481,7 @@ class LeapmotorCard extends HTMLElement {
         }).join("")}</div></div>
         <div class="schtg">${toggle("enabled", "schOn")}${toggle("repeat", "schRepeat")}${toggle("recharge", "schRecharge", true)}
           <div class="schinfo" id="schedinfo"><b aria-hidden="true">i</b><span>${esc(t("schRechargeOff"))}</span></div></div>
-        <div class="schhint" id="schedhint">${esc(problem)}</div>
-        <div class="lset">
-          <button class="btn primary${armed ? " armed" : ""}" id="schedsave" data-act="schedsave"${problem ? " disabled" : ""}>${icon("check")}${esc(armed ? t("tapConfirm") : t("schSave"))}</button>
-          <button class="btn" data-act="schedcancel">${esc(t("cancel"))}</button></div>
+        ${buttons}
       </div>`;
   }
 
@@ -4471,6 +4492,7 @@ class LeapmotorCard extends HTMLElement {
     this._sched = {
       start: now.start, end: now.end, days: now.days && now.days.length ? [...now.days] : [...SCHED_DAYS],
       enabled: now.enabled ?? true, repeat: now.repeat ?? true, recharge: now.recharge ?? false,
+      startOnly: now.startOnly,
     };
     this._renderSection("charging");
   }
@@ -4515,10 +4537,13 @@ class LeapmotorCard extends HTMLElement {
     this._renderSection("charging");
     try {
       // The charge limit and auto recharge are left out: the car keeps what it has.
-      await this._hass.callService("leapmotor", "set_charging_schedule", {
-        entity_id: id, start_time: d.start, end_time: d.end, days: SCHED_DAYS.filter((day) => d.days.includes(day)),
-        enabled: d.enabled, repeat_weekly: d.repeat,
-      });
+      // A start-time-only schedule (T03) has nothing but the start and the switch.
+      await this._hass.callService("leapmotor", "set_charging_schedule", d.startOnly
+        ? { entity_id: id, start_time: d.start, enabled: d.enabled }
+        : {
+          entity_id: id, start_time: d.start, end_time: d.end, days: SCHED_DAYS.filter((day) => d.days.includes(day)),
+          enabled: d.enabled, repeat_weekly: d.repeat,
+        });
       this._toast(this._tr("sent", { x: this._tr("schedule") }));
       this._sched = null;
     } catch (err) {

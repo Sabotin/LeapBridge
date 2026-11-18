@@ -9,6 +9,10 @@ same payload LeapConnect / leapmotor-api 0.6.0 (AGPL-3.0) send:
 
 Weekdays are numbered 1 = Monday to 7 = Sunday. This module has no Home
 Assistant imports.
+
+The T03's schedule is a start time only, as on its own screen: on or off, a
+start time and the charge limit. Command 190 still carries the other fields;
+``start_only_schedule_command`` keeps them as the cloud has them.
 """
 
 from __future__ import annotations
@@ -234,6 +238,36 @@ def with_car_values(
     return result
 
 
+def _cloud_int(value: Any) -> int:
+    """The cloud's integer for a flag of the plan, 0 when it has none."""
+    if isinstance(value, bool):
+        return int(value)
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        return 0
+
+
+def _kept_from_cloud(schedule: dict[str, Any]) -> dict[str, Any]:
+    """The parts of command 190 a start-time-only car (T03) does not have.
+
+    Kept as the cloud has them. One it leaves out (a plan set in the official
+    app has no end time, weekdays or recharge flag) gets what leapmotor-api
+    0.6.0 fills in, which a T03 has taken from LeapConnect, leapmotor-mate and
+    the ioBroker adapter: every day, an 08:00 end, weekly repetition and auto
+    recharge off.
+    """
+    cycles = schedule.get("cycles")
+    return {
+        "circulation": _cloud_int(schedule.get("circulation")),
+        # Kept in the cloud's own form (day numbers or seven flags) when it is one.
+        "cycles": cycles.strip() if isinstance(cycles, str) and parse_cycles(cycles)
+        else format_cycles(ALL_DAYS),
+        "endtime": schedule.get("endtime") or "08:00",
+        "recharge": _cloud_int(schedule.get("recharge")),
+    }
+
+
 def schedule_switch_command(schedule: dict[str, Any] | None, *, enabled: bool) -> str:
     """Command 190 content that switches the schedule on or off and changes nothing else.
 
@@ -249,15 +283,78 @@ def schedule_switch_command(schedule: dict[str, Any] | None, *, enabled: bool) -
         raise ValueError(
             "The car's charge limit is not known, so its charging schedule cannot be switched."
         )
+    rest = _kept_from_cloud(schedule)
     return json.dumps(
         {
             "chargeEnable": int(bool(enabled)),
             "chargesoc": limit,
-            "circulation": schedule.get("circulation", 0),
-            "cycles": schedule.get("cycles") or format_cycles(ALL_DAYS),
-            "endtime": schedule.get("endtime") or "08:00",
-            "recharge": schedule.get("recharge", 0),
+            "circulation": rest["circulation"],
+            "cycles": rest["cycles"],
+            "endtime": rest["endtime"],
+            "recharge": rest["recharge"],
             "starttime": schedule.get("starttime") or "00:00",
+        },
+        separators=(",", ":"),
+    )
+
+
+def start_only_schedule_command(
+    schedule: dict[str, Any] | None,
+    *,
+    start_time: Any = None,
+    enabled: bool | None = None,
+    charge_limit_percent: int | None = None,
+) -> str:
+    """Command 190 content for a car whose schedule is a start time only (T03).
+
+    The car's own settings are the switch, the start time and the charge
+    limit; a value that is not given is kept from ``schedule``, the cloud's
+    copy with the start time and limit the car reported (``with_car_values``).
+    The end time, weekdays, weekly repetition and recharge flag the command
+    also carries are kept as the cloud has them (``_kept_from_cloud``), never
+    made up. Raises ValueError when a value is neither given nor known: a
+    guessed switch would turn the car's schedule on or off.
+    """
+    schedule = schedule or {}
+    if start_time is not None:
+        start = normalize_time(start_time)
+    else:
+        try:
+            start = normalize_time(schedule.get("starttime"))
+        except ValueError:
+            raise ValueError(
+                "Give the start time: the car's charging schedule start is not known."
+            ) from None
+    if charge_limit_percent is not None:
+        limit = _percent(charge_limit_percent)
+        if limit is None or limit < 1:
+            raise ValueError(f"Charge limit must be 1-100 %, got {charge_limit_percent!r}.")
+    else:
+        limit = _percent(schedule.get("chargesoc"))
+        if limit is None or limit < 1:
+            raise ValueError(
+                "The car's charge limit is not known, so its charging schedule cannot be set."
+            )
+    if enabled is not None:
+        switch = int(bool(enabled))
+    else:
+        known = _flag(schedule.get("chargeEnable"))
+        if known is None:
+            raise ValueError(
+                "It is not known whether the car's charging schedule is on: "
+                "say whether it should be on."
+            )
+        switch = known
+    rest = _kept_from_cloud(schedule)
+    return json.dumps(
+        {
+            "chargeEnable": switch,
+            "chargesoc": limit,
+            "circulation": rest["circulation"],
+            "cycles": rest["cycles"],
+            "endtime": rest["endtime"],
+            "recharge": rest["recharge"],
+            "starttime": start,
         },
         separators=(",", ":"),
     )
@@ -400,5 +497,6 @@ __all__ = [
     "parse_time",
     "schedule_switch_command",
     "schedule_view",
+    "start_only_schedule_command",
     "with_car_values",
 ]

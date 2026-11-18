@@ -269,6 +269,12 @@ copied to every car, so set it on the intended vehicle.
   more; the same value twice is harmless. The *Charging schedule* switch
   stays unsupported on the T03; the schedule editor and *Charge now* do
   switch it.
+- **Charging schedule on the T03** is a start time only, as on the car's own
+  screen: on or off, the start time and the charge limit. The card's editor
+  shows just those, and a T03 has no *Set charging schedule end* entity.
+  `leapmotor.set_charging_schedule` refuses `end_time`, `days`,
+  `repeat_weekly` and `auto_recharge` for a T03; the rest of command 190 is
+  kept as the cloud has it, and weekly repetition is never switched on.
 - **Charge now on the T03:** the T03 has no command that starts a charge, so
   *Charge now* (and `leapmotor.charging_start`) switches its charging schedule
   off; a plugged-in car that was waiting then starts. The integration switches
@@ -539,6 +545,7 @@ state, charging, `evcc_status`, charging power/current/voltage, odometer and
 | Remote control does nothing | Configure the vehicle PIN; check account and shared-car permissions. |
 | *Token is invalid* / *Leapmotor rejected the session* | The integration logs in again and retries on its own. If it keeps happening, the official app is probably signed in with the same account; use a second account with the car shared to it. |
 | *Leapmotor accepted the command but did not confirm the result* | The command most likely reached the car. Wait a few seconds and check its state before sending it again. |
+| *Leapmotor did not pass the command on to the car (code 137)* | Nothing changed. This answer has come while the car could not be reached. Try again while the car is awake, for example right after a drive or while it charges. |
 | Card not found | Hard-refresh the browser (Ctrl + F5) or reset the companion-app frontend cache. |
 | No tabs or no Settings tab on a tablet or phone | The app is still running an older copy of the dashboard. In the companion app: *Settings → Companion app → Debugging → Reset frontend cache*, then reopen it. In a browser: Ctrl + F5. |
 

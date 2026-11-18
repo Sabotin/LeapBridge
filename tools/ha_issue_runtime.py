@@ -1783,6 +1783,61 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.client._remote_control_raw.assert_not_called()
         coordinator.cancel_scheduled_followup_refreshes()
 
+    async def test_t03_schedule_is_a_start_time_only_and_code_137_is_explained(self):
+        """Reported: a T03 save with an end time and weekly repetition came back as code 137."""
+        registry = entity_registry.async_get(self.hass)
+        # An end time entity left by an earlier version.
+        registry.async_get_or_create("time", "leapmotor", f"{VIN}_charging_schedule_end",
+                                     suggested_object_id="t03_set_charging_schedule_end")
+        entry = await self.load_entry()
+        coordinator = self.hass.data["leapmotor"][entry.entry_id]
+        self.assertIsNone(registry.async_get_entity_id("time", "leapmotor", f"{VIN}_charging_schedule_end"))
+        self.assertEqual([state.entity_id for state in self.hass.states.async_all("time")],
+                         [self.state_of("time", "charging_schedule_start").entity_id])
+        start = self.state_of("time", "charging_schedule_start")
+        self.assertIs(start.attributes["start_time_only"], True)
+        cloud = {"chargeEnable": 1, "chargesoc": 80, "starttime": "23:55", "endtime": "09:37",
+                 "cycles": "1,2,3,4,5,6,7", "circulation": 0, "recharge": 0}
+        self.client.get_charge_schedule = Mock(return_value=dict(cloud))
+
+        async def save(**data):
+            coordinator._last_remote_results.clear()
+            self.client._sent_charge_plans.clear()
+            self.client._remote_control_raw.reset_mock()
+            await self.hass.services.async_call(
+                "leapmotor", "set_charging_schedule", {"entity_id": start.entity_id, **data}, blocking=True)
+
+        # The card's save on a T03: the start time and the switch, nothing else.
+        await save(start_time="22:00", enabled=True)
+        self.assertEqual(json.loads(self.sent_plan()), {**cloud, "starttime": "22:00"})
+
+        # What a T03 does not have is refused before anything is sent.
+        with self.assertRaisesRegex(HomeAssistantError, "start time only.*no end time or weekly repetition"):
+            await save(start_time="22:00", end_time="08:00", repeat_weekly=True)
+        self.client._remote_control_raw.assert_not_called()
+
+        # Code 137: the cloud did not pass the command on; said so, and no cooldown follows.
+        self.client._remote_control_raw.side_effect = self.api.LeapmotorCommandNotDeliveredError(
+            'Leapmotor remote set_charging_schedule failed: {"code":137,"result":137,"message":"","data":null}',
+            code=137)
+        with self.assertRaises(HomeAssistantError) as caught:
+            await save(start_time="22:00", enabled=True)
+        self.assertEqual(caught.exception.translation_key, "remote_not_delivered")
+        self.assertEqual(caught.exception.translation_placeholders, {"code": "137"})
+        self.assertIn("did not pass the command on to the car (code 137)", str(caught.exception))
+        self.assertEqual(self.client._remote_control_raw.call_count, 1)
+        remote = coordinator.data["vehicles"][VIN]["remote_control"]
+        self.assertEqual((remote["action"], remote["success"]), ("set_charging_schedule", False))
+        self.assertIn("code 137", remote["error"])
+        self.assertEqual(coordinator.remote_action_cooldown_remaining(VIN), 0)
+
+        from homeassistant.helpers import translation
+        for language in ("en", "sl", "de"):
+            strings = await translation.async_get_translations(self.hass, language, "exceptions", ["leapmotor"])
+            message = strings["component.leapmotor.exceptions.remote_not_delivered.message"]
+            self.assertIn("{code}", message, language)
+        coordinator.cancel_scheduled_followup_refreshes()
+
     async def test_charging_schedule_time_entities_show_and_change_the_window(self):
         entry, coordinator = await self.load_entry_with_plan()
         start, end = self.state_of("time", "charging_schedule_start"), self.state_of("time", "charging_schedule_end")
@@ -1791,10 +1846,10 @@ class IssueRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotEqual(start.entity_id, end.entity_id)
         # The dashboard reads the whole schedule from the start entity.
         self.assertEqual({key: start.attributes[key] for key in (
-            "vin", "schedule_enabled", "schedule_start", "schedule_end", "schedule_days",
+            "vin", "start_time_only", "schedule_enabled", "schedule_start", "schedule_end", "schedule_days",
             "repeat_weekly", "auto_recharge", "charge_limit_percent", "operation_password_configured")}, {
-            "vin": VIN, "schedule_enabled": True, "schedule_start": "23:00", "schedule_end": "06:00",
-            "schedule_days": ["mon", "tue", "wed", "thu", "fri"], "repeat_weekly": True,
+            "vin": VIN, "start_time_only": False, "schedule_enabled": True, "schedule_start": "23:00",
+            "schedule_end": "06:00", "schedule_days": ["mon", "tue", "wed", "thu", "fri"], "repeat_weekly": True,
             "auto_recharge": False, "charge_limit_percent": 90, "operation_password_configured": True})
         registry = entity_registry.async_get(self.hass)
         self.assertEqual(registry.async_get(start.entity_id).entity_category.value, "config")

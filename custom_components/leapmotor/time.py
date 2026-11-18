@@ -1,4 +1,8 @@
-"""Time entities for Leapmotor: the charging schedule's start and end."""
+"""Time entities for Leapmotor: the charging schedule's start and end.
+
+A T03's schedule is a start time only, as on its own screen, so it gets no
+end entity.
+"""
 
 from __future__ import annotations
 
@@ -11,6 +15,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -19,6 +24,7 @@ from .charging_schedule import DAY_NAMES, parse_time, schedule_view
 from .const import DOMAIN
 from .coordinator import LeapmotorDataUpdateCoordinator
 from .entity_helpers import build_vehicle_display_name
+from .model_helpers import charging_schedule_start_only
 from .remote_helpers import (
     RemoteActionSpec,
     failure_starts_cooldown,
@@ -40,6 +46,8 @@ SCHEDULE_TIMES: tuple[tuple[str, str, str, str], ...] = (
     ("charging_schedule_start", "start", "start_time", "mdi:clock-start"),
     ("charging_schedule_end", "end", "end_time", "mdi:clock-end"),
 )
+#: What a car whose schedule is a start time only does not have.
+END_KEY = "charging_schedule_end"
 
 
 async def async_setup_entry(
@@ -49,11 +57,21 @@ async def async_setup_entry(
 ) -> None:
     """Set up the charging schedule times of every vehicle."""
     coordinator: LeapmotorDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-    for vin in coordinator.data.get("vehicles", {}):
+    registry = er.async_get(hass)
+    for vin, vehicle_data in coordinator.data.get("vehicles", {}).items():
+        start_only = charging_schedule_start_only(
+            (vehicle_data.get("vehicle") or {}).get("car_type")
+        )
+        if start_only:
+            # Earlier versions gave a T03 an end time it does not have.
+            stale = registry.async_get_entity_id("time", DOMAIN, f"{vin}_{END_KEY}")
+            if stale:
+                registry.async_remove(stale)
         async_add_entities(
             [
                 LeapmotorChargingScheduleTime(coordinator, vin, *description)
                 for description in SCHEDULE_TIMES
+                if not (start_only and description[0] == END_KEY)
             ],
             config_subentry_id=coordinator.config_subentry_id_for_vin(vin),
         )
@@ -117,6 +135,10 @@ class LeapmotorChargingScheduleTime(
         days = view["days"]
         return {
             "vin": self.vin,
+            # A T03: on or off and a start time, no end, weekdays or repetition.
+            "start_time_only": charging_schedule_start_only(
+                (self.vehicle_data.get("vehicle") or {}).get("car_type")
+            ),
             "schedule_enabled": view["enabled"],
             "schedule_start": view["start"],
             "schedule_end": view["end"],

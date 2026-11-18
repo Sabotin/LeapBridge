@@ -1219,7 +1219,7 @@
     },
     "set_charging_schedule": {
       "name": "Nastavi urnik polnjenja",
-      "description": "Z enim ukazom nastavi urnik polnjenja avta: časovno okno, dneve v tednu, mejo polnjenja, tedensko ponavljanje in samodejno dopolnjevanje. Polja, ki jih izpustiš, obdržijo vrednost, ki jo ima avto zdaj. Potreben je PIN vozila.",
+      "description": "Z enim ukazom nastavi urnik polnjenja avta: časovno okno, dneve v tednu, mejo polnjenja, tedensko ponavljanje in samodejno dopolnjevanje. Polja, ki jih izpustiš, obdržijo vrednost, ki jo ima avto zdaj. Urnik T03 je samo začetni čas, kot na njegovem zaslonu: podaj začetek, Urnik vklopljen in mejo polnjenja. Potreben je PIN vozila.",
       "fields": {
         "start_time": {
           "name": "Začetek",
@@ -1227,11 +1227,11 @@
         },
         "end_time": {
           "name": "Konec",
-          "description": "Kdaj se polnjenje konča. Okno čez polnoč je mogoče, npr. od 23:00 do 06:00."
+          "description": "Kdaj se polnjenje konča. Okno čez polnoč je mogoče, npr. od 23:00 do 06:00. Ne pri T03, katerega urnik je samo začetni čas."
         },
         "days": {
           "name": "Dnevi",
-          "description": "Dnevi v tednu, za katere velja urnik. Mogoče tudi s številkami, od 1 (ponedeljek) do 7 (nedelja)."
+          "description": "Dnevi v tednu, za katere velja urnik. Mogoče tudi s številkami, od 1 (ponedeljek) do 7 (nedelja). Ne pri T03, katerega urnik je samo začetni čas."
         },
         "enabled": {
           "name": "Urnik vklopljen",
@@ -1243,11 +1243,11 @@
         },
         "repeat_weekly": {
           "name": "Ponovi vsak teden",
-          "description": "Urnik se ponovi vsak teden na izbrane dneve. Izklopljeno pomeni, da se izvede enkrat."
+          "description": "Urnik se ponovi vsak teden na izbrane dneve. Izklopljeno pomeni, da se izvede enkrat. Ne pri T03, katerega urnik je samo začetni čas."
         },
         "auto_recharge": {
           "name": "Samodejno dopolnjevanje",
-          "description": "Stikalo urnika za samodejno dopolnjevanje."
+          "description": "Stikalo urnika za samodejno dopolnjevanje. Ne pri T03, katerega urnik je samo začetni čas."
         },
         "vin": {
           "name": "VIN",
@@ -1269,6 +1269,9 @@
     },
     "session_rejected": {
       "message": "Leapmotor je zavrnil prijavo tudi po ponovni prijavi. Če si v uradni aplikaciji prijavljen z istim računom, daj Home Assistantu svoj (deljeni) račun."
+    },
+    "remote_not_delivered": {
+      "message": "Leapmotor ukaza ni posredoval avtu (koda {code}), zato se ni nič spremenilo. Ta odgovor je prišel, ko avto ni bil dosegljiv: v mirovanju ali brez mobilnega signala. Poskusi znova, ko je avto buden, na primer takoj po vožnji ali med polnjenjem."
     }
   },
   "issues": {

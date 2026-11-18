@@ -71,6 +71,7 @@ from .leap_api import (
     LeapmotorAccountCertError,
     LeapmotorApiError,
     LeapmotorAuthError,
+    LeapmotorCommandNotDeliveredError,
     LeapmotorMissingAppCertError,
     LeapmotorNoVehicleError,
     LeapmotorRemoteCommandUnconfirmedError,
@@ -86,6 +87,7 @@ from .charging_schedule import (
     is_enabled as schedule_is_enabled,
     plan_is_reported,
     schedule_switch_command,
+    start_only_schedule_command,
     with_car_values,
 )
 from .cloud_extras import (
@@ -107,6 +109,7 @@ from .history_helpers import (
 )
 from .model_helpers import (
     charging_plan_control_supported,
+    charging_schedule_start_only,
     VehicleStatusPathResolver,
     climate_off_payload,
     native_window_open_position,
@@ -754,18 +757,22 @@ class LeapmotorApiClient:
         Ported from LeapConnect (leapmotor-api 0.6.0 ``set_charge_schedule``): one
         remote command 190 carries the whole schedule. Values that are not
         given are kept from the car's current schedule, which is only read
-        when something is left out.
+        when something is left out. A T03's schedule is a start time only
+        (``_set_start_only_schedule``).
         """
         vehicle = self._find_vehicle_by_vin(vin)
-        status_plan = charging_plan_control_supported(vehicle.car_type)
-        if (
-            charge_limit_percent is not None
-            and not status_plan
-            and not T03_CHARGE_LIMIT_MIN <= int(charge_limit_percent) <= T03_CHARGE_LIMIT_MAX
-        ):
-            raise LeapmotorApiError(
-                f"T03 charge limit must be {T03_CHARGE_LIMIT_MIN}-{T03_CHARGE_LIMIT_MAX} %, "
-                f"got {charge_limit_percent} %."
+        if charging_schedule_start_only(vehicle.car_type):
+            return self._set_start_only_schedule(
+                vehicle,
+                start_time=start_time,
+                enabled=enabled,
+                charge_limit_percent=charge_limit_percent,
+                not_in_car={
+                    "end time": end_time,
+                    "weekdays": days,
+                    "weekly repetition": repeat_weekly,
+                    "auto recharge": auto_recharge,
+                },
             )
         given = (
             start_time, end_time, days, enabled,
@@ -773,7 +780,7 @@ class LeapmotorApiClient:
         )
         current = (
             {} if all(value is not None for value in given)
-            else self._current_charge_plan(vehicle, use_status=status_plan)
+            else self._current_charge_plan(vehicle, use_status=True)
         )
         try:
             cmd_content = build_schedule_command(
@@ -788,10 +795,59 @@ class LeapmotorApiClient:
             )
         except ValueError as exc:
             raise LeapmotorApiError(str(exc)) from exc
-        # The T03 often leaves command 190 unconfirmed (see the charge limit);
-        # the schedule is a fixed state, so sending it once more is harmless.
         return self._send_charge_plan_repeating(
-            vehicle, cmd_content, "set_charging_schedule", attempts=1 if status_plan else 2
+            vehicle, cmd_content, "set_charging_schedule", attempts=1
+        )
+
+    def _set_start_only_schedule(
+        self,
+        vehicle: Vehicle,
+        *,
+        start_time: Any,
+        enabled: bool | None,
+        charge_limit_percent: int | None,
+        not_in_car: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Set a T03's schedule: on or off, the start time and the charge limit.
+
+        That is all the car's own screen has. A value for something it does
+        not have is refused before anything is sent. The rest of command 190
+        is kept as the cloud has it and never switched on here: the tools
+        that set a T03's schedule successfully (LeapConnect, leapmotor-mate,
+        the ioBroker adapter) send weekly repetition off.
+        """
+        unsupported = [name for name, value in not_in_car.items() if value is not None]
+        if unsupported:
+            named = (
+                unsupported[0] if len(unsupported) == 1
+                else f"{', '.join(unsupported[:-1])} or {unsupported[-1]}"
+            )
+            raise LeapmotorApiError(
+                "This car's charging schedule is a start time only, as on its own screen: "
+                f"it has no {named}. Set the start time, whether the schedule is on, "
+                "or the charge limit."
+            )
+        if (
+            charge_limit_percent is not None
+            and not T03_CHARGE_LIMIT_MIN <= int(charge_limit_percent) <= T03_CHARGE_LIMIT_MAX
+        ):
+            raise LeapmotorApiError(
+                f"T03 charge limit must be {T03_CHARGE_LIMIT_MIN}-{T03_CHARGE_LIMIT_MAX} %, "
+                f"got {charge_limit_percent} %."
+            )
+        try:
+            cmd_content = start_only_schedule_command(
+                self._schedule_for_commands(vehicle),
+                start_time=start_time,
+                enabled=enabled,
+                charge_limit_percent=charge_limit_percent,
+            )
+        except ValueError as exc:
+            raise LeapmotorApiError(str(exc)) from exc
+        # The T03 often leaves command 190 unconfirmed; the schedule is a fixed
+        # state, so sending it once more is harmless.
+        return self._send_charge_plan_repeating(
+            vehicle, cmd_content, "set_charging_schedule", attempts=2
         )
 
     def _send_charge_plan_repeating(
@@ -2910,6 +2966,15 @@ class LeapmotorApiClient:
                     f"{message}. The backend currently rejects the verification "
                     "request before any vehicle action is sent."
                 )
+            if (
+                label.startswith("remote ")
+                and label != "remote control result"
+                and str(data.get("code")) in COMMAND_NOT_DELIVERED_CODES
+            ):
+                # The command request itself was refused: nothing reached the car.
+                raise LeapmotorCommandNotDeliveredError(
+                    f"Leapmotor {label} failed: {message}", code=data.get("code")
+                )
             raise LeapmotorApiError(f"Leapmotor {label} failed: {message}")
         return data
 
@@ -3429,6 +3494,10 @@ def _vehicle_status_car_type_path(car_type: str | None) -> str:
 #: Same range as LeapConnect's Home Assistant charge-limit slider.
 T03_CHARGE_LIMIT_MIN = 50
 T03_CHARGE_LIMIT_MAX = 100
+#: Answers to a remote command request after which the cloud gave no command
+#: id. 137 came while a T03 could not be reached (kerniger/leapmotor-ha #70)
+#: and to a T03 charging schedule with weekly repetition on.
+COMMAND_NOT_DELIVERED_CODES = frozenset({"137"})
 CHARGE_LIMIT_RETRY_DELAY_SECONDS = 3
 
 

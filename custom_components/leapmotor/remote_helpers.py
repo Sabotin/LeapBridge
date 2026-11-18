@@ -12,6 +12,7 @@ from .const import DOMAIN
 from .coordinator import LeapmotorDataUpdateCoordinator
 from .leap_api import (
     LeapmotorApiError,
+    LeapmotorCommandNotDeliveredError,
     LeapmotorMissingAppCertError,
     LeapmotorRemoteCommandUnconfirmedError,
 )
@@ -19,6 +20,13 @@ from .leap_api import (
 SESSION_REJECTED_MESSAGE = (
     "Leapmotor rejected the session even after logging in again. If the official "
     "app is signed in with the same account, give Home Assistant its own (shared) account."
+)
+
+NOT_DELIVERED_MESSAGE = (
+    "Leapmotor did not pass the command on to the car (code {code}), so nothing changed. "
+    "This answer has come while the car could not be reached: asleep or without mobile "
+    "signal. Try again while the car is awake, for example right after a drive or while "
+    "it charges."
 )
 
 
@@ -68,6 +76,8 @@ def format_remote_error(exc: Exception) -> str:
             "Leapmotor accepted the command but did not confirm the result "
             f"({_unconfirmed_cause(exc)}). Check the car before trying again."
         )
+    if isinstance(exc, LeapmotorCommandNotDeliveredError):
+        return NOT_DELIVERED_MESSAGE.format(code=exc.code)
     if isinstance(exc, LeapmotorMissingAppCertError):
         return (
             "App certificate or private key is missing. "
@@ -131,6 +141,13 @@ def remote_action_error(exc: Exception) -> HomeAssistantError:
             message,
             translation_domain=DOMAIN,
             translation_key="session_rejected",
+        )
+    if isinstance(exc, LeapmotorCommandNotDeliveredError):
+        return HomeAssistantError(
+            message,
+            translation_domain=DOMAIN,
+            translation_key="remote_not_delivered",
+            translation_placeholders={"code": str(exc.code)},
         )
     return HomeAssistantError(message)
 

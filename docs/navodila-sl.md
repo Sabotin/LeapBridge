@@ -304,6 +304,12 @@ Ti podatki se berejo iz Leapmotorjevega oblaka redkeje kot stanje vozila
   izbereš vrednost (na T03 od 50 do 100 % po 5 %) in jo pošlješ z dvojnim
   tapom na **Nastavi**, ali z entiteto *Meja polnjenja*. Na T03 se
   pošlje tako kot v LeapConnectu; če avto ukaza ne potrdi, se pošlje še enkrat.
+- **Urnik polnjenja na T03** je samo začetni čas, kot na zaslonu avta: vklop
+  ali izklop, začetek in meja polnjenja. Urejevalnik v kartici pokaže samo to,
+  entitete *Nastavi konec urnika polnjenja* T03 nima. `leapmotor.set_charging_schedule`
+  za T03 zavrne `end_time`, `days`, `repeat_weekly` in `auto_recharge`; drugo,
+  kar nosi ukaz 190, ostane, kot ga ima oblak, tedensko ponavljanje pa se
+  nikoli ne vklopi.
 - **Polni zdaj na T03:** T03 nima ukaza za začetek polnjenja, zato **Polni
   zdaj** izklopi urnik polnjenja; priključen avto, ki je čakal na urnik, takrat
   začne polniti. Integracija urnik sama znova vklopi, ko je to polnjenje
@@ -330,6 +336,7 @@ Ti podatki se berejo iz Leapmotorjevega oblaka redkeje kot stanje vozila
 | Daljinsko upravljanje ne deluje | Nastavi PIN vozila; preveri dovoljenja računa in deljenega vozila. |
 | *Token is invalid* ali *Leapmotor je zavrnil prijavo* | Integracija se sama znova prijavi in ukaz ponovi. Če se napaka ponavlja, si najbrž v uradni aplikaciji prijavljen z istim računom. Uporabi drugi račun z deljenim vozilom. |
 | *Leapmotor je ukaz sprejel, izida pa ni potrdil* | Ukaz je verjetno že prišel do avta. Počakaj nekaj sekund in preveri stanje, preden ga pošlješ znova. |
+| *Leapmotor ukaza ni posredoval avtu (koda 137)* | Nič se ni spremenilo. Ta odgovor je prišel, ko avto ni bil dosegljiv. Poskusi znova, ko je avto buden, na primer takoj po vožnji ali med polnjenjem. |
 | Kartice ni mogoče najti | Osveži brskalnik (Ctrl + F5) ali ponastavi predpomnilnik vmesnika v aplikaciji. |
 | Na tablici ali telefonu ni zavihkov ali zavihka Nastavitve | Aplikacija še uporablja staro različico nadzorne plošče. V aplikaciji: *Nastavitve → Aplikacija → Razhroščevanje → Ponastavi predpomnilnik vmesnika*, nato jo znova odpri. V brskalniku: Ctrl + F5. |
 

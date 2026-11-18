@@ -37,6 +37,7 @@ class FakeCloud:
         self.reject_token_at: dict[str, int] = {}
         self.refreshes = 0
         self.result_data = 1
+        self.ctl_answer = None  # the command request's answer instead of a command id
 
     def count(self, endpoint: str) -> int:
         return sum(1 for name, _ in self.calls if name == endpoint)
@@ -60,6 +61,8 @@ class FakeCloud:
         if headers.get("token") != self.valid_token:
             return {"status_code": 200, "body": json.dumps({"code": 401, "message": "Token is invalid"})}
         if endpoint == "ctl":
+            if self.ctl_answer is not None:
+                return {"status_code": 200, "body": json.dumps(self.ctl_answer, separators=(",", ":"))}
             return self._ok({"remoteCtlId": "synthetic-ctl", "queryInterval": 250,
                              "queryRemoteCtlResultTimeout": 3000})
         if endpoint == "result":
@@ -127,6 +130,22 @@ class RemoteSessionRecoveryTests(unittest.TestCase):
             self.preheat()
         self.assertEqual(self.cloud.count("ctl"), 1)
         self.assertEqual(self.cloud.refreshes, 1)
+
+    def test_code_137_is_a_command_the_cloud_did_not_pass_on(self):
+        """Reported on a T03 schedule save: {"code":137,"result":137,"message":"","data":null}."""
+        self.cloud.ctl_answer = {"code": 137, "result": 137, "message": "", "data": None}
+        with self.assertRaises(api.LeapmotorCommandNotDeliveredError) as caught:
+            self.preheat()
+        self.assertEqual(caught.exception.code, 137)
+        self.assertIn('"code":137', str(caught.exception))
+        self.assertEqual(self.cloud.count("ctl"), 1, "refused once, not sent again")
+        self.assertEqual(self.cloud.count("result"), 0, "no command id, nothing to poll")
+        # Any other refusal stays an ordinary API error.
+        self.setUp()
+        self.cloud.ctl_answer = {"code": 1, "message": "busy", "data": None}
+        with self.assertRaises(LeapmotorApiError) as caught:
+            self.preheat()
+        self.assertNotIsInstance(caught.exception, api.LeapmotorCommandNotDeliveredError)
 
     def test_result_timeout_is_unconfirmed(self):
         self.cloud.result_data = 0

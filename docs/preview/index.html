@@ -163,7 +163,7 @@
     add("time.c10_set_charging_schedule_start", "charging_schedule_start", "23:00:00", { ...meta, schedule_enabled: !paused, schedule_paused: paused,
       schedule_start: "23:00", schedule_end: startOnly ? null : "06:00",
       schedule_days: startOnly ? null : ["mon", "tue", "wed", "thu", "fri"],
-      repeat_weekly: startOnly ? null : true, auto_recharge: startOnly ? null : false,
+      repeat_weekly: startOnly ? null : true, auto_recharge: startOnly ? null : false, start_time_only: startOnly,
       charge_limit_percent: 90, operation_password_configured: true });
     for (const [slug, tk] of [["refresh_data", "refresh_data"], ["unlock_charger", "unlock_charger"], ["open_trunk", "open_trunk"],
       ["close_trunk", "close_trunk"], ["find_vehicle", "find_vehicle"], ["open_windows", "open_windows"], ["close_windows", "close_windows"],
@@ -458,8 +458,8 @@
           // Show the saved schedule the way the integration does after the command.
           const id = "time.c10_set_charging_schedule_start";
           S[id] = { ...S[id], state: `${data.start_time}:00`, last_updated: iso(Date.now()), attributes: { ...S[id].attributes,
-            schedule_enabled: data.enabled, schedule_start: data.start_time, schedule_end: data.end_time,
-            schedule_days: data.days, repeat_weekly: data.repeat_weekly } };
+            schedule_enabled: data.enabled, schedule_start: data.start_time, schedule_end: data.end_time ?? null,
+            schedule_days: data.days ?? null, repeat_weekly: data.repeat_weekly ?? null } };
           const el = window.__card || window.__panel;
           if (el) el.hass = { ...hass, states: { ...S } };
         }

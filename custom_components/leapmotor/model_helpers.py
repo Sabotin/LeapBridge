@@ -91,6 +91,19 @@ def charging_plan_control_supported(car_type: object) -> bool:
     return str(car_type or "").strip().upper() != "T03"
 
 
+def charging_schedule_start_only(car_type: object) -> bool:
+    """Return whether the car's charging schedule is a start time only.
+
+    The T03's schedule is what its own screen shows: on or off and a start
+    time, with the charge limit. It has no end time, weekdays, weekly
+    repetition or auto recharge. The cloud's copy of a plan set in the
+    official app carries no end time, weekdays or recharge flag either, and
+    tools that set a T03's schedule successfully send weekly repetition off.
+    The C10 and B10 have the full weekly schedule.
+    """
+    return str(car_type or "").strip().upper() == "T03"
+
+
 #: ``rightList`` code of the start/stop charging command (193).
 RIGHT_START_STOP_CHARGING = "193"
 

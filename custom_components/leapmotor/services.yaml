@@ -799,7 +799,7 @@ set_charge_limit:
         text:
 set_charging_schedule:
   name: Set charging schedule
-  description: Set the car's charging schedule in one command - time window, weekdays, charge limit, weekly repetition and auto recharge. Fields you leave out keep the value the car has now. Requires the configured Vehicle PIN.
+  description: Set the car's charging schedule in one command - time window, weekdays, charge limit, weekly repetition and auto recharge. Fields you leave out keep the value the car has now. A T03's schedule is a start time only, as on its screen - give it the start time, Schedule on and the charge limit. Requires the configured Vehicle PIN.
   fields:
     start_time:
       name: Start time
@@ -809,13 +809,13 @@ set_charging_schedule:
         time:
     end_time:
       name: End time
-      description: When charging stops. A window over midnight is fine, for example 23:00 to 06:00.
+      description: When charging stops. A window over midnight is fine, for example 23:00 to 06:00. Not on the T03, whose schedule is a start time only.
       example: "06:00"
       selector:
         time:
     days:
       name: Days
-      description: Weekdays the schedule applies to. Also accepted as numbers, 1 (Monday) to 7 (Sunday).
+      description: Weekdays the schedule applies to. Also accepted as numbers, 1 (Monday) to 7 (Sunday). Not on the T03, whose schedule is a start time only.
       example: '["mon", "tue", "wed", "thu", "fri"]'
       selector:
         select:
@@ -847,12 +847,12 @@ set_charging_schedule:
           mode: box
     repeat_weekly:
       name: Repeat every week
-      description: Repeat the schedule every week on the chosen days. Off means it runs once.
+      description: Repeat the schedule every week on the chosen days. Off means it runs once. Not on the T03, whose schedule is a start time only.
       selector:
         boolean:
     auto_recharge:
       name: Auto recharge
-      description: The schedule's auto-recharge switch.
+      description: The schedule's auto-recharge switch. Not on the T03, whose schedule is a start time only.
       selector:
         boolean:
     vin:

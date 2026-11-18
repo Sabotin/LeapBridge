@@ -4,6 +4,37 @@
 below; from this release on, HACS installs releases instead of the latest
 commit.
 
+## 0.8.0: the T03 charging schedule is a start time
+
+- **T03: the schedule editor matches the car.** The T03's charging schedule
+  is what its own screen shows: on or off and a start time, with the charge
+  limit. The card's editor came from LeapConnect's weekly schedule for the
+  C10 and B10 and asked a T03 for an end time, weekdays and weekly
+  repetition it does not have: it would not save without an end time, and it
+  switched weekly repetition on whenever the car reported none. On a T03 the
+  editor now has the start time and *Schedule on* only, and there is no
+  *Set charging schedule end* entity any more (an old one is removed). Other
+  models keep the full editor.
+- **T03: the schedule command keeps what the car does not have.** Command 190
+  still carries an end time, weekdays, weekly repetition and auto recharge.
+  On a T03 they are now kept as the cloud has them, and weekly repetition is
+  never switched on: LeapConnect, leapmotor-mate and the ioBroker adapter all
+  send it off to a T03, and the plan the reporting car had accepted before
+  had it off. `leapmotor.set_charging_schedule` refuses `end_time`, `days`,
+  `repeat_weekly` and `auto_recharge` for a T03 before anything is sent. A
+  start time alone keeps whether the schedule is on, and is refused when that
+  is not known.
+- **Code 137 is explained.** Leapmotor answers code 137 when it does not pass
+  a command on to the car. Instead of the raw answer, the message now says
+  that nothing changed, that this answer has come while the car could not be
+  reached (asleep or without signal), and to try again while the car is
+  awake, for example right after a drive or while it charges. No cooldown
+  follows.
+- **Not yet seen on a car:** what caused the reported 137, the car asleep at
+  the time or weekly repetition on a T03. The new command has the shape the
+  car accepted before.
+- **Card 1.3.4.**
+
 ## 0.7.11: Charge now on the T03
 
 - **T03: *Charge now* starts the charge.** The button sent the start-charging

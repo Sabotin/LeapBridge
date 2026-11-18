@@ -1219,7 +1219,7 @@
     },
     "set_charging_schedule": {
       "name": "Ladeplanung einstellen",
-      "description": "Stellt die Ladeplanung des Autos mit einem Befehl ein: Zeitfenster, Wochentage, Ladelimit, wöchentliche Wiederholung und automatisches Nachladen. Weggelassene Felder behalten den Wert, den das Auto gerade hat. Fahrzeug-PIN erforderlich.",
+      "description": "Stellt die Ladeplanung des Autos mit einem Befehl ein: Zeitfenster, Wochentage, Ladelimit, wöchentliche Wiederholung und automatisches Nachladen. Weggelassene Felder behalten den Wert, den das Auto gerade hat. Die Planung des T03 ist nur eine Startzeit, wie auf seinem Bildschirm: Startzeit, Planung ein und Ladelimit angeben. Fahrzeug-PIN erforderlich.",
       "fields": {
         "start_time": {
           "name": "Startzeit",
@@ -1227,11 +1227,11 @@
         },
         "end_time": {
           "name": "Endzeit",
-          "description": "Wann das Laden endet. Ein Zeitfenster über Mitternacht ist möglich, z. B. 23:00 bis 06:00."
+          "description": "Wann das Laden endet. Ein Zeitfenster über Mitternacht ist möglich, z. B. 23:00 bis 06:00. Nicht beim T03, dessen Planung nur eine Startzeit ist."
         },
         "days": {
           "name": "Tage",
-          "description": "Wochentage, an denen die Planung gilt. Auch als Zahlen möglich, 1 (Montag) bis 7 (Sonntag)."
+          "description": "Wochentage, an denen die Planung gilt. Auch als Zahlen möglich, 1 (Montag) bis 7 (Sonntag). Nicht beim T03, dessen Planung nur eine Startzeit ist."
         },
         "enabled": {
           "name": "Planung ein",
@@ -1243,11 +1243,11 @@
         },
         "repeat_weekly": {
           "name": "Jede Woche wiederholen",
-          "description": "Wiederholt die Planung jede Woche an den gewählten Tagen. Aus bedeutet: einmalig."
+          "description": "Wiederholt die Planung jede Woche an den gewählten Tagen. Aus bedeutet: einmalig. Nicht beim T03, dessen Planung nur eine Startzeit ist."
         },
         "auto_recharge": {
           "name": "Automatisch nachladen",
-          "description": "Der Schalter „automatisch nachladen“ der Planung."
+          "description": "Der Schalter „automatisch nachladen“ der Planung. Nicht beim T03, dessen Planung nur eine Startzeit ist."
         },
         "vin": {
           "name": "FIN",
@@ -1303,6 +1303,9 @@
     },
     "session_rejected": {
       "message": "Leapmotor hat die Sitzung auch nach erneuter Anmeldung abgelehnt. Wenn die offizielle App mit demselben Konto angemeldet ist, Home Assistant ein eigenes (geteiltes) Konto geben."
+    },
+    "remote_not_delivered": {
+      "message": "Leapmotor hat den Befehl nicht an das Auto weitergegeben (Code {code}), es hat sich nichts geändert. Diese Antwort kam, wenn das Auto nicht erreichbar war: im Ruhezustand oder ohne Mobilfunkempfang. Erneut versuchen, wenn das Auto wach ist, zum Beispiel direkt nach einer Fahrt oder während es lädt."
     }
   },
   "selector": {
